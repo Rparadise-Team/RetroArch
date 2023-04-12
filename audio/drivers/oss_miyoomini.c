@@ -83,6 +83,10 @@ static void *oss_init(const char *device,
       else if ( rate > 16000 ) new_rate = 32000;
       else if ( rate > 8000 ) new_rate = 16000;
       else new_rate = 8000;
+      
+      	   
+	  system("tinymix set 6 80"); //set volume to -20
+	  RARCH_LOG("[OSS]: without audioserver.\n");
    }
 
    frags = (latency * new_rate * 4) / (1000 * (1 << 10));
