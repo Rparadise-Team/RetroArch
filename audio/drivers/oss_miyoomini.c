@@ -78,7 +78,6 @@ static void *oss_init(const char *device,
       ossaudio->audioserver = true;
       new_rate = rate;
 	   
-      system("/mnt/SDCARD/Koriki/bin/freemma"); //free mma memory
       RARCH_LOG("[OSS]: Using audioserver.\n");
    } else {
       /* stock oss supports 48k, 32k, 16k, 8k only */
