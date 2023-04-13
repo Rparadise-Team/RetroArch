@@ -91,7 +91,6 @@ static void *oss_init(const char *device,
 	  char command[100];
 	  sprintf(command, "tinymix set 6 %d", volumeMM);
 	  system(command); //set volume without audiofix
-     system("/mnt/SDCARD/Koriki/bin/freemma"); //free mma memory
 	  RARCH_LOG("[OSS]: without audioserver.\n");
    }
 
