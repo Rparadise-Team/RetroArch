@@ -35,6 +35,7 @@
 
 #include "../audio_driver.h"
 #include "../../verbosity.h"
+#include "volume/volume.h"
 
 #define SDL_AUDIO_SAMPLES 256
 
@@ -102,7 +103,12 @@ static void *sdl_audio_init(const char *device,
    spec.samples  = SDL_AUDIO_SAMPLES;
    spec.callback = sdl_audio_cb;
    spec.userdata = sdl;
-
+	
+   int volumeMM = setVolumeMM();
+   char command[100];
+   sprintf(command, "tinymix set 6 %d", volumeMM);
+   system(command); //set volume without audiofix
+   
    if (SDL_OpenAudio(&spec, &out) < 0)
    {
       RARCH_ERR("[SDL audio]: Failed to open SDL audio: %s\n", SDL_GetError());
