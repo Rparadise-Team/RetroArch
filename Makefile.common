@@ -811,6 +811,11 @@ endif
 
 # Audio
 
+ifeq ($(MIYOOMINI), 1)
+   OBJ += audio/drivers/volume/volume.o
+   OBJ += audio/drivers/volume/cJSON.o
+endif
+
 ifeq ($(HAVE_COREAUDIO), 1)
    DEFINES += -DHAVE_COREAUDIO
    OBJ += audio/drivers/coreaudio.o
