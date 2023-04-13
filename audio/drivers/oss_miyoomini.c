@@ -42,6 +42,7 @@
 
 #include "../audio_driver.h"
 #include "../../verbosity.h"
+#include "volume/volume.h"
 
 #define DEFAULT_OSS_DEV "/dev/dsp"
 
@@ -76,6 +77,8 @@ static void *oss_init(const char *device,
       }
       ossaudio->audioserver = true;
       new_rate = rate;
+	   
+	  system("/mnt/SDCARD/Koriki/bin/freemma"); //free mma memory
       RARCH_LOG("[OSS]: Using audioserver.\n");
    } else {
       /* stock oss supports 48k, 32k, 16k, 8k only */
@@ -83,9 +86,11 @@ static void *oss_init(const char *device,
       else if ( rate > 16000 ) new_rate = 32000;
       else if ( rate > 8000 ) new_rate = 16000;
       else new_rate = 8000;
-      
-      	   
-	  system("tinymix set 6 80"); //set volume to -20
+	   
+	  int volumeMM = setVolumeMM();
+	  char command[100];
+	  sprintf(command, "tinymix set 6 %d", volumeMM);
+	  system(command); //set volume without audiofix
 	  RARCH_LOG("[OSS]: without audioserver.\n");
    }
 
