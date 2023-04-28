@@ -19,7 +19,6 @@
 
 #include <stddef.h>
 
-
 #include <libretro.h>
 #include <retro_common_api.h>
 #include <boolean.h>
@@ -41,10 +40,6 @@
 
 #include "video_defines.h"
 
-#ifdef HAVE_VIDEO_LAYOUT
-#include "video_layout.h"
-#endif
-
 #ifdef HAVE_CRTSWITCHRES
 #include "video_crt_switch.h"
 #endif
@@ -57,20 +52,21 @@
 
 #define MEASURE_FRAME_TIME_SAMPLES_COUNT (2 * 1024)
 
-#define VIDEO_SHADER_STOCK_BLEND (GFX_MAX_SHADERS - 1)
-#define VIDEO_SHADER_MENU        (GFX_MAX_SHADERS - 2)
-#define VIDEO_SHADER_MENU_2      (GFX_MAX_SHADERS - 3)
-#define VIDEO_SHADER_MENU_3      (GFX_MAX_SHADERS - 4)
-#define VIDEO_SHADER_MENU_4      (GFX_MAX_SHADERS - 5)
-#define VIDEO_SHADER_MENU_5      (GFX_MAX_SHADERS - 6)
-#define VIDEO_SHADER_MENU_6      (GFX_MAX_SHADERS - 7)
-#define VIDEO_SHADER_STOCK_HDR   (GFX_MAX_SHADERS - 8)
+#define VIDEO_SHADER_STOCK_BLEND   (GFX_MAX_SHADERS - 1)
+#define VIDEO_SHADER_MENU          (GFX_MAX_SHADERS - 2)
+#define VIDEO_SHADER_MENU_2        (GFX_MAX_SHADERS - 3)
+#define VIDEO_SHADER_MENU_3        (GFX_MAX_SHADERS - 4)
+#define VIDEO_SHADER_MENU_4        (GFX_MAX_SHADERS - 5)
+#define VIDEO_SHADER_MENU_5        (GFX_MAX_SHADERS - 6)
+#define VIDEO_SHADER_MENU_6        (GFX_MAX_SHADERS - 7)
+#define VIDEO_SHADER_STOCK_HDR     (GFX_MAX_SHADERS - 8)
+#define VIDEO_SHADER_STOCK_NOBLEND (GFX_MAX_SHADERS - 9)
 
 #define VIDEO_HDR_MAX_CONTRAST 10.0f
 
 #if defined(_XBOX360)
 #define DEFAULT_SHADER_TYPE RARCH_SHADER_HLSL
-#elif defined(__PSL1GHT__) || defined(HAVE_OPENGLES2) || defined(HAVE_GLSL)
+#elif defined(HAVE_OPENGLES2) || defined(HAVE_GLSL)
 #define DEFAULT_SHADER_TYPE RARCH_SHADER_GLSL
 #elif defined(HAVE_CG)
 #define DEFAULT_SHADER_TYPE RARCH_SHADER_CG
@@ -429,13 +425,13 @@ typedef struct video_frame_info
    float menu_header_opacity;
    float menu_footer_opacity;
    float refresh_rate;
+   float font_size;
    float font_msg_pos_x;
    float font_msg_pos_y;
    float font_msg_color_r;
    float font_msg_color_g;
    float font_msg_color_b;
    float xmb_alpha_factor;
-
 
    struct
    {
@@ -769,9 +765,6 @@ typedef struct video_driver
    void (*overlay_interface)(void *data,
          const video_overlay_interface_t **iface);
 #endif
-#ifdef HAVE_VIDEO_LAYOUT
-   const video_layout_render_interface_t *(*video_layout_render_interface)(void *data);
-#endif
    void (*poke_interface)(void *data, const video_poke_interface_t **iface);
    unsigned (*wrap_type_to_enum)(enum gfx_wrap_type type);
 
@@ -919,6 +912,8 @@ bool video_driver_prefer_viewport_read(void);
 
 bool video_driver_supports_read_frame_raw(void);
 
+float video_driver_get_core_aspect(void);
+
 void video_driver_set_viewport_core(void);
 
 void video_driver_reset_custom_viewport(settings_t *settings);
@@ -1005,10 +1000,6 @@ void video_driver_set_texture_enable(bool enable, bool full_screen);
 
 void video_driver_set_texture_frame(const void *frame, bool rgb32,
       unsigned width, unsigned height, float alpha);
-
-#ifdef HAVE_VIDEO_LAYOUT
-const video_layout_render_interface_t *video_driver_layout_render_interface(void);
-#endif
 
 void * video_driver_read_frame_raw(unsigned *width,
    unsigned *height, size_t *pitch);

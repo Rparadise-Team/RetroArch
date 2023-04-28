@@ -1479,7 +1479,6 @@ MSG_HASH(
    )
 
 
-
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_META_AI_SERVICE,
    "Dịch vụ AI"
@@ -2429,10 +2428,6 @@ MSG_HASH(
    MSG_FILE_ALREADY_EXISTS_SAVING_TO_BACKUP_BUFFER,
    "Ttệp đã tồn tại. Đang lưu vào backup buffer"
    )
-MSG_HASH(
-   MSG_WAITING_FOR_CLIENT,
-   "Đang đợi máy khách  ..."
-   )
 
 MSG_HASH(
    MSG_AUDIO_VOLUME,
@@ -2521,10 +2516,6 @@ MSG_HASH(
 MSG_HASH(
    MSG_LOADING_STATE,
    "Đang tải state"
-   )
-MSG_HASH(
-   MSG_MOVIE_FILE_IS_NOT_A_VALID_BSV1_FILE,
-   "Movie file is not a valid BSV1 file."
    )
 MSG_HASH(
    MSG_MOVIE_FORMAT_DIFFERENT_SERIALIZER_VERSION,

@@ -117,10 +117,6 @@
 #endif
 #endif
 
-#ifdef HAVE_VIDEO_LAYOUT
-#include "../gfx/video_layout.h"
-#endif
-
 #if defined(HAVE_OVERLAY)
 #include "../input/input_overlay.h"
 #endif
@@ -292,9 +288,6 @@ enum settings_list_type
    SETTINGS_LIST_FRAME_TIME_COUNTER,
    SETTINGS_LIST_ONSCREEN_NOTIFICATIONS,
    SETTINGS_LIST_OVERLAY,
-#ifdef HAVE_VIDEO_LAYOUT
-   SETTINGS_LIST_VIDEO_LAYOUT,
-#endif
    SETTINGS_LIST_MENU,
    SETTINGS_LIST_MENU_FILE_BROWSER,
    SETTINGS_LIST_MULTIMEDIA,
@@ -2908,6 +2901,35 @@ static int setting_action_ok_select_physical_keyboard(
 }
 #endif
 
+#if !defined(RARCH_CONSOLE)
+static int setting_string_action_ok_audio_device(
+      rarch_setting_t *setting, size_t idx, bool wraparound)
+{
+   char enum_idx[16];
+   if (!setting)
+      return -1;
+
+   snprintf(enum_idx, sizeof(enum_idx), "%d", setting->enum_idx);
+
+   generic_action_ok_displaylist_push(
+         enum_idx, /* we will pass the enumeration index of the string as a path */
+         NULL, NULL, 0, idx, 0,
+         ACTION_OK_DL_DROPDOWN_BOX_LIST_AUDIO_DEVICE);
+   return 0;
+}
+
+static int setting_string_action_start_audio_device(rarch_setting_t *setting)
+{
+   if (!setting)
+      return -1;
+
+   strlcpy(setting->value.target.string, "", setting->size);
+
+   command_event(CMD_EVENT_AUDIO_REINIT, NULL);
+   return 0;
+}
+#endif
+
 static int setting_string_action_left_string_options(
    rarch_setting_t* setting, size_t idx, bool wraparound)
 {
@@ -3099,6 +3121,19 @@ static void setting_get_string_representation_video_filter(rarch_setting_t *sett
             "", len);
 }
 
+static void setting_get_string_representation_video_font_path(rarch_setting_t *setting,
+      char *s, size_t len)
+{
+   if (!setting)
+      return;
+
+   if (string_is_empty(setting->value.target.string))
+      strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_DONT_CARE), len);
+   else
+      fill_pathname(s, path_basename(setting->value.target.string),
+            "", len);
+}
+
 static void setting_get_string_representation_state_slot(rarch_setting_t *setting,
       char *s, size_t len)
 {
@@ -3107,7 +3142,7 @@ static void setting_get_string_representation_state_slot(rarch_setting_t *settin
 
    snprintf(s, len, "%d", *setting->value.target.integer);
    if (*setting->value.target.integer == -1)
-      strlcat(s, " (Auto)", len);
+      strlcpy(s, "Auto", len);
 }
 
 static void setting_get_string_representation_percentage(rarch_setting_t *setting,
@@ -5093,6 +5128,18 @@ static void setting_get_string_representation_int_audio_wasapi_sh_buffer_length(
 }
 #endif
 
+static void setting_get_string_representation_string_audio_device(rarch_setting_t *setting,
+      char *s, size_t len)
+{
+   if (!setting)
+      return;
+
+   if (string_is_empty(setting->value.target.string))
+      strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_DONT_CARE), len);
+   else
+      strlcpy(s, setting->value.target.string, len);
+}
+
 static void setting_get_string_representation_crt_switch_resolution_super(
       rarch_setting_t *setting,
       char *s, size_t len)
@@ -5850,11 +5897,17 @@ static int setting_string_action_left_audio_device(
    audio_device_index--;
 
    /* Reset index if needed */
-   if (audio_device_index < 0)
+   if (audio_device_index < -1)
       audio_device_index = (int)(ptr->size - 1);
 
-   strlcpy(setting->value.target.string, ptr->elems[audio_device_index].data, setting->size);
+   if (audio_device_index < 0)
+      strlcpy(setting->value.target.string,
+            "", setting->size);
+   else
+      strlcpy(setting->value.target.string,
+            ptr->elems[audio_device_index].data, setting->size);
 
+   command_event(CMD_EVENT_AUDIO_REINIT, NULL);
    return 0;
 }
 #endif
@@ -6128,16 +6181,21 @@ static int setting_string_action_right_audio_device(
       return -1;
 
    /* Get index in the string list */
-   audio_device_index = string_list_find_elem(ptr,setting->value.target.string) -1;
+   audio_device_index = string_list_find_elem(ptr,setting->value.target.string) - 1;
    audio_device_index++;
 
    /* Reset index if needed */
    if (audio_device_index == (signed)ptr->size)
-      audio_device_index = 0;
+      audio_device_index = -1;
 
-   strlcpy(setting->value.target.string,
-         ptr->elems[audio_device_index].data, setting->size);
+   if (audio_device_index < 0)
+      strlcpy(setting->value.target.string,
+            "", setting->size);
+   else
+      strlcpy(setting->value.target.string,
+            ptr->elems[audio_device_index].data, setting->size);
 
+   command_event(CMD_EVENT_AUDIO_REINIT, NULL);
    return 0;
 }
 #endif
@@ -6654,6 +6712,22 @@ static void setting_get_string_representation_uint_autosave_interval(
       strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_OFF), len);
 }
 #endif
+
+static void setting_get_string_representation_uint_replay_checkpoint_interval(
+      rarch_setting_t *setting,
+      char *s, size_t len)
+{
+   if (!setting)
+      return;
+
+   if (*setting->value.target.unsigned_integer)
+   {
+      snprintf(s, len, "%u ", *setting->value.target.unsigned_integer);
+      strlcat(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_SECONDS), len);
+   }
+   else
+      strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_OFF), len);
+}
 
 #if defined(HAVE_NETWORKING)
 static void setting_get_string_representation_netplay_mitm_server(
@@ -8834,40 +8908,6 @@ static void overlay_auto_rotate_toggle_change_handler(rarch_setting_t *setting)
 }
 #endif
 
-#ifdef HAVE_VIDEO_LAYOUT
-static void change_handler_video_layout_enable(rarch_setting_t *setting)
-{
-   if (*setting->value.target.boolean)
-   {
-      settings_t *settings = config_get_ptr();
-      void         *driver = video_driver_get_ptr();
-
-      video_layout_init(driver, video_driver_layout_render_interface());
-      video_layout_load(settings->paths.path_video_layout);
-      video_layout_view_select(settings->uints.video_layout_selected_view);
-   }
-   else
-   {
-      video_layout_deinit();
-   }
-}
-
-static void change_handler_video_layout_path(rarch_setting_t *setting)
-{
-   settings_t *settings = config_get_ptr();
-   configuration_set_uint(settings,
-         settings->uints.video_layout_selected_view, 0);
-
-   video_layout_load(setting->value.target.string);
-}
-
-static void change_handler_video_layout_selected_view(rarch_setting_t *setting)
-{
-   unsigned *v = setting->value.target.unsigned_integer;
-   *v = video_layout_view_select(*v);
-}
-#endif
-
 #ifdef HAVE_CHEEVOS
 static void achievement_hardcore_mode_write_handler(rarch_setting_t *setting)
 {
@@ -9579,6 +9619,25 @@ static bool setting_append_list(
             &setting_get_string_representation_state_slot;
          menu_settings_list_current_add_range(list, list_info, -1, 999, 1, true, true);
 
+#ifdef HAVE_BSV_MOVIE
+         CONFIG_INT(
+               list, list_info,
+               &settings->ints.replay_slot,
+               MENU_ENUM_LABEL_REPLAY_SLOT,
+               MENU_ENUM_LABEL_VALUE_REPLAY_SLOT,
+               0,
+               &group_info,
+               &subgroup_info,
+               parent_group,
+               general_write_handler,
+               general_read_handler);
+         (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
+         (*list)[list_info->index - 1].offset_by     = -1;
+         (*list)[list_info->index - 1].get_string_representation =
+            &setting_get_string_representation_state_slot;
+         menu_settings_list_current_add_range(list, list_info, -1, 999, 1, true, true);
+#endif
+
          CONFIG_ACTION(
                list, list_info,
                MENU_ENUM_LABEL_START_CORE,
@@ -10169,17 +10228,6 @@ static bool setting_append_list(
          SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
 #endif
 
-#ifdef HAVE_VIDEO_LAYOUT
-         CONFIG_ACTION(
-               list, list_info,
-               MENU_ENUM_LABEL_ONSCREEN_VIDEO_LAYOUT_SETTINGS,
-               MENU_ENUM_LABEL_VALUE_ONSCREEN_VIDEO_LAYOUT_SETTINGS,
-               &group_info,
-               &subgroup_info,
-               parent_group);
-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
-#endif
-
          CONFIG_ACTION(
                list, list_info,
                MENU_ENUM_LABEL_ONSCREEN_NOTIFICATIONS_SETTINGS,
@@ -10455,7 +10503,7 @@ static bool setting_append_list(
       case SETTINGS_LIST_DRIVERS:
          {
             unsigned i, j = 0;
-            struct string_options_entry string_options_entries[12] = {0};
+            struct string_options_entry string_options_entries[12] = {{0}};
 
             START_GROUP(list, list_info, &group_info, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_DRIVER_SETTINGS), parent_group);
             MENU_SETTINGS_LIST_CURRENT_ADD_ENUM_IDX_PTR(list, list_info, MENU_ENUM_LABEL_DRIVER_SETTINGS);
@@ -11108,6 +11156,56 @@ static bool setting_append_list(
                   general_read_handler);
             (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
             menu_settings_list_current_add_range(list, list_info, 0, 999, 1, true, true);
+
+#ifdef HAVE_BSV_MOVIE
+            CONFIG_BOOL(
+                  list, list_info,
+                  &settings->bools.replay_auto_index,
+                  MENU_ENUM_LABEL_REPLAY_AUTO_INDEX,
+                  MENU_ENUM_LABEL_VALUE_REPLAY_AUTO_INDEX,
+                  DEFAULT_REPLAY_AUTO_INDEX,
+                  MENU_ENUM_LABEL_VALUE_OFF,
+                  MENU_ENUM_LABEL_VALUE_ON,
+                  &group_info,
+                  &subgroup_info,
+                  parent_group,
+                  general_write_handler,
+                  general_read_handler,
+                  SD_FLAG_NONE);
+            (*list)[list_info->index - 1].action_ok     = &setting_bool_action_left_with_refresh;
+            (*list)[list_info->index - 1].action_left   = &setting_bool_action_left_with_refresh;
+            (*list)[list_info->index - 1].action_right  = &setting_bool_action_right_with_refresh;
+
+            CONFIG_UINT(
+                  list, list_info,
+                  &settings->uints.replay_max_keep,
+                  MENU_ENUM_LABEL_REPLAY_MAX_KEEP,
+                  MENU_ENUM_LABEL_VALUE_REPLAY_MAX_KEEP,
+                  DEFAULT_REPLAY_MAX_KEEP,
+                  &group_info,
+                  &subgroup_info,
+                  parent_group,
+                  general_write_handler,
+                  general_read_handler);
+            (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
+            menu_settings_list_current_add_range(list, list_info, 0, 999, 1, true, true);
+
+            CONFIG_UINT(
+                  list, list_info,
+                  &settings->uints.replay_checkpoint_interval,
+                  MENU_ENUM_LABEL_REPLAY_CHECKPOINT_INTERVAL,
+                  MENU_ENUM_LABEL_VALUE_REPLAY_CHECKPOINT_INTERVAL,
+                  DEFAULT_REPLAY_CHECKPOINT_INTERVAL,
+                  &group_info,
+                  &subgroup_info,
+                  parent_group,
+                  general_write_handler,
+                  general_read_handler);
+            (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
+            (*list)[list_info->index - 1].get_string_representation =
+               &setting_get_string_representation_uint_replay_checkpoint_interval;
+            menu_settings_list_current_add_range(list, list_info, 0, 3600, 60, true, false);
+#endif
 
             CONFIG_BOOL(
                   list, list_info,
@@ -12225,7 +12323,7 @@ static bool setting_append_list(
                   CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
             SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
 
-#if defined(GEKKO) || defined(PS2) || !defined(__PSL1GHT__) && defined(__PS3__)
+#if defined(GEKKO) || defined(PS2) || defined(__PS3__)
             if (true)
 #else
             if (!string_is_equal(video_display_server_get_ident(), "null"))
@@ -12483,7 +12581,10 @@ static bool setting_append_list(
                general_read_handler,
                SD_FLAG_NONE);
          MENU_SETTINGS_LIST_CURRENT_ADD_CMD(list, list_info, CMD_EVENT_REINIT);
+#endif
 
+#if (defined(_WIN32) && !defined(_XBOX) && !defined(__WINRT__)) ||  \
+    (defined(HAVE_COCOA_METAL) && !defined(HAVE_COCOATOUCH))
             CONFIG_BOOL(
                   list, list_info,
                   &settings->bools.video_window_save_positions,
@@ -12740,7 +12841,7 @@ static bool setting_append_list(
 
             END_SUB_GROUP(list, list_info, parent_group);
 
-            if(video_driver_supports_hdr())
+            if (video_driver_supports_hdr())
             {
                START_SUB_GROUP(list, list_info, "HDR", &group_info, &subgroup_info, parent_group);
 
@@ -13698,11 +13799,12 @@ static bool setting_append_list(
                parent_group,
                general_write_handler,
                general_read_handler);
-         SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_ALLOW_INPUT);
-         (*list)[list_info->index - 1].ui_type       = ST_UI_TYPE_STRING_LINE_EDIT;
-         (*list)[list_info->index - 1].action_start  = setting_generic_action_start_default;
+         (*list)[list_info->index - 1].action_start  = &setting_string_action_start_audio_device;
          (*list)[list_info->index - 1].action_left   = &setting_string_action_left_audio_device;
          (*list)[list_info->index - 1].action_right  = &setting_string_action_right_audio_device;
+         (*list)[list_info->index - 1].action_ok     = &setting_string_action_ok_audio_device;
+         (*list)[list_info->index - 1].get_string_representation =
+               &setting_get_string_representation_string_audio_device;
 #endif
 
          CONFIG_UINT(
@@ -15191,6 +15293,7 @@ static bool setting_append_list(
          MENU_SETTINGS_LIST_CURRENT_ADD_VALUES(list, list_info, "ttf");
          MENU_SETTINGS_LIST_CURRENT_ADD_CMD(list, list_info, CMD_EVENT_REINIT);
          (*list)[list_info->index - 1].ui_type   = ST_UI_TYPE_FONT_SELECTOR;
+         (*list)[list_info->index - 1].get_string_representation = &setting_get_string_representation_video_font_path;
 
          CONFIG_FLOAT(
                list, list_info,
@@ -16181,64 +16284,6 @@ static bool setting_append_list(
          END_GROUP(list, list_info, parent_group);
 #endif
          break;
-#ifdef HAVE_VIDEO_LAYOUT
-      case SETTINGS_LIST_VIDEO_LAYOUT:
-         START_GROUP(list, list_info, &group_info,
-               msg_hash_to_str(MENU_ENUM_LABEL_ONSCREEN_VIDEO_LAYOUT_SETTINGS),
-               parent_group);
-
-         parent_group = msg_hash_to_str(MENU_ENUM_LABEL_ONSCREEN_VIDEO_LAYOUT_SETTINGS);
-
-         START_SUB_GROUP(list, list_info, "State", &group_info, &subgroup_info, parent_group);
-
-         CONFIG_BOOL(
-               list, list_info,
-               &settings->bools.video_layout_enable,
-               MENU_ENUM_LABEL_VIDEO_LAYOUT_ENABLE,
-               MENU_ENUM_LABEL_VALUE_VIDEO_LAYOUT_ENABLE,
-               true,
-               MENU_ENUM_LABEL_VALUE_OFF,
-               MENU_ENUM_LABEL_VALUE_ON,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               change_handler_video_layout_enable,
-               general_read_handler,
-               SD_FLAG_NONE);
-         (*list)[list_info->index - 1].action_ok     = setting_bool_action_left_with_refresh;
-         (*list)[list_info->index - 1].action_left   = setting_bool_action_left_with_refresh;
-         (*list)[list_info->index - 1].action_right  = setting_bool_action_right_with_refresh;
-
-         CONFIG_PATH(
-               list, list_info,
-               settings->paths.path_video_layout,
-               sizeof(settings->paths.path_video_layout),
-               MENU_ENUM_LABEL_VIDEO_LAYOUT_PATH,
-               MENU_ENUM_LABEL_VALUE_VIDEO_LAYOUT_PATH,
-               settings->paths.directory_video_layout,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               change_handler_video_layout_path,
-               general_read_handler);
-
-         CONFIG_UINT(
-               list, list_info,
-               &settings->uints.video_layout_selected_view,
-               MENU_ENUM_LABEL_VIDEO_LAYOUT_SELECTED_VIEW,
-               MENU_ENUM_LABEL_VALUE_VIDEO_LAYOUT_SELECTED_VIEW,
-               0,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               change_handler_video_layout_selected_view,
-               general_read_handler);
-         menu_settings_list_current_add_range(list, list_info, 0, 0, 1, false, false);
-
-         END_SUB_GROUP(list, list_info, parent_group);
-         END_GROUP(list, list_info, parent_group);
-         break;
-#endif
       case SETTINGS_LIST_MENU:
          START_GROUP(list, list_info, &group_info,
                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MENU_SETTINGS),
@@ -16283,7 +16328,8 @@ static bool setting_append_list(
             SETTINGS_DATA_LIST_CURRENT_ADD_FLAGS(list, list_info, SD_FLAG_LAKKA_ADVANCED);
          }
 
-         if (string_is_not_equal(settings->arrays.menu_driver, "rgui"))
+         if (string_is_not_equal(settings->arrays.menu_driver, "rgui") &&
+             string_is_not_equal(settings->arrays.menu_driver, "xmb"))
          {
             CONFIG_FLOAT(
                   list, list_info,
@@ -17432,23 +17478,6 @@ static bool setting_append_list(
                   general_write_handler,
                   general_read_handler,
                   SD_FLAG_LAKKA_ADVANCED);
-
-#ifdef HAVE_VIDEO_LAYOUT
-            CONFIG_BOOL(
-                  list, list_info,
-                  &settings->bools.menu_show_video_layout,
-                  MENU_ENUM_LABEL_CONTENT_SHOW_VIDEO_LAYOUT,
-                  MENU_ENUM_LABEL_VALUE_CONTENT_SHOW_VIDEO_LAYOUT,
-                  DEFAULT_QUICK_MENU_SHOW_VIDEO_LAYOUT,
-                  MENU_ENUM_LABEL_VALUE_OFF,
-                  MENU_ENUM_LABEL_VALUE_ON,
-                  &group_info,
-                  &subgroup_info,
-                  parent_group,
-                  general_write_handler,
-                  general_read_handler,
-                  SD_FLAG_LAKKA_ADVANCED);
-#endif
 
             CONFIG_BOOL(
                   list, list_info,
@@ -19413,6 +19442,21 @@ static bool setting_append_list(
                MENU_ENUM_LABEL_QUICK_MENU_SHOW_SAVE_LOAD_STATE,
                MENU_ENUM_LABEL_VALUE_QUICK_MENU_SHOW_SAVE_LOAD_STATE,
                DEFAULT_QUICK_MENU_SHOW_SAVE_LOAD_STATE,
+               MENU_ENUM_LABEL_VALUE_OFF,
+               MENU_ENUM_LABEL_VALUE_ON,
+               &group_info,
+               &subgroup_info,
+               parent_group,
+               general_write_handler,
+               general_read_handler,
+               SD_FLAG_NONE);
+
+         CONFIG_BOOL(
+               list, list_info,
+               &settings->bools.quick_menu_show_replay,
+               MENU_ENUM_LABEL_QUICK_MENU_SHOW_REPLAY,
+               MENU_ENUM_LABEL_VALUE_QUICK_MENU_SHOW_REPLAY,
+               DEFAULT_QUICK_MENU_SHOW_REPLAY,
                MENU_ENUM_LABEL_VALUE_OFF,
                MENU_ENUM_LABEL_VALUE_ON,
                &group_info,
@@ -21857,23 +21901,6 @@ static bool setting_append_list(
          (*list)[list_info->index - 1].action_start = directory_action_start_generic;
 #endif
 
-#ifdef HAVE_VIDEO_LAYOUT
-         CONFIG_DIR(
-               list, list_info,
-               settings->paths.directory_video_layout,
-               sizeof(settings->paths.directory_video_layout),
-               MENU_ENUM_LABEL_VIDEO_LAYOUT_DIRECTORY,
-               MENU_ENUM_LABEL_VALUE_VIDEO_LAYOUT_DIRECTORY,
-               g_defaults.dirs[DEFAULT_DIR_VIDEO_LAYOUT],
-               MENU_ENUM_LABEL_VALUE_DIRECTORY_DEFAULT,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               general_write_handler,
-               general_read_handler);
-         (*list)[list_info->index - 1].action_start = directory_action_start_generic;
-#endif
-
          CONFIG_DIR(
                list, list_info,
                settings->paths.directory_screenshot,
@@ -22513,9 +22540,6 @@ static rarch_setting_t *menu_setting_new_internal(rarch_setting_info_t *list_inf
       SETTINGS_LIST_FRAME_TIME_COUNTER,
       SETTINGS_LIST_ONSCREEN_NOTIFICATIONS,
       SETTINGS_LIST_OVERLAY,
-#ifdef HAVE_VIDEO_LAYOUT
-      SETTINGS_LIST_VIDEO_LAYOUT,
-#endif
       SETTINGS_LIST_MENU,
       SETTINGS_LIST_MENU_FILE_BROWSER,
       SETTINGS_LIST_MULTIMEDIA,

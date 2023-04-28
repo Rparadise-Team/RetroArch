@@ -114,18 +114,30 @@ enum bsv_flags
    BSV_FLAG_MOVIE_START_RECORDING    = (1 << 0),
    BSV_FLAG_MOVIE_START_PLAYBACK     = (1 << 1),
    BSV_FLAG_MOVIE_PLAYBACK           = (1 << 2),
-   BSV_FLAG_MOVIE_EOF_EXIT           = (1 << 3),
-   BSV_FLAG_MOVIE_END                = (1 << 4)
+   BSV_FLAG_MOVIE_RECORDING          = (1 << 3),
+   BSV_FLAG_MOVIE_END                = (1 << 4),
+   BSV_FLAG_MOVIE_EOF_EXIT           = (1 << 5)
 };
 
 struct bsv_state
 {
    uint8_t flags;
    /* Movie playback/recording support. */
-   char movie_path[PATH_MAX_LENGTH];
+   char movie_auto_path[PATH_MAX_LENGTH];
    /* Immediate playback/recording. */
    char movie_start_path[PATH_MAX_LENGTH];
 };
+
+/* These data are always little-endian. */
+struct bsv_key_data {
+  uint8_t down;
+  uint16_t mod;
+  uint8_t _padding;
+  uint32_t code;
+  uint32_t character;
+};
+
+typedef struct bsv_key_data bsv_key_data_t;
 
 struct bsv_movie
 {
@@ -138,13 +150,23 @@ struct bsv_movie
    size_t frame_ptr;
    size_t min_file_pos;
    size_t state_size;
+   int64_t identifier;
 
+   /* Staging variables for keyboard events */
+   uint8_t key_event_count;
+   bsv_key_data_t key_events[255];
+
+   /* Rewind state */
    bool playback;
    bool first_rewind;
    bool did_rewind;
 };
 
 typedef struct bsv_movie bsv_movie_t;
+
+#define REPLAY_TOKEN_INVALID          '\0'
+#define REPLAY_TOKEN_REGULAR_FRAME    'f'
+#define REPLAY_TOKEN_CHECKPOINT_FRAME 'c'
 #endif
 
 /**
@@ -988,15 +1010,19 @@ void input_overlay_init(void);
 
 #ifdef HAVE_BSV_MOVIE
 void bsv_movie_frame_rewind(void);
+void bsv_movie_next_frame(input_driver_state_t *input_st);
+void bsv_movie_finish_rewind(input_driver_state_t *input_st);
 void bsv_movie_deinit(input_driver_state_t *input_st);
 
 bool movie_start_playback(input_driver_state_t *input_st, char *path);
 bool movie_start_record(input_driver_state_t *input_st, char *path);
-bool movie_stop_playback();
+bool movie_stop_playback(input_driver_state_t *input_st);
 bool movie_stop_record(input_driver_state_t *input_st);
-bool movie_toggle_record(input_driver_state_t *input_st, settings_t *settings);
 bool movie_stop(input_driver_state_t *input_st);
 
+size_t replay_get_serialize_size(void);
+bool replay_get_serialized_data(void* buffer);
+bool replay_set_serialized_data(void* buffer);
 #endif
 
 /**

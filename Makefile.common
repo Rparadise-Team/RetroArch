@@ -447,37 +447,17 @@ ifeq ($(HAVE_LANGEXTRA), 1)
    DEFINES += -DHAVE_LANGEXTRA
    DEF_FLAGS += -finput-charset=UTF-8
 
-   OBJ += intl/msg_hash_de.o \
-          intl/msg_hash_eo.o \
-          intl/msg_hash_es.o \
-          intl/msg_hash_fr.o \
-          intl/msg_hash_it.o \
+   OBJ += intl/msg_hash_ca.o \
+          intl/msg_hash_chs.o \
+          intl/msg_hash_el.o \
           intl/msg_hash_ja.o \
           intl/msg_hash_ko.o \
-          intl/msg_hash_nl.o \
-          intl/msg_hash_pl.o \
           intl/msg_hash_pt_br.o \
           intl/msg_hash_pt_pt.o \
           intl/msg_hash_ru.o \
-          intl/msg_hash_vn.o \
-          intl/msg_hash_chs.o \
-          intl/msg_hash_cht.o \
-          intl/msg_hash_ar.o \
-          intl/msg_hash_el.o \
           intl/msg_hash_tr.o \
-          intl/msg_hash_sk.o \
-          intl/msg_hash_fa.o \
-          intl/msg_hash_he.o \
-          intl/msg_hash_ast.o \
-          intl/msg_hash_fi.o \
-          intl/msg_hash_id.o \
-          intl/msg_hash_sv.o \
-          intl/msg_hash_uk.o \
-          intl/msg_hash_cs.o \
           intl/msg_hash_val.o \
-          intl/msg_hash_ca.o \
-          intl/msg_hash_en.o \
-          intl/msg_hash_hu.o
+          intl/msg_hash_vn.o
 endif
 
 ifneq ($(HAVE_GETOPT_LONG), 1)
@@ -1123,18 +1103,6 @@ ifeq ($(HAVE_OVERLAY), 1)
           led/drivers/led_overlay.o
 endif
 
-ifeq ($(HAVE_VIDEO_LAYOUT), 1)
-   DEFINES += -DHAVE_VIDEO_LAYOUT
-   OBJ += \
-	  gfx/video_layout.o \
-	  gfx/video_layout/view.o \
-	  gfx/video_layout/element.o \
-	  gfx/video_layout/component.o \
-	  gfx/video_layout/internal.o \
-	  gfx/video_layout/scope.o \
-	  gfx/video_layout/load.o
-endif
-
 ifeq ($(HAVE_STB_FONT), 1)
    OBJ += gfx/drivers_font_renderer/stb.o
    OBJ += gfx/drivers_font_renderer/stb_unicode.o
@@ -1268,9 +1236,12 @@ ifeq ($(HAVE_WAYLAND), 1)
         input/common/wayland_common.o \
         input/drivers/wayland_input.o \
         gfx/common/wayland_common.o \
+        gfx/common/wayland/viewporter.o \
         gfx/common/wayland/xdg-shell.o \
         gfx/common/wayland/idle-inhibit-unstable-v1.o \
-        gfx/common/wayland/xdg-decoration-unstable-v1.o
+        gfx/common/wayland/xdg-decoration-unstable-v1.o \
+        gfx/common/wayland/pointer-constraints-unstable-v1.o \
+        gfx/common/wayland/relative-pointer-unstable-v1.o
 
    ifeq ($(HAVE_VULKAN), 1)
       OBJ += gfx/drivers_context/wayland_vk_ctx.o
@@ -1368,11 +1339,10 @@ ifeq ($(HAVE_LIBUSB), 1)
 endif
 
 ifeq ($(HAVE_IOHIDMANAGER), 1)
-   ifeq ($(HAVE_HID), 1)
-      DEFINES += -DHAVE_IOHIDMANAGER
-      OBJ += input/drivers_hid/iohidmanager_hid.o
-      LIBS += -framework IOKit
-   endif
+   HAVE_HID=1
+   DEFINES += -DHAVE_IOHIDMANAGER
+   OBJ += input/drivers_hid/iohidmanager_hid.o
+   LIBS += -framework IOKit
 endif
 
 ifeq ($(HAVE_HID), 1)
@@ -1389,8 +1359,8 @@ ifeq ($(HAVE_HID), 1)
           input/connect/connect_nesusb.o \
           input/connect/connect_snesusb.o \
           input/connect/connect_wiiupro.o \
-		  input/connect/connect_kade.o \
-		  input/connect/connect_zerodelay_dragonrise.o \
+	  input/connect/connect_kade.o \
+	  input/connect/connect_zerodelay_dragonrise.o \
           input/connect/connect_wiiugca.o
 endif
 
@@ -2441,7 +2411,8 @@ ifeq ($(HAVE_STATIC_AUDIO_FILTERS), 1)
 endif
 
 ifeq ($(HAVE_RPILED), 1)
-   OBJ += led/drivers/led_rpi.o
+   OBJ += led/drivers/led_rpi.o \
+          led/drivers/led_sys_linux.o
 endif
 
 ifneq ($(findstring Win32,$(OS)),)

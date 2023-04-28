@@ -65,11 +65,14 @@ static void xdg_toplevel_handle_configure(void *data,
    xdg_toplevel_handle_configure_common(wl, toplevel, width, height, states);
 #ifdef HAVE_EGL
    if (wl->win)
-      wl_egl_window_resize(wl->win, wl->width, wl->height, 0, 0);
+      wl_egl_window_resize(wl->win,
+            wl->buffer_width,
+            wl->buffer_height,
+            0, 0);
    else
       wl->win = wl_egl_window_create(wl->surface,
-            wl->width * wl->buffer_scale,
-            wl->height * wl->buffer_scale);
+            wl->buffer_width,
+            wl->buffer_height);
 #endif
 
    wl->configured = false;
@@ -113,11 +116,13 @@ static bool gfx_ctx_wl_set_resize(void *data, unsigned width, unsigned height)
 {
    gfx_ctx_wayland_data_t *wl = (gfx_ctx_wayland_data_t*)data;
 
+   wl->last_buffer_scale = wl->buffer_scale;
+   wl_surface_set_buffer_scale(wl->surface, wl->buffer_scale);
+
 #ifdef HAVE_EGL
    wl_egl_window_resize(wl->win, width, height, 0, 0);
 #endif
 
-   wl_surface_set_buffer_scale(wl->surface, wl->buffer_scale);
    return true;
 }
 
@@ -144,12 +149,15 @@ libdecor_frame_handle_configure(struct libdecor_frame *frame,
 
 #ifdef HAVE_EGL
    if (wl->win)
-      wl_egl_window_resize(wl->win, wl->width, wl->height, 0, 0);
+      wl_egl_window_resize(wl->win,
+            wl->buffer_width,
+            wl->buffer_height,
+            0, 0);
    else
       wl->win         = wl_egl_window_create(
             wl->surface,
-            wl->width  * wl->buffer_scale,
-            wl->height * wl->buffer_scale);
+            wl->buffer_width,
+            wl->buffer_height);
 #endif
 
    wl->configured = false;
@@ -259,15 +267,11 @@ static bool gfx_ctx_wl_egl_init_context(gfx_ctx_wayland_data_t *wl)
             egl_default_accept_config_cb))
    {
       egl_report_error();
-      goto error;
+      return false;
    }
-
-   if (n == 0 || !egl_has_config(&wl->egl))
-      goto error;
+   if (n == 0 || !&wl->egl.config)
+      return false;
    return true;
-
-error:
-   return false;
 }
 #endif
 
@@ -275,23 +279,17 @@ static void *gfx_ctx_wl_init(void *data)
 {
    int i;
    gfx_ctx_wayland_data_t *wl = NULL;
-
    if (!gfx_ctx_wl_init_common(&toplevel_listener, &wl))
       goto error;
-
 #ifdef HAVE_EGL
    if (!gfx_ctx_wl_egl_init_context(wl))
       goto error;
 #endif
-
    return wl;
-
 error:
    gfx_ctx_wl_destroy_resources(wl);
-
    if (wl)
       free(wl);
-
    return NULL;
 }
 
@@ -397,7 +395,7 @@ static bool gfx_ctx_wl_set_video_mode(void *data,
 {
    gfx_ctx_wayland_data_t *wl   = (gfx_ctx_wayland_data_t*)data;
 
-   if (!gfx_ctx_wl_set_video_mode_common_size(wl, width, height))
+   if (!gfx_ctx_wl_set_video_mode_common_size(wl, width, height, fullscreen))
       goto error;
 
 #ifdef HAVE_EGL
@@ -406,8 +404,8 @@ static bool gfx_ctx_wl_set_video_mode(void *data,
          (gfx_ctx_wayland_data_t*)data, egl_attribs);
 
    wl->win = wl_egl_window_create(wl->surface,
-      wl->width  * wl->buffer_scale,
-      wl->height * wl->buffer_scale);
+      wl->buffer_width,
+      wl->buffer_height);
 
    if (!egl_create_context(&wl->egl, (attr != egl_attribs)
             ? egl_attribs : NULL))
@@ -420,9 +418,6 @@ static bool gfx_ctx_wl_set_video_mode(void *data,
       goto error;
    egl_set_swap_interval(&wl->egl, wl->egl.interval);
 #endif
-
-   if (!gfx_ctx_wl_set_video_mode_common_fullscreen(wl, fullscreen))
-      goto error;
 
    return true;
 

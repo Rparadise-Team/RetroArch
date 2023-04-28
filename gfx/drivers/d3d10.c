@@ -76,7 +76,7 @@ static void d3d10_clear_scissor(d3d10_video_t *d3d10, unsigned width, unsigned h
 #ifdef HAVE_OVERLAY
 static void d3d10_free_overlays(d3d10_video_t* d3d10)
 {
-   int i;
+   size_t i;
    for (i = 0; i < (unsigned)d3d10->overlays.count; i++)
       d3d10_release_texture(&d3d10->overlays.textures[i]);
 
@@ -146,7 +146,7 @@ static void d3d10_overlay_set_alpha(void* data, unsigned index, float mod)
 
 static bool d3d10_overlay_load(void* data, const void* image_data, unsigned num_images)
 {
-   int i;
+   size_t i;
    D3D10_BUFFER_DESC desc;
    d3d10_sprite_t*             sprites = NULL;
    d3d10_video_t*              d3d10   = (d3d10_video_t*)data;
@@ -346,7 +346,7 @@ static void d3d10_update_viewport(d3d10_video_t *d3d10, bool force_full)
 
 static void d3d10_free_shader_preset(d3d10_video_t* d3d10)
 {
-   int i;
+   size_t i;
    if (!d3d10->shader_preset)
       return;
 
@@ -456,6 +456,7 @@ static bool d3d10_gfx_set_shader(void* data, enum rarch_shader_type type, const 
             &d3d10->frame.output_size,       /* FinalViewportSize */
             &d3d10->pass[i].frame_count,     /* FrameCount */
             &d3d10->pass[i].frame_direction, /* FrameDirection */
+            &d3d10->pass[i].rotation,        /* Rotation */
          }
       };
       /* clang-format on */
@@ -1062,8 +1063,7 @@ static void *d3d10_gfx_init(const video_info_t* video,
    }
 
 #if 0
-   if (video_driver_get_hw_context()->context_type == RETRO_HW_CONTEXT_DIRECT3D &&
-         video_driver_get_hw_context()->version_major == 11)
+   if (video_driver_get_hw_context()->context_type == RETRO_HW_CONTEXT_D3D10)
    {
       d3d10->hw.enable                  = true;
       d3d10->hw.iface.interface_type    = RETRO_HW_RENDER_INTERFACE_D3D10;
@@ -1170,7 +1170,7 @@ static void d3d10_init_history(d3d10_video_t* d3d10,
 static void d3d10_init_render_targets(d3d10_video_t* d3d10,
       unsigned width, unsigned height)
 {
-   int i;
+   size_t i;
    for (i = 0; i < d3d10->shader_preset->passes; i++)
    {
       struct video_shader_pass* pass = &d3d10->shader_preset->pass[i];
@@ -1428,6 +1428,8 @@ static bool d3d10_gfx_frame(
 #else
          d3d10->pass[i].frame_direction = 1;
 #endif
+
+         d3d10->pass[i].rotation = retroarch_get_rotation();
 
          for (j = 0; j < SLANG_CBUFFER_MAX; j++)
          {
@@ -1953,9 +1955,6 @@ video_driver_t video_d3d10 = {
 
 #ifdef HAVE_OVERLAY
    d3d10_get_overlay_interface,
-#endif
-#ifdef HAVE_VIDEO_LAYOUT
-   NULL,
 #endif
    d3d10_gfx_get_poke_interface,
    NULL, /* d3d10_wrap_type_to_enum */

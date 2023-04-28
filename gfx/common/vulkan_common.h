@@ -21,7 +21,7 @@
 #endif
 
 #include <lists/string_list.h>
-
+#include <retro_inline.h>
 
 #define VULKAN_DESCRIPTOR_MANAGER_BLOCK_SETS    16
 #define VULKAN_MAX_DESCRIPTOR_POOL_SIZES        16
@@ -119,7 +119,6 @@ enum vulkan_context_flags
    VK_CTX_FLAG_SWAPCHAIN_IS_SRGB            = (1 << 2),
    VK_CTX_FLAG_SWAP_INTERVAL_EMULATION_LOCK = (1 << 3),
    VK_CTX_FLAG_HAS_ACQUIRED_SWAPCHAIN       = (1 << 4),
-   VK_CTX_FLAG_HAS_PACK16_FMTS              = (1 << 5)
 };
 
 typedef struct vulkan_context
@@ -209,6 +208,7 @@ typedef struct gfx_ctx_vulkan_data
    VkSwapchainKHR swapchain;     /* ptr alignment */
    struct vulkan_emulated_mailbox mailbox;
    uint8_t flags;
+   enum vulkan_wsi_type wsi_type;
 } gfx_ctx_vulkan_data_t;
 
 struct vulkan_display_surface_info
@@ -422,6 +422,7 @@ typedef struct vk
    {
       VkPipeline alpha_blend;
       VkPipeline font;
+      VkPipeline rgb565_to_rgba8888;
 #ifdef VULKAN_HDR_SWAPCHAIN
       VkPipeline hdr;
 #endif /* VULKAN_HDR_SWAPCHAIN */
@@ -667,49 +668,8 @@ void vulkan_destroy_texture(
 /* Dynamic texture type should be set to : VULKAN_TEXTURE_DYNAMIC
  * Staging texture type should be set to : VULKAN_TEXTURE_STAGING
  */
-#define VULKAN_COPY_STAGING_TO_DYNAMIC(vk, cmd, dynamic, staging) \
-{ \
-   VkBufferImageCopy region; \
-   VULKAN_IMAGE_LAYOUT_TRANSITION( \
-         cmd, \
-         dynamic->image, \
-         VK_IMAGE_LAYOUT_UNDEFINED, \
-         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, \
-         0, \
-         VK_ACCESS_TRANSFER_WRITE_BIT, \
-         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, \
-         VK_PIPELINE_STAGE_TRANSFER_BIT); \
-   region.bufferOffset                    = 0; \
-   region.bufferRowLength                 = 0; \
-   region.bufferImageHeight               = 0; \
-   region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT; \
-   region.imageSubresource.mipLevel       = 0; \
-   region.imageSubresource.baseArrayLayer = 0; \
-   region.imageSubresource.layerCount     = 1; \
-   region.imageOffset.x                   = 0; \
-   region.imageOffset.y                   = 0; \
-   region.imageOffset.z                   = 0; \
-   region.imageExtent.width               = dynamic->width; \
-   region.imageExtent.height              = dynamic->height; \
-   region.imageExtent.depth               = 1; \
-   vkCmdCopyBufferToImage( \
-         cmd, \
-         staging->buffer, \
-         dynamic->image, \
-         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, \
-         1, \
-         &region); \
-   VULKAN_IMAGE_LAYOUT_TRANSITION( \
-         cmd, \
-         dynamic->image, \
-         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, \
-         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, \
-         VK_ACCESS_TRANSFER_WRITE_BIT, \
-         VK_ACCESS_SHADER_READ_BIT, \
-         VK_PIPELINE_STAGE_TRANSFER_BIT, \
-         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT); \
-   dynamic->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; \
-}
+void vulkan_copy_staging_to_dynamic(vk_t *vk, VkCommandBuffer cmd,
+      struct vk_texture *dynamic, struct vk_texture *staging);
 
 /* We don't have to sync against previous TRANSFER,
  * since we observed the completion by fences.
@@ -784,6 +744,13 @@ void vulkan_set_uniform_buffer(
 
 void vulkan_debug_mark_image(VkDevice device, VkImage image);
 void vulkan_debug_mark_memory(VkDevice device, VkDeviceMemory memory);
+
+static INLINE VkFormat vulkan_remap_to_texture_format(VkFormat fmt)
+{
+   if (fmt == VK_FORMAT_R5G6B5_UNORM_PACK16)
+      return VK_FORMAT_R8G8B8A8_UNORM;
+   return fmt;
+}
 
 RETRO_END_DECLS
 

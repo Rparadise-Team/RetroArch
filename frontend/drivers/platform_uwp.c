@@ -52,16 +52,12 @@ static void frontend_uwp_get_os(char *s, size_t len, int *major, int *minor)
    char build_str[11]     = {0};
    bool server            = false;
    const char *arch       = "";
-
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0500
-   /* Windows 2000 and later */
    SYSTEM_INFO si         = {{0}};
    OSVERSIONINFOEX vi     = {0};
    vi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
    GetSystemInfo(&si);
 
-   /* Available from NT 3.5 and Win95 */
    GetVersionEx((OSVERSIONINFO*)&vi);
 
    server = vi.wProductType != VER_NT_WORKSTATION;
@@ -83,13 +79,6 @@ static void frontend_uwp_get_os(char *s, size_t len, int *major, int *minor)
       default:
          break;
    }
-#else
-   OSVERSIONINFO vi = {0};
-   vi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-
-   /* Available from NT 3.5 and Win95 */
-   GetVersionEx(&vi);
-#endif
 
    if (major)
       *major = vi.dwMajorVersion;
@@ -174,37 +163,36 @@ enum frontend_powerstate frontend_uwp_get_powerstate(
       int *seconds, int *percent)
 {
    SYSTEM_POWER_STATUS status;
-   enum frontend_powerstate ret = FRONTEND_POWERSTATE_NONE;
+   enum frontend_powerstate 
+      ret         = FRONTEND_POWERSTATE_NONE;
 
-   if (!GetSystemPowerStatus(&status))
-      return ret;
+   if (GetSystemPowerStatus(&status))
+   {
+      if (status.BatteryFlag == 0xFF)
+         ret      = FRONTEND_POWERSTATE_NONE;
+      else if (status.BatteryFlag & (1 << 7))
+         ret      = FRONTEND_POWERSTATE_NO_SOURCE;
+      else if (status.BatteryFlag & (1 << 3))
+         ret      = FRONTEND_POWERSTATE_CHARGING;
+      else if (status.ACLineStatus == 1)
+         ret      = FRONTEND_POWERSTATE_CHARGED;
+      else
+         ret      = FRONTEND_POWERSTATE_ON_POWER_SOURCE;
 
-   if (status.BatteryFlag == 0xFF)
-      ret = FRONTEND_POWERSTATE_NONE;
-   else if (status.BatteryFlag & (1 << 7))
-      ret = FRONTEND_POWERSTATE_NO_SOURCE;
-   else if (status.BatteryFlag & (1 << 3))
-      ret = FRONTEND_POWERSTATE_CHARGING;
-   else if (status.ACLineStatus == 1)
-      ret = FRONTEND_POWERSTATE_CHARGED;
-   else
-      ret = FRONTEND_POWERSTATE_ON_POWER_SOURCE;
-
-   *percent  = (int)status.BatteryLifePercent;
-   *seconds  = (int)status.BatteryLifeTime;
+      *percent    = (int)status.BatteryLifePercent;
+      *seconds    = (int)status.BatteryLifeTime;
 
 #ifdef _WIN32
-   if (*percent == 255)
-      *percent = 0;
+      if (*percent == 255)
+         *percent = 0;
 #endif
+   }
 
    return ret;
 }
 
 enum frontend_architecture frontend_uwp_get_arch(void)
 {
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0500
-   /* Windows 2000 and later */
    SYSTEM_INFO si = {{0}};
 
    GetSystemInfo(&si);
@@ -222,7 +210,6 @@ enum frontend_architecture frontend_uwp_get_arch(void)
       default:
          break;
    }
-#endif
 
    return FRONTEND_ARCH_NONE;
 }
@@ -273,8 +260,10 @@ static int frontend_uwp_parse_drive_list(void *data, bool load_content)
       if (string_is_equal(uwp_device_family, "Windows.Desktop"))
       {
          menu_entries_append(list,
-            msg_hash_to_str(MENU_ENUM_LABEL_VALUE_FILE_BROWSER_OPEN_UWP_PERMISSIONS),
-            msg_hash_to_str(MENU_ENUM_LABEL_FILE_BROWSER_OPEN_UWP_PERMISSIONS),
+            msg_hash_to_str(
+               MENU_ENUM_LABEL_VALUE_FILE_BROWSER_OPEN_UWP_PERMISSIONS),
+            msg_hash_to_str(
+               MENU_ENUM_LABEL_FILE_BROWSER_OPEN_UWP_PERMISSIONS),
             MENU_ENUM_LABEL_FILE_BROWSER_OPEN_UWP_PERMISSIONS,
             MENU_SETTING_ACTION, 0, 0, NULL);
       }
@@ -315,10 +304,6 @@ static void frontend_uwp_env_get(int *argc, char *argv[],
       "~\\thumbnails\\", sizeof(g_defaults.dirs[DEFAULT_DIR_THUMBNAILS]));
    fill_pathname_expand_special(g_defaults.dirs[DEFAULT_DIR_OVERLAY],
       "~\\overlays\\", sizeof(g_defaults.dirs[DEFAULT_DIR_OVERLAY]));
-#ifdef HAVE_VIDEO_LAYOUT
-   fill_pathname_expand_special(g_defaults.dirs[DEFAULT_DIR_VIDEO_LAYOUT],
-      "~\\layouts\\", sizeof(g_defaults.dirs[DEFAULT_DIR_VIDEO_LAYOUT]));
-#endif
    /* This one is an exception: cores have to be loaded from
     * the install directory,
     * since this is the only place UWP apps can take .dlls from */
@@ -362,36 +347,18 @@ static void frontend_uwp_env_get(int *argc, char *argv[],
 
 static uint64_t frontend_uwp_get_total_mem(void)
 {
-   /* OSes below 2000 don't have the Ex version,
-    * and non-Ex cannot work with >4GB RAM */
-#if _WIN32_WINNT >= 0x0500
    MEMORYSTATUSEX mem_info;
    mem_info.dwLength = sizeof(MEMORYSTATUSEX);
    GlobalMemoryStatusEx(&mem_info);
    return mem_info.ullTotalPhys;
-#else
-   MEMORYSTATUS mem_info;
-   mem_info.dwLength = sizeof(MEMORYSTATUS);
-   GlobalMemoryStatus(&mem_info);
-   return mem_info.dwTotalPhys;
-#endif
 }
 
 static uint64_t frontend_uwp_get_free_mem(void)
 {
-   /* OSes below 2000 don't have the Ex version,
-    * and non-Ex cannot work with >4GB RAM */
-#if _WIN32_WINNT >= 0x0500
    MEMORYSTATUSEX mem_info;
    mem_info.dwLength = sizeof(MEMORYSTATUSEX);
    GlobalMemoryStatusEx(&mem_info);
-   return ((frontend_uwp_get_total_mem() - mem_info.ullAvailPhys));
-#else
-   MEMORYSTATUS mem_info;
-   mem_info.dwLength = sizeof(MEMORYSTATUS);
-   GlobalMemoryStatus(&mem_info);
-   return ((frontend_uwp_get_total_mem() - mem_info.dwAvailPhys));
-#endif
+   return (mem_info.ullTotalPhys - mem_info.ullAvailPhys);
 }
 
 frontend_ctx_driver_t frontend_ctx_uwp = {

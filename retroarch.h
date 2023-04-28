@@ -143,6 +143,16 @@ const char* config_get_audio_driver_options(void);
 
 /* Camera */
 
+/*
+   Returns rotation requested by the core regardless of if it has been
+   applied with the final video rotation
+*/
+unsigned int retroarch_get_core_requested_rotation(void);
+
+/*
+   Returns final rotation including both user chosen video rotation 
+   and core requested rotation if allowed by video_allow_rotate
+*/
 unsigned int retroarch_get_rotation(void);
 
 void retroarch_init_task_queue(void);

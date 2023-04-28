@@ -280,6 +280,9 @@ enum msg_hash_enums
    MSG_VALUE_REBOOTING,
    MSG_FAILED_TO_START_AUDIO_DRIVER,
    MSG_FOUND_LAST_STATE_SLOT,
+   MSG_FOUND_LAST_REPLAY_SLOT,
+   MSG_REPLAY_LOAD_STATE_HALT_INCOMPAT,
+   MSG_REPLAY_LOAD_STATE_FAILED_INCOMPAT,
    MSG_RESTORED_OLD_SAVE_STATE,
    MSG_NO_STATE_HAS_BEEN_LOADED_YET,
    MSG_GOT_CONNECTION_FROM,
@@ -336,8 +339,9 @@ enum msg_hash_enums
    MSG_LOADING_HISTORY_FILE,
    MSG_LOADING_FAVORITES_FILE,
    MSG_COULD_NOT_READ_STATE_FROM_MOVIE,
-   MSG_MOVIE_FILE_IS_NOT_A_VALID_BSV1_FILE,
+   MSG_MOVIE_FILE_IS_NOT_A_VALID_REPLAY_FILE,
    MSG_OVERRIDES_NOT_SAVED,
+   MSG_OVERRIDES_ACTIVE_NOT_SAVING,
    MSG_OVERRIDES_SAVED_SUCCESSFULLY,
    MSG_OVERRIDES_REMOVED_SUCCESSFULLY,
    MSG_OVERRIDES_UNLOADED_SUCCESSFULLY,
@@ -459,6 +463,7 @@ enum msg_hash_enums
    MSG_FAILED_TO_START_MOVIE_RECORD,
    MSG_CHEEVOS_HARDCORE_MODE_ENABLE,
    MSG_STATE_SLOT,
+   MSG_REPLAY_SLOT,
    MSG_STARTING_MOVIE_RECORD_TO,
    MSG_FAILED_TO_APPLY_SHADER,
    MSG_FAILED_TO_APPLY_SHADER_PRESET,
@@ -859,6 +864,9 @@ enum msg_hash_enums
    MENU_ENUM_LABEL_VALUE_TURBO_MODE_CLASSIC,
    MENU_ENUM_LABEL_VALUE_TURBO_MODE_SINGLEBUTTON,
    MENU_ENUM_LABEL_VALUE_TURBO_MODE_SINGLEBUTTON_HOLD,
+   MENU_ENUM_LABEL_HELP_TURBO_MODE_CLASSIC,
+   MENU_ENUM_LABEL_HELP_TURBO_MODE_SINGLEBUTTON,
+   MENU_ENUM_LABEL_HELP_TURBO_MODE_SINGLEBUTTON_HOLD,
    MENU_LABEL(INPUT_TURBO_DEFAULT_BUTTON),
 
    MENU_ENUM_LABEL_INPUT_PLAYER1_JOYPAD_INDEX,
@@ -1021,6 +1029,12 @@ enum msg_hash_enums
    MENU_ENUM_LABEL_VALUE_INPUT_META_STATE_SLOT_PLUS,
    MENU_ENUM_LABEL_VALUE_INPUT_META_STATE_SLOT_MINUS,
 
+   MENU_ENUM_LABEL_VALUE_INPUT_META_PLAY_REPLAY_KEY,
+   MENU_ENUM_LABEL_VALUE_INPUT_META_RECORD_REPLAY_KEY,
+   MENU_ENUM_LABEL_VALUE_INPUT_META_HALT_REPLAY_KEY,
+   MENU_ENUM_LABEL_VALUE_INPUT_META_REPLAY_SLOT_PLUS,
+   MENU_ENUM_LABEL_VALUE_INPUT_META_REPLAY_SLOT_MINUS,
+
    MENU_ENUM_LABEL_VALUE_INPUT_META_DISK_EJECT_TOGGLE,
    MENU_ENUM_LABEL_VALUE_INPUT_META_DISK_NEXT,
    MENU_ENUM_LABEL_VALUE_INPUT_META_DISK_PREV,
@@ -1036,7 +1050,6 @@ enum msg_hash_enums
    MENU_ENUM_LABEL_VALUE_INPUT_META_SCREENSHOT,
    MENU_ENUM_LABEL_VALUE_INPUT_META_RECORDING_TOGGLE,
    MENU_ENUM_LABEL_VALUE_INPUT_META_STREAMING_TOGGLE,
-   MENU_ENUM_LABEL_VALUE_INPUT_META_BSV_RECORD_TOGGLE,
 
    MENU_ENUM_LABEL_VALUE_INPUT_META_GRAB_MOUSE_TOGGLE,
    MENU_ENUM_LABEL_VALUE_INPUT_META_GAME_FOCUS_TOGGLE,
@@ -1098,6 +1111,12 @@ enum msg_hash_enums
    MENU_ENUM_SUBLABEL_INPUT_META_STATE_SLOT_PLUS,
    MENU_ENUM_SUBLABEL_INPUT_META_STATE_SLOT_MINUS,
 
+   MENU_ENUM_SUBLABEL_INPUT_META_PLAY_REPLAY_KEY,
+   MENU_ENUM_SUBLABEL_INPUT_META_RECORD_REPLAY_KEY,
+   MENU_ENUM_SUBLABEL_INPUT_META_HALT_REPLAY_KEY,
+   MENU_ENUM_SUBLABEL_INPUT_META_REPLAY_SLOT_PLUS,
+   MENU_ENUM_SUBLABEL_INPUT_META_REPLAY_SLOT_MINUS,
+
    MENU_ENUM_SUBLABEL_INPUT_META_DISK_EJECT_TOGGLE,
    MENU_ENUM_SUBLABEL_INPUT_META_DISK_NEXT,
    MENU_ENUM_SUBLABEL_INPUT_META_DISK_PREV,
@@ -1113,7 +1132,6 @@ enum msg_hash_enums
    MENU_ENUM_SUBLABEL_INPUT_META_SCREENSHOT,
    MENU_ENUM_SUBLABEL_INPUT_META_RECORDING_TOGGLE,
    MENU_ENUM_SUBLABEL_INPUT_META_STREAMING_TOGGLE,
-   MENU_ENUM_SUBLABEL_INPUT_META_BSV_RECORD_TOGGLE,
 
    MENU_ENUM_SUBLABEL_INPUT_META_GRAB_MOUSE_TOGGLE,
    MENU_ENUM_SUBLABEL_INPUT_META_GAME_FOCUS_TOGGLE,
@@ -1496,6 +1514,7 @@ enum msg_hash_enums
    MENU_LABEL(QUICK_MENU_SHOW_SAVESTATE_SUBMENU),
    MENU_LABEL(QUICK_MENU_SHOW_SAVE_LOAD_STATE),
    MENU_LABEL(QUICK_MENU_SHOW_UNDO_SAVE_LOAD_STATE),
+   MENU_LABEL(QUICK_MENU_SHOW_REPLAY),
    MENU_LABEL(QUICK_MENU_SHOW_ADD_TO_FAVORITES),
    MENU_LABEL(QUICK_MENU_SHOW_START_RECORDING),
    MENU_LABEL(QUICK_MENU_SHOW_START_STREAMING),
@@ -1778,6 +1797,7 @@ enum msg_hash_enums
    MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST,
    MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_SPECIAL,
    MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_RESOLUTION,
+   MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_AUDIO_DEVICE,
    MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_VIDEO_SHADER_PARAMETER,
    MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_VIDEO_SHADER_PRESET_PARAMETER,
    MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_VIDEO_SHADER_NUM_PASSES,
@@ -2056,6 +2076,7 @@ enum msg_hash_enums
    MENU_LBL_H(AUDIO_MAX_TIMING_SKEW),
    MENU_LABEL(AUDIO_OUTPUT_RATE),
    MENU_LBL_H(AUDIO_DEVICE),
+   MENU_ENUM_LABEL_AUDIO_DEVICE_LIST,
    MENU_ENUM_LABEL_HELP_AUDIO_DEVICE_ALSA,
    MENU_ENUM_LABEL_HELP_AUDIO_DEVICE_OSS,
    MENU_ENUM_LABEL_HELP_AUDIO_DEVICE_JACK,
@@ -2081,6 +2102,11 @@ enum msg_hash_enums
    MENU_LABEL(UNDO_LOAD_STATE),
    MENU_LABEL(UNDO_SAVE_STATE),
 
+   MENU_LABEL(PLAY_REPLAY),
+   MENU_LABEL(RECORD_REPLAY),
+   MENU_LABEL(HALT_REPLAY),
+   MENU_LABEL(REPLAY_SLOT),
+
    MENU_LABEL(NETPLAY_GAME_WATCH),
    MENU_LABEL(CHEAT_INDEX_MINUS),
    MENU_LABEL(CHEAT_INDEX_PLUS),
@@ -2094,7 +2120,6 @@ enum msg_hash_enums
    MENU_LABEL(MEMORY_UPDATE_INTERVAL),
    MENU_LABEL(STATISTICS_SHOW),
    MENU_LABEL(FRAMECOUNT_SHOW),
-   MENU_LABEL(BSV_RECORD_TOGGLE),
    MENU_ENUM_LABEL_L_X_PLUS,
    MENU_ENUM_LABEL_L_X_MINUS,
    MENU_ENUM_LABEL_L_Y_PLUS,
@@ -2214,6 +2239,8 @@ enum msg_hash_enums
 
    MENU_LABEL(SAVESTATE_AUTO_INDEX),
    MENU_LABEL(SAVESTATE_MAX_KEEP),
+   MENU_LABEL(REPLAY_AUTO_INDEX),
+   MENU_LABEL(REPLAY_MAX_KEEP),
    MENU_LABEL(SAVESTATE_AUTO_SAVE),
    MENU_LABEL(SAVESTATE_AUTO_LOAD),
    MENU_LABEL(SAVESTATE_THUMBNAIL_ENABLE),
@@ -2325,10 +2352,13 @@ enum msg_hash_enums
    MENU_ENUM_LABEL_GAME_FOCUS_TOGGLE,
    MENU_LABEL(STATE_SLOT_DECREASE),
    MENU_LABEL(STATE_SLOT_INCREASE),
+   MENU_LABEL(REPLAY_SLOT_DECREASE),
+   MENU_LABEL(REPLAY_SLOT_INCREASE),
 
    MENU_LABEL(FRONTEND_LOG_LEVEL),
    MENU_LBL_H(LIBRETRO_LOG_LEVEL),
    MENU_LBL_H(AUTOSAVE_INTERVAL),
+   MENU_LBL_H(REPLAY_CHECKPOINT_INTERVAL),
    MENU_LBL_H(CONFIG_SAVE_ON_EXIT),
    MENU_LABEL(REMAP_SAVE_ON_EXIT),
    MENU_LABEL(CONFIGURATION_LIST),
@@ -2913,6 +2943,8 @@ enum msg_hash_enums
 
    MENU_LABEL(CUSTOM_RATIO),
    MENU_LABEL(HELP),
+   MENU_ENUM_LABEL_VALUE_CLEAR_SETTING,
+   MENU_ENUM_LABEL_VALUE_SCAN_ENTRY,
    MENU_LABEL(CHEAT_DATABASE_PATH),
    MENU_LABEL(CURSOR_DIRECTORY),
    MENU_LABEL(OSK_OVERLAY_DIRECTORY),
@@ -3943,17 +3975,7 @@ enum msg_hash_enums
 
 const char *msg_hash_to_str(enum msg_hash_enums msg);
 
-const char *msg_hash_to_str_fr(enum msg_hash_enums msg);
-
 const char *msg_hash_to_str_ru(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_de(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_es(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_eo(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_it(enum msg_hash_enums msg);
 
 const char *msg_hash_to_str_jp(enum msg_hash_enums msg);
 int msg_hash_get_help_jp_enum(enum msg_hash_enums msg, char *s, size_t len);
@@ -3967,23 +3989,16 @@ int msg_hash_get_help_pt_br_enum(enum msg_hash_enums msg, char *s, size_t len);
 const char *msg_hash_to_str_pt_pt(enum msg_hash_enums msg);
 int msg_hash_get_help_pt_pt_enum(enum msg_hash_enums msg, char *s, size_t len);
 
-const char *msg_hash_to_str_pl(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_nl(enum msg_hash_enums msg);
-
 const char *msg_hash_to_str_vn(enum msg_hash_enums msg);
 int msg_hash_get_help_vn_enum(enum msg_hash_enums msg, char *s, size_t len);
 
 const char *msg_hash_to_str_chs(enum msg_hash_enums msg);
 int msg_hash_get_help_chs_enum(enum msg_hash_enums msg, char *s, size_t len);
 
-const char *msg_hash_to_str_cht(enum msg_hash_enums msg);
 int msg_hash_get_help_cht_enum(enum msg_hash_enums msg, char *s, size_t len);
 
 const char *msg_hash_to_str_us(enum msg_hash_enums msg);
 int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len);
-
-const char *msg_hash_to_str_ar(enum msg_hash_enums msg);
 
 const char *msg_hash_to_str_el(enum msg_hash_enums msg);
 int msg_hash_get_help_el_enum(enum msg_hash_enums msg, char *s, size_t len);
@@ -3991,31 +4006,9 @@ int msg_hash_get_help_el_enum(enum msg_hash_enums msg, char *s, size_t len);
 const char *msg_hash_to_str_tr(enum msg_hash_enums msg);
 int msg_hash_get_help_tr_enum(enum msg_hash_enums msg, char *s, size_t len);
 
-const char *msg_hash_to_str_sk(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_fa(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_he(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_ast(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_fi(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_id(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_sv(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_uk(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_cs(enum msg_hash_enums msg);
-
 const char *msg_hash_to_str_val(enum msg_hash_enums msg);
 
 const char *msg_hash_to_str_ca(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_en(enum msg_hash_enums msg);
-
-const char *msg_hash_to_str_hu(enum msg_hash_enums msg);
 
 int msg_hash_get_help_enum(enum msg_hash_enums msg, char *s, size_t len);
 
@@ -4052,7 +4045,6 @@ void msg_hash_set_uint(enum msg_hash_action type, unsigned val);
  *   rendering implementation */
 const char *msg_hash_get_wideglyph_str(void);
 const char *msg_hash_get_wideglyph_str_chs(void);
-const char *msg_hash_get_wideglyph_str_cht(void);
 const char *msg_hash_get_wideglyph_str_jp(void);
 const char *msg_hash_get_wideglyph_str_ko(void);
 

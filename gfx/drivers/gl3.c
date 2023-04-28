@@ -58,7 +58,7 @@ static const struct video_ortho gl3_default_ortho = {0, 1, 0, 1, -1, 1};
 
 static void gl3_deinit_fences(gl3_t *gl)
 {
-   int i;
+   size_t i;
    for (i = 0; i < gl->fence_count; i++)
    {
       if (gl->fences[i])
@@ -256,7 +256,7 @@ static void gl3_overlay_tex_geom(void *data,
 static void gl3_render_overlay(gl3_t *gl,
       unsigned width, unsigned height)
 {
-   int i;
+   size_t i;
 
    glEnable(GL_BLEND);
    glDisable(GL_CULL_FACE);
@@ -287,7 +287,7 @@ static void gl3_render_overlay(gl3_t *gl,
    {
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, gl->overlay_tex[i]);
-      glDrawArrays(GL_TRIANGLE_STRIP, 4 * i, 4);
+      glDrawArrays(GL_TRIANGLE_STRIP, (GLint)(4 * i), 4);
    }
 
    glDisableVertexAttribArray(0);
@@ -1035,19 +1035,13 @@ static void *gl3_init(const video_info_t *video,
 
 #ifdef GL_DEBUG
    gl3_begin_debug(gl);
-   if (gl->flags & GL3_FLAG_USE_SHARED_CONTEXT)
+   if (gl->flags & GL3_FLAG_HW_RENDER_ENABLE)
    {
-      if (gl->hw_render_enable)
-      {
+      if (gl->flags & GL3_FLAG_USE_SHARED_CONTEXT)
          gl->ctx_driver->bind_hw_render(gl->ctx_data, true);
-         gl3_begin_debug(gl);
+      gl3_begin_debug(gl);
+      if (gl->flags & GL3_FLAG_USE_SHARED_CONTEXT)
          gl->ctx_driver->bind_hw_render(gl->ctx_data, false);
-      }
-   }
-   else
-   {
-      if (gl->hw_render_enable)
-         gl3_begin_debug(gl);
    }
 #endif
 
@@ -1258,7 +1252,8 @@ static void video_texture_load_gl3(
 static bool gl3_overlay_load(void *data,
       const void *image_data, unsigned num_images)
 {
-   int i, j;
+   size_t i;
+   int j;
    GLuint id;
    gl3_t *gl = (gl3_t*)data;
    const struct texture_image *images =
@@ -1295,8 +1290,8 @@ static bool gl3_overlay_load(void *data,
       gl->overlay_tex[i] = id;
 
       /* Default. Stretch to whole screen. */
-      gl3_overlay_tex_geom(gl, i, 0, 0, 1, 1);
-      gl3_overlay_vertex_geom(gl, i, 0, 0, 1, 1);
+      gl3_overlay_tex_geom   (gl, (unsigned)i, 0, 0, 1, 1);
+      gl3_overlay_vertex_geom(gl, (unsigned)i, 0, 0, 1, 1);
 
       for (j = 0; j < 16; j++)
          gl->overlay_color_coord[16 * i + j] = 1.0f;
@@ -1790,6 +1785,7 @@ static bool gl3_frame(void *data, const void *frame,
 #else
    gl3_filter_chain_set_frame_direction(gl->filter_chain, 1);
 #endif
+   gl3_filter_chain_set_rotation(gl->filter_chain, retroarch_get_rotation());
    gl3_filter_chain_set_input_texture(gl->filter_chain, &texture);
    gl3_filter_chain_build_offscreen_passes(gl->filter_chain,
          &gl->filter_chain_vp);
@@ -1884,7 +1880,7 @@ static bool gl3_frame(void *data, const void *frame,
          && !runloop_is_paused 
          && (!(gl->flags & GL3_FLAG_MENU_TEXTURE_ENABLE)))
     {
-        int n;
+        size_t n;
         for (n = 0; n < black_frame_insertion; ++n)
         {
           glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -2253,9 +2249,6 @@ video_driver_t video_gl3 = {
 
 #ifdef HAVE_OVERLAY
    gl3_get_overlay_interface,
-#endif
-#ifdef HAVE_VIDEO_LAYOUT
-   NULL,
 #endif
    gl3_get_poke_interface,
    gl3_wrap_type_to_enum,

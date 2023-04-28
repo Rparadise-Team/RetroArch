@@ -136,58 +136,62 @@ static void fill_derived_paths(void)
 		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "cores", sizeof(g_defaults.dirs[DEFAULT_DIR_CORE]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CORE_INFO],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "info",
 		       sizeof(g_defaults.dirs[DEFAULT_DIR_CORE_INFO]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_MENU_CONFIG],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "config", sizeof(g_defaults.dirs[DEFAULT_DIR_MENU_CONFIG]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_REMAP],
 		       g_defaults.dirs[DEFAULT_DIR_MENU_CONFIG],
 		       "remaps", sizeof(g_defaults.dirs[DEFAULT_DIR_REMAP]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_SAVESTATE],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "savestates", sizeof(g_defaults.dirs[DEFAULT_DIR_SAVESTATE]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_SRAM],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "savefiles", sizeof(g_defaults.dirs[DEFAULT_DIR_SRAM]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_SYSTEM],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "system", sizeof(g_defaults.dirs[DEFAULT_DIR_SYSTEM]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_SHADER],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "shaders_cg", sizeof(g_defaults.dirs[DEFAULT_DIR_SHADER]));
     fill_pathname_join(g_defaults.path_config, g_defaults.dirs[DEFAULT_DIR_PORT],
 		       FILE_PATH_MAIN_CONFIG,  sizeof(g_defaults.path_config));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_OVERLAY],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "overlays", sizeof(g_defaults.dirs[DEFAULT_DIR_OVERLAY]));
-#ifdef HAVE_VIDEO_LAYOUT
-    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_VIDEO_LAYOUT],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
-		       "layouts", sizeof(g_defaults.dirs[DEFAULT_DIR_VIDEO_LAYOUT]));
-#endif
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_ASSETS],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "assets", sizeof(g_defaults.dirs[DEFAULT_DIR_ASSETS]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_DATABASE],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "database/rdb", sizeof(g_defaults.dirs[DEFAULT_DIR_DATABASE]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_PLAYLIST],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "playlists", sizeof(g_defaults.dirs[DEFAULT_DIR_PLAYLIST]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CORE_ASSETS],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "downloads", sizeof(g_defaults.dirs[DEFAULT_DIR_CORE_ASSETS]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CHEATS],
-		       g_defaults.dirs[DEFAULT_DIR_CORE], "cheats",
+		       g_defaults.dirs[DEFAULT_DIR_PORT], "cheats",
 		       sizeof(g_defaults.dirs[DEFAULT_DIR_CHEATS]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_AUTOCONFIG],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "autoconfig", sizeof(g_defaults.dirs[DEFAULT_DIR_AUTOCONFIG]));
     fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_LOGS],
-		       g_defaults.dirs[DEFAULT_DIR_CORE],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
 		       "logs", sizeof(g_defaults.dirs[DEFAULT_DIR_LOGS]));
+	fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_THUMBNAILS],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
+		       "thumbnails", sizeof(g_defaults.dirs[DEFAULT_DIR_THUMBNAILS]));
+	fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_REMAP],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
+		       "remaps", sizeof(g_defaults.dirs[DEFAULT_DIR_REMAP]));
+	fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_MENU_CONFIG],
+		       g_defaults.dirs[DEFAULT_DIR_PORT],
+		       "config", sizeof(g_defaults.dirs[DEFAULT_DIR_MENU_CONFIG]));
 }
 
 static void use_app_path(char *content_info_path)
@@ -218,12 +222,8 @@ static void frontend_ps3_get_env(int *argc, char *argv[],
 #if defined(HAVE_LOGGER)
    logger_init();
 #elif defined(HAVE_FILE_LOGGER)
-#ifdef __PSL1GHT__
    retro_main_log_file_init("/dev_hdd0/game/"
       EMULATOR_CONTENT_DIR "/USRDIR/retroarch-log.txt", false);
-#else
-   retro_main_log_file_init("/dev_hdd0/retroarch-log.txt", false);
-#endif
 #endif
 #elif defined(__PSL1GHT__)
 #ifdef HAVE_FILE_LOGGER
@@ -403,9 +403,9 @@ static bool frontend_ps3_set_fork(enum frontend_fork fork_mode)
 static int frontend_ps3_exec_exitspawn(const char *path,
       char const *argv[], char const *envp[])
 {
-   int ret;
    unsigned i;
    char spawn_data[256];
+   int ret                   = -1;
 #ifndef __PSL1GHT__
    SceNpDrmKey *license_data = NULL;
 #endif
@@ -417,8 +417,6 @@ static int frontend_ps3_exec_exitspawn(const char *path,
    ret = sceNpDrmProcessExitSpawn(license_data, path,
          (const char** const)argv, envp, (sys_addr_t)spawn_data,
          256, 1000, SYS_PROCESS_SPAWN_STACK_SIZE_1M);
-#else
-   ret = -1;
 #endif
 
    if (ret <  0)
@@ -637,14 +635,14 @@ static void frontend_ps3_process_args(int *argc, char *argv[])
 static size_t frontend_ps3_get_mem_total(void)
 {
    sys_memory_info_t mem_info;
-   sys_memory_get_user_memory_size(&mem_info);
+   sys_memory_get_user_memory_size((u64)&mem_info);
    return mem_info.total;
 }
 
 static size_t frontend_ps3_get_mem_used(void)
 {
    sys_memory_info_t mem_info;
-   sys_memory_get_user_memory_size(&mem_info);
+   sys_memory_get_user_memory_size((u64)&mem_info);
    return mem_info.avail;
 }
 #endif

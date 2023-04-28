@@ -96,6 +96,12 @@ enum
    RARCH_STATE_SLOT_PLUS,
    RARCH_STATE_SLOT_MINUS,
 
+   RARCH_PLAY_REPLAY_KEY,
+   RARCH_RECORD_REPLAY_KEY,
+   RARCH_HALT_REPLAY_KEY,
+   RARCH_REPLAY_SLOT_PLUS,
+   RARCH_REPLAY_SLOT_MINUS,
+
    RARCH_DISK_EJECT_TOGGLE,
    RARCH_DISK_NEXT,
    RARCH_DISK_PREV,
@@ -111,7 +117,6 @@ enum
    RARCH_SCREENSHOT,
    RARCH_RECORDING_TOGGLE,
    RARCH_STREAMING_TOGGLE,
-   RARCH_BSV_RECORD_TOGGLE,
 
    RARCH_GRAB_MOUSE_TOGGLE,
    RARCH_GAME_FOCUS_TOGGLE,
@@ -234,8 +239,8 @@ enum input_turbo_default_button
 #define GET_HAT(x)         (x & (~HAT_MASK))
 
 #ifdef HAVE_BSV_MOVIE
-#define BSV_MOVIE_IS_PLAYBACK_ON() (input_st->bsv_movie_state_handle && (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_PLAYBACK))
-#define BSV_MOVIE_IS_PLAYBACK_OFF() (input_st->bsv_movie_state_handle && (!(input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_PLAYBACK)))
+#define BSV_MOVIE_IS_PLAYBACK_ON() (input_st->bsv_movie_state_handle && (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_PLAYBACK) && !(input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_END))
+#define BSV_MOVIE_IS_RECORDING() (input_st->bsv_movie_state_handle && (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_RECORDING))
 
 #endif
 

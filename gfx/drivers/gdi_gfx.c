@@ -39,7 +39,7 @@
 #include "../common/win32_common.h"
 #endif
 
-static HDC   win32_gdi_hdc;
+HDC          win32_gdi_hdc;
 static void *dinput_gdi;
 
 struct bitmap_info {
@@ -180,15 +180,6 @@ static void gfx_ctx_gdi_input_driver(
    *input      = NULL;
 #endif
    *input_data = dinput_gdi;
-}
-
-void create_gdi_context(HWND hwnd, bool *quit)
-{
-   win32_gdi_hdc = GetDC(hwnd);
-
-   win32_setup_pixel_format(win32_gdi_hdc, false);
-
-   g_win32_flags |= WIN32_CMN_FLAG_INITED;
 }
 
 static void gdi_gfx_create(gdi_t *gdi)
@@ -755,9 +746,6 @@ video_driver_t video_gdi = {
 
 #ifdef HAVE_OVERLAY
   NULL, /* overlay_interface */
-#endif
-#ifdef HAVE_VIDEO_LAYOUT
-   NULL,
 #endif
   gdi_gfx_get_poke_interface,
 };

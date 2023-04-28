@@ -7733,11 +7733,6 @@ static int generic_menu_iterate(
                   case FILE_TYPE_OVERLAY:
                      enum_idx = MENU_ENUM_LABEL_FILE_BROWSER_OVERLAY;
                      break;
-#ifdef HAVE_VIDEO_LAYOUT
-                  case FILE_TYPE_VIDEO_LAYOUT:
-                     enum_idx = MENU_ENUM_LABEL_FILE_BROWSER_VIDEO_LAYOUT;
-                     break;
-#endif
                   case FILE_TYPE_CHEAT:
                      enum_idx = MENU_ENUM_LABEL_FILE_BROWSER_CHEAT;
                      break;
@@ -8045,7 +8040,9 @@ int generic_menu_entry_action(
          }
          else /* MENU_SCROLL_START_LETTER */
          {
+#ifdef HAVE_AUDIOMIXER
             size_t selection_old = menu_st->selection_ptr;
+#endif
             if (
                      menu_st->scroll.index_size
                   && menu_st->selection_ptr != 0
@@ -8103,7 +8100,9 @@ int generic_menu_entry_action(
          {
             if (menu_st->scroll.index_size)
             {
+#ifdef HAVE_AUDIOMIXER
                size_t selection_old = menu_st->selection_ptr;
+#endif
                if (menu_st->selection_ptr == menu_st->scroll.index_list[menu_st->scroll.index_size - 1])
                   menu_st->selection_ptr = selection_buf_size - 1;
                else
@@ -8282,6 +8281,7 @@ int generic_menu_entry_action(
       const char *deferred_path = menu ? menu->deferred_path : NULL;
       const char *flush_target  = msg_hash_to_str(MENU_ENUM_LABEL_MAIN_MENU);
       size_t stack_offset       = 1;
+      unsigned i                = 0;
       bool reset_navigation     = true;
 
       /* Loop backwards through the menu stack to
@@ -8330,6 +8330,9 @@ int generic_menu_entry_action(
        * the menu stack. We therefore have to force a
        * RARCH_MENU_CTL_UNSET_PREVENT_POPULATE */
       menu_driver_ctl(RARCH_MENU_CTL_UNSET_PREVENT_POPULATE, NULL);
+
+      /* Ozone requires thumbnail refreshing */
+      menu_driver_ctl(RARCH_MENU_CTL_REFRESH_THUMBNAIL_IMAGE, &i);
 
       if (reset_navigation)
          menu_st->selection_ptr = 0;
@@ -8505,6 +8508,18 @@ size_t menu_update_fullscreen_thumbnail_label(
       snprintf(tmpstr, sizeof(tmpstr), "%s %d",
             msg_hash_to_str(MENU_ENUM_LABEL_VALUE_STATE_SLOT),
             config_get_ptr()->ints.state_slot);
+      thumbnail_label = tmpstr;
+   }
+   else if (is_quick_menu && (
+            string_is_equal(selected_entry.label, "replay_slot") ||
+            string_is_equal(selected_entry.label, "record_replay") ||
+            string_is_equal(selected_entry.label, "play_replay") ||
+            string_is_equal(selected_entry.label, "halt_replay")
+         ))
+   {
+      snprintf(tmpstr, sizeof(tmpstr), "%s %d",
+            msg_hash_to_str(MENU_ENUM_LABEL_VALUE_REPLAY_SLOT),
+               config_get_ptr()->ints.replay_slot);
       thumbnail_label = tmpstr;
    }
    else if (string_to_unsigned(selected_entry.label) == MENU_ENUM_LABEL_STATE_SLOT)

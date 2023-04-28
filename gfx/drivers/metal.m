@@ -174,6 +174,10 @@
 
       [apple_platform setVideoMode:mode];
 
+#ifdef HAVE_COCOATOUCH
+      [self mtkView:view drawableSizeWillChange:CGSizeMake(mode.width, mode.height)];
+#endif
+
       *input         = NULL;
       *inputData     = NULL;
       /* graphics display driver */
@@ -318,9 +322,9 @@
       [self _drawCore];
       [self _drawMenu:video_info];
 
-      id<MTLRenderCommandEncoder> rce = _context.rce;
-
 #ifdef HAVE_OVERLAY
+       id<MTLRenderCommandEncoder> rce = _context.rce;
+
       if (_overlay.enabled)
       {
          [_context resetRenderViewport:_overlay.fullscreen ? kFullscreenViewport : kVideoViewport];
@@ -573,6 +577,7 @@ typedef struct MTLALIGN(16)
       texture_t feedback;
       uint32_t frame_count;
       int32_t frame_direction;
+      uint32_t rotation;
       pass_semantics_t semantics;
       MTLViewport viewport;
       __unsafe_unretained id<MTLRenderPipelineState> _state;
@@ -944,6 +949,8 @@ typedef struct MTLALIGN(16)
          _engine.pass[i].frame_direction = 1;
 #endif
 
+      _engine.pass[i].rotation = retroarch_get_rotation();
+
       for (j = 0; j < SLANG_CBUFFER_MAX; j++)
       {
          id<MTLBuffer> buffer      = _engine.pass[i].buffers[j];
@@ -1200,6 +1207,7 @@ typedef struct MTLALIGN(16)
                &_engine.frame.output_size,       /* FinalViewportSize */
                &_engine.pass[i].frame_count,     /* FrameCount */
                &_engine.pass[i].frame_direction, /* FrameDirection */
+               &_engine.pass[i].rotation,        /* Rotation */
             }
          };
          /* clang-format on */
@@ -2001,9 +2009,6 @@ video_driver_t video_metal = {
    NULL, /* read_frame_raw */
 #ifdef HAVE_OVERLAY
    metal_get_overlay_interface,
-#endif
-#ifdef HAVE_VIDEO_LAYOUT
-  NULL,
 #endif
    metal_get_poke_interface,
    NULL, /* metal_wrap_type_to_enum */

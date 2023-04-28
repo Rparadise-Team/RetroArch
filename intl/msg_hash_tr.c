@@ -213,10 +213,6 @@ int msg_hash_get_help_tr_enum(enum msg_hash_enums msg, char *s, size_t len)
                    " \n"
                    "Geri sarma etkin olmalı.");
              break;
-          case RARCH_BSV_RECORD_TOGGLE:
-             snprintf(s, len,
-                   "Kayıt yapmak ve yapmamak arasında geçiş yapar.");
-             break;
           default:
              if (string_is_empty(s))
                 strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NO_INFORMATION_AVAILABLE), len);
@@ -1444,7 +1440,7 @@ int msg_hash_get_help_tr_enum(enum msg_hash_enums msg, char *s, size_t len)
                              " \n"
                              "Save all save files (*.srm) to this \n"
                              "directory. This includes related files like \n"
-                             ".bsv, .rt, .psrm, etc...\n"
+                             ".rt, .psrm, etc...\n"
                              " \n"
                              "This will be overridden by explicit command line\n"
                              "options.");
@@ -1785,10 +1781,6 @@ int msg_hash_get_help_tr_enum(enum msg_hash_enums msg, char *s, size_t len)
             snprintf(s, len,
                      "İçerik duraklatıldığında kare ilerlemesi.");
             break;
-        case MENU_ENUM_LABEL_BSV_RECORD_TOGGLE:
-            snprintf(s, len,
-                     "Kayıt yapma arasında geçiş yapmak için");
-            break;
         case MENU_ENUM_LABEL_VALUE_WHAT_IS_A_CORE_DESC:
             snprintf(s, len,
                      "RetroArch kendi başına hiçbir şey yapmaz. \n"
@@ -1911,7 +1903,8 @@ static const char *menu_hash_to_str_tr_label_enum(enum msg_hash_enums msg)
 }
 #endif
 
-const char *msg_hash_to_str_tr(enum msg_hash_enums msg) {
+const char *msg_hash_to_str_tr(enum msg_hash_enums msg)
+{
 #ifdef HAVE_MENU
     const char *ret = menu_hash_to_str_tr_label_enum(msg);
 
@@ -1919,7 +1912,8 @@ const char *msg_hash_to_str_tr(enum msg_hash_enums msg) {
        return ret;
 #endif
 
-    switch (msg) {
+    switch (msg)
+    {
 #include "msg_hash_tr.h"
         default:
 #if 0

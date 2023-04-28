@@ -2478,11 +2478,6 @@ MSG_HASH(
    "Memulai/hentikan siaran alir dari sesi saat ini ke pelantar video daring."
    )
 MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_INPUT_META_BSV_RECORD_TOGGLE,
-   "Putar Ulang Masukan Rekaman (Mati/Nyala)"
-   )
-
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_META_FULLSCREEN_TOGGLE_KEY,
    "Layar Penuh (Mati/Nyala)"
    )
@@ -2736,10 +2731,6 @@ MSG_HASH(
 
 /* Settings > User Interface > Appearance */
 
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_MENU_REMEMBER_SELECTION,
-   "Ingat Pilihan saat Mengganti Tab"
-   )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MENU_REMEMBER_SELECTION,
    "Ingat posisi dari kursor pada menu saat beralih ke tab lain."

@@ -465,7 +465,7 @@ static void d3d9_hlsl_deinit_progs(hlsl_renderchain_t *chain)
 {
    if (chain->chain.passes->count >= 1)
    {
-      int i;
+      size_t i;
 
       d3d9_vertex_buffer_free(NULL,
             chain->chain.passes->data[0].vertex_decl);
@@ -484,7 +484,7 @@ static void d3d9_hlsl_deinit_progs(hlsl_renderchain_t *chain)
 
 static void d3d9_hlsl_destroy_resources(hlsl_renderchain_t *chain)
 {
-   int i;
+   size_t i;
 
    for (i = 0; i < TEXTURES; i++)
    {
@@ -1610,9 +1610,6 @@ video_driver_t video_d3d9_hlsl = {
    NULL,                      /* read_frame_raw */
 #ifdef HAVE_OVERLAY
    d3d9_get_overlay_interface,
-#endif
-#ifdef HAVE_VIDEO_LAYOUT
-   NULL,
 #endif
    d3d9_hlsl_get_poke_interface,
    NULL, /* wrap_type_to_enum */

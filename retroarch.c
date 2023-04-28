@@ -2172,14 +2172,6 @@ bool command_event(enum event_command cmd, void *data)
          video_shader_toggle(settings);
 #endif
          break;
-      case CMD_EVENT_BSV_RECORDING_TOGGLE:
-         {
-#ifdef HAVE_BSV_MOVIE
-            input_driver_state_t *input_st = input_state_get_ptr();
-            movie_toggle_record(input_st, settings);
-#endif
-         }
-         break;
       case CMD_EVENT_AI_SERVICE_TOGGLE:
          {
 #ifdef HAVE_TRANSLATE
@@ -2300,12 +2292,11 @@ bool command_event(enum event_command cmd, void *data)
 #if HAVE_RUNAHEAD
          {
             bool old_warn   = settings->bools.preemptive_frames_hide_warnings;
-            bool old_inited = runloop_st->preempt_data;
+            bool old_inited = runloop_st->preempt_data != NULL;
 
             /* Toggle with warnings shown */
             settings->bools.preemptive_frames_hide_warnings = false;
-
-            settings->bools.preemptive_frames_enable =
+            settings->bools.preemptive_frames_enable        =
                   !(settings->bools.preemptive_frames_enable);
             command_event(CMD_EVENT_PREEMPT_UPDATE, NULL);
 
@@ -2328,7 +2319,7 @@ bool command_event(enum event_command cmd, void *data)
                      NULL, MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
 
                /* Disable runahead */
-               settings->bools.run_ahead_enabled = false;
+               settings->bools.run_ahead_enabled        = false;
             }
             else /* Failed to init */
                settings->bools.preemptive_frames_enable = false;
@@ -2442,17 +2433,6 @@ bool command_event(enum event_command cmd, void *data)
 #endif
       case CMD_EVENT_LOAD_STATE:
          {
-#ifdef HAVE_BSV_MOVIE
-            /* Immutable - disallow savestate load when
-             * we absolutely cannot change game state. */
-            input_driver_state_t *input_st   = input_state_get_ptr();
-            if (input_st->bsv_movie_state_handle)
-              {
-                RARCH_LOG("[Load] [Movie] Can't load state during movie playback or record\n");
-               return false;
-              }
-#endif
-
 #ifdef HAVE_CHEEVOS
             if (rcheevos_hardcore_active())
             {
@@ -2529,6 +2509,80 @@ bool command_event(enum event_command cmd, void *data)
          command_event(CMD_EVENT_PREEMPT_RESET_BUFFER, NULL);
 #endif
          return false;
+      case CMD_EVENT_PLAY_REPLAY:
+      {
+         bool res = false;
+#ifdef HAVE_BSV_MOVIE
+         input_driver_state_t *input_st = input_state_get_ptr();
+         char replay_path[PATH_MAX_LENGTH];
+         res = true;
+         /* TODO: Consider extending the current replay if we start recording during a playback */
+         if (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_RECORDING)
+            res = false;
+         else if (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_PLAYBACK)
+            res = movie_stop(input_st);
+         if (!runloop_get_current_replay_path(replay_path, sizeof(replay_path)))
+            res = false;
+         if (res)
+            res = movie_start_playback(input_st, replay_path);
+         if(!res)
+         {
+            const char *movie_fail_str        =
+               msg_hash_to_str(MSG_FAILED_TO_LOAD_MOVIE_FILE);
+            runloop_msg_queue_push(movie_fail_str,
+               1, 180, true,
+               NULL, MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
+            RARCH_ERR("%s.\n", movie_fail_str);
+         }
+         return res;
+#else
+         return false;
+#endif
+      }
+      case CMD_EVENT_RECORD_REPLAY:
+      {
+         bool res = false;
+#ifdef HAVE_BSV_MOVIE
+         input_driver_state_t *input_st = input_state_get_ptr();
+         int replay_slot = settings->ints.replay_slot;
+         char replay_path[PATH_MAX_LENGTH];
+         if (settings->bools.replay_auto_index)
+            replay_slot += 1;
+         res = true;
+         /* TODO: Consider cloning and extending the current replay if we start recording during a recording */
+         if (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_RECORDING)
+            res = false;
+         else if (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_PLAYBACK)
+            res = movie_stop(input_st);
+         if (!runloop_get_replay_path(replay_path, sizeof(replay_path), replay_slot))
+            res = false;
+         if(res)
+            res = movie_start_record(input_st, replay_path);
+
+         if(res && settings->bools.replay_auto_index)
+         {
+            configuration_set_int(settings, settings->ints.replay_slot, replay_slot);
+         }
+         if(!res)
+         {
+             const char *movie_rec_fail_str        =
+               msg_hash_to_str(MSG_FAILED_TO_START_MOVIE_RECORD);
+            runloop_msg_queue_push(movie_rec_fail_str,
+               1, 180, true,
+               NULL, MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
+            RARCH_ERR("%s.\n", movie_rec_fail_str);
+         }
+#endif
+         return res;
+      }
+      case CMD_EVENT_HALT_REPLAY:
+      {
+#ifdef HAVE_BSV_MOVIE
+         input_driver_state_t *input_st = input_state_get_ptr();
+         movie_stop(input_st);
+#endif
+         return true;
+      }
       case CMD_EVENT_SAVE_STATE:
       case CMD_EVENT_SAVE_STATE_TO_RAM:
          {
@@ -2560,6 +2614,28 @@ bool command_event(enum event_command cmd, void *data)
             int new_state_slot        = settings->ints.state_slot + 1;
             configuration_set_int(settings, settings->ints.state_slot, new_state_slot);
          }
+         break;
+      case CMD_EVENT_REPLAY_DECREMENT:
+#ifdef HAVE_BSV_MOVIE
+         {
+            int slot            = settings->ints.replay_slot;
+
+            /* Slot -1 is (auto) slot. */
+            if (slot >= 0)
+            {
+               int new_slot = slot - 1;
+               configuration_set_int(settings, settings->ints.replay_slot, new_slot);
+            }
+         }
+#endif
+         break;
+      case CMD_EVENT_REPLAY_INCREMENT:
+#ifdef HAVE_BSV_MOVIE
+         {
+            int new_slot        = settings->ints.replay_slot + 1;
+            configuration_set_int(settings, settings->ints.replay_slot, new_slot);
+         }
+#endif
          break;
       case CMD_EVENT_TAKE_SCREENSHOT:
 #ifdef HAVE_SCREENSHOTS
@@ -2616,7 +2692,6 @@ bool command_event(enum event_command cmd, void *data)
             {
                /* Reload the original config */
                config_unload_override();
-               runloop_st->flags &= ~RUNLOOP_FLAG_OVERRIDES_ACTIVE;
 
                if (!settings->bools.video_fullscreen)
                {
@@ -4401,6 +4476,7 @@ static void global_free(struct rarch_state *p_rarch)
    *runloop_st->name.ips                 = '\0';
    *runloop_st->name.savefile            = '\0';
    *runloop_st->name.savestate           = '\0';
+   *runloop_st->name.replay              = '\0';
    *runloop_st->name.cheatfile           = '\0';
    *runloop_st->name.label               = '\0';
 
@@ -5023,12 +5099,12 @@ static void retroarch_print_help(const char *arg0)
 
 #ifdef HAVE_BSV_MOVIE
    strlcat(buf,
-         "  -P, --bsvplay=FILE             "
-         "Playback a BSV movie file.\n"
-         "  -R, --bsvrecord=FILE           "
-         "Start recording a BSV movie file from the beginning.\n"
+         "  -P, --play-replay=FILE         "
+         "Playback a replay file.\n"
+         "  -R, --record-replay=FILE       "
+         "Start recording a replay file from the beginning.\n"
          "      --eof-exit                 "
-         "Exit upon reaching the end of the BSV movie file.\n"
+         "Exit upon reaching the end of the replay file.\n"
          , sizeof(buf));
 #endif
 
@@ -5282,8 +5358,8 @@ static bool retroarch_parse_input_and_config(
       { "savestate",          1, NULL, 'S' },
       { "set-shader",         1, NULL, RA_OPT_SET_SHADER },
 #ifdef HAVE_BSV_MOVIE
-      { "bsvplay",            1, NULL, 'P' },
-      { "bsvrecord",          1, NULL, 'R' },
+      { "play-replay",        1, NULL, 'P' },
+      { "record-replay",      1, NULL, 'R' },
 #endif
       { "sram-mode",          1, NULL, 'M' },
 #ifdef HAVE_NETWORKING
@@ -5459,6 +5535,8 @@ static bool retroarch_parse_input_and_config(
             case 'S':
                strlcpy(runloop_st->name.savestate, optarg,
                      sizeof(runloop_st->name.savestate));
+               strlcpy(runloop_st->name.replay, optarg,
+                     sizeof(runloop_st->name.replay));
                retroarch_override_setting_set(
                      RARCH_OVERRIDE_SETTING_STATE_PATH, NULL);
                break;
@@ -5920,9 +5998,10 @@ static bool retroarch_parse_input_and_config(
    if (runloop_st->entry_state_slot)
    {
      input_driver_state_t *input_st = input_state_get_ptr();
-     if(input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_START_PLAYBACK) {
+     if (input_st->bsv_movie_state.flags & BSV_FLAG_MOVIE_START_PLAYBACK)
+     {
         runloop_st->entry_state_slot = 0;
-        RARCH_WARN("Trying to load entry state while BSV playback is active. Ignoring entry state.\n");
+        RARCH_WARN("Trying to load entry state while replay playback is active. Ignoring entry state.\n");
      }
    }
    #endif
@@ -6231,7 +6310,6 @@ bool retroarch_main_init(int argc, char *argv[])
          {
             /* Reload the original config */
             config_unload_override();
-            runloop_st->flags &= ~RUNLOOP_FLAG_OVERRIDES_ACTIVE;
          }
 #endif
 
@@ -6882,12 +6960,17 @@ bool retroarch_main_quit(void)
    settings_t *settings          = config_get_ptr();
    bool config_save_on_exit      = settings->bools.config_save_on_exit;
 
+   /* Restore video driver before saving */
+   video_driver_restore_cached(settings);
+
 #if !defined(HAVE_DYNAMIC)
+   {
       /* Salamander sets RUNLOOP_FLAG_SHUTDOWN_INITIATED prior, so we need to handle it seperately */
       /* config_save_file_salamander() must be called independent of config_save_on_exit */
       config_save_file_salamander();
       if (config_save_on_exit)
          command_event(CMD_EVENT_MENU_SAVE_CURRENT_CONFIG, NULL);
+   }
 #endif
 
 #ifdef HAVE_PRESENCE
@@ -6955,7 +7038,6 @@ bool retroarch_main_quit(void)
       {
          /* Reload the original config */
          config_unload_override();
-         runloop_st->flags &= ~RUNLOOP_FLAG_OVERRIDES_ACTIVE;
       }
 #endif
 #if defined(HAVE_CG) || defined(HAVE_GLSL) || defined(HAVE_SLANG) || defined(HAVE_HLSL)
@@ -6984,7 +7066,6 @@ enum retro_language retroarch_get_language_from_iso(const char *iso639)
 
    const struct lang_pair pairs[] =
    {
-      {"en", RETRO_LANGUAGE_ENGLISH},
       {"ja", RETRO_LANGUAGE_JAPANESE},
       {"fr", RETRO_LANGUAGE_FRENCH},
       {"es", RETRO_LANGUAGE_SPANISH},
@@ -7016,9 +7097,10 @@ enum retro_language retroarch_get_language_from_iso(const char *iso639)
       {"sv", RETRO_LANGUAGE_SWEDISH},
       {"uk", RETRO_LANGUAGE_UKRAINIAN},
       {"cs", RETRO_LANGUAGE_CZECH},
-      {"ca_valencia", RETRO_LANGUAGE_CATALAN_VALENCIA},
+      {"ca_ES@valencia", RETRO_LANGUAGE_CATALAN_VALENCIA},
       {"ca", RETRO_LANGUAGE_CATALAN},
       {"en_GB", RETRO_LANGUAGE_BRITISH_ENGLISH},
+      {"en", RETRO_LANGUAGE_ENGLISH},
       {"hu", RETRO_LANGUAGE_HUNGARIAN},
    };
 

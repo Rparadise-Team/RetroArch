@@ -277,8 +277,6 @@ VIDEO CONTEXT
 #include "../gfx/drivers_context/qnx_ctx.c"
 #elif defined(EMSCRIPTEN)
 #include "../gfx/drivers_context/emscriptenegl_ctx.c"
-#elif defined(__PSL1GHT__)
-#include "../gfx/drivers_context/psl1ght_ctx.c"
 #elif defined(__PS3__)
 #include "../gfx/drivers_context/ps3_ctx.c"
 #endif
@@ -535,7 +533,7 @@ VIDEO DRIVER
 #include "../gfx/drivers/xvideo.c"
 #endif
 
-#if defined(__PSL1GHT__)
+#if defined(HAVE_GCM)
 #include "../gfx/drivers/rsx_gfx.c"
 #include "../gfx/drivers_display/gfx_display_rsx.c"
 #elif defined(GEKKO)
@@ -569,16 +567,6 @@ VIDEO DRIVER
 #endif
 
 #include "../deps/ibxm/ibxm.c"
-
-#ifdef HAVE_VIDEO_LAYOUT
-#include "../gfx/video_layout.c"
-#include "../gfx/video_layout/view.c"
-#include "../gfx/video_layout/element.c"
-#include "../gfx/video_layout/component.c"
-#include "../gfx/video_layout/internal.c"
-#include "../gfx/video_layout/scope.c"
-#include "../gfx/video_layout/load.c"
-#endif
 
 /*============================================================
 FONTS
@@ -642,7 +630,7 @@ FONTS
 #include "../gfx/drivers_font/wiiu_font.c"
 #endif
 
-#if defined(__PSL1GHT__)
+#if defined(HAVE_GCM)
 #include "../gfx/drivers_font/rsx_font.c"
 #endif
 
@@ -715,9 +703,6 @@ INPUT
 #elif defined(PS2)
 #include "../input/drivers/ps2_input.c"
 #include "../input/drivers_joypad/ps2_joypad.c"
-#elif defined(__PSL1GHT__)
-#include "../input/drivers/psl1ght_input.c"
-#include "../input/drivers_joypad/ps3_joypad.c"
 #elif defined(__PS3__)
 #include "../input/drivers/ps3_input.c"
 #include "../input/drivers_joypad/ps3_joypad.c"
@@ -904,6 +889,7 @@ LEDS
 
 #if defined(HAVE_RPILED)
 #include "../led/drivers/led_rpi.c"
+#include "../led/drivers/led_sys_linux.c"
 #endif
 
 #if defined(_WIN32) && !defined(_XBOX) && !defined(__WINRT__)
@@ -1247,37 +1233,17 @@ RETROARCH
 
 #include "../msg_hash.c"
 #ifdef HAVE_LANGEXTRA
-#include "../intl/msg_hash_de.c"
-#include "../intl/msg_hash_es.c"
-#include "../intl/msg_hash_eo.c"
-#include "../intl/msg_hash_fr.c"
-#include "../intl/msg_hash_it.c"
+#include "../intl/msg_hash_ca.c"
+#include "../intl/msg_hash_chs.c"
+#include "../intl/msg_hash_el.c"
 #include "../intl/msg_hash_ja.c"
 #include "../intl/msg_hash_ko.c"
-#include "../intl/msg_hash_nl.c"
 #include "../intl/msg_hash_pt_br.c"
 #include "../intl/msg_hash_pt_pt.c"
-#include "../intl/msg_hash_pl.c"
 #include "../intl/msg_hash_ru.c"
-#include "../intl/msg_hash_vn.c"
-#include "../intl/msg_hash_chs.c"
-#include "../intl/msg_hash_cht.c"
-#include "../intl/msg_hash_ar.c"
-#include "../intl/msg_hash_el.c"
 #include "../intl/msg_hash_tr.c"
-#include "../intl/msg_hash_sk.c"
-#include "../intl/msg_hash_fa.c"
-#include "../intl/msg_hash_he.c"
-#include "../intl/msg_hash_ast.c"
-#include "../intl/msg_hash_fi.c"
-#include "../intl/msg_hash_id.c"
-#include "../intl/msg_hash_sv.c"
-#include "../intl/msg_hash_uk.c"
-#include "../intl/msg_hash_cs.c"
 #include "../intl/msg_hash_val.c"
-#include "../intl/msg_hash_ca.c"
-#include "../intl/msg_hash_en.c"
-#include "../intl/msg_hash_hu.c"
+#include "../intl/msg_hash_vn.c"
 #endif
 
 #include "../intl/msg_hash_us.c"
@@ -1718,4 +1684,16 @@ ANDROID PLAY FEATURE DELIVERY
 ============================================================ */
 #if defined(ANDROID)
 #include "../play_feature_delivery/play_feature_delivery.c"
+#endif
+
+/*============================================================
+STEAM INTEGRATION USING MIST
+============================================================ */
+#ifdef HAVE_MIST
+#include "../steam/steam.c"
+#include "../tasks/task_steam.c"
+#endif
+
+#ifdef HAVE_PRESENCE
+#include "../network/presence.c"
 #endif

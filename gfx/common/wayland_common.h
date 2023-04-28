@@ -58,7 +58,7 @@ void gfx_ctx_wl_destroy_resources_common(gfx_ctx_wayland_data_t *wl);
 
 void gfx_ctx_wl_update_title_common(gfx_ctx_wayland_data_t *wl);
 
-bool gfx_ctx_wl_get_metrics_common(gfx_ctx_wayland_data_t *wl,
+bool gfx_ctx_wl_get_metrics_common(void *data,
       enum display_metric_types type, float *value);
 
 bool gfx_ctx_wl_init_common(
@@ -66,10 +66,7 @@ bool gfx_ctx_wl_init_common(
       gfx_ctx_wayland_data_t **wl);
 
 bool gfx_ctx_wl_set_video_mode_common_size(gfx_ctx_wayland_data_t *wl,
-      unsigned width, unsigned height);
-
-bool gfx_ctx_wl_set_video_mode_common_fullscreen(gfx_ctx_wayland_data_t *wl,
-      bool fullscreen);
+      unsigned width, unsigned height, bool fullscreen);
 
 bool gfx_ctx_wl_suppress_screensaver(void *data, bool state);
 
