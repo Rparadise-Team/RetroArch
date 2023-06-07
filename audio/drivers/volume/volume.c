@@ -52,7 +52,6 @@ int getVolumeMM(char const *key)
 int setVolumeMM()
 {
   // set volumen lever save from last sesion
-    uint32_t fa = open("/dev/mi_ao", O_RDWR);
     int volume = getVolumeMM("vol");
     int set = 0;
     set = ((volume*3)+40); //tinymix work in 100-40 // 0-(-60)
