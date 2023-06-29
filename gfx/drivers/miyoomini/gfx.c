@@ -83,9 +83,10 @@ static void* GFX_FlipThread(void* param) {
 			if (ovrsurface) {
 				MI_GFX_WaitAllDone(FALSE, flipFence);
 				OvrDst.phyAddr = finfo.smem_start + (640*target_offset*4);
-				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &flipFence);
-				Fence = flipFence;
-			}
+				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
+				MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0;
+				if (flip_callback) flip_callback(userdata_callback);
+			} else
 #endif
 			if (flip_callback) {
 				// Wait done always when callback is active
@@ -901,7 +902,6 @@ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_
 			SrcRect.u32Width = Src.u32Width;
 			SrcRect.u32Height = Src.u32Height;
 		}
-		FlushCacheNeeded(src->pixels, src->pitch, SrcRect.s32Ypos, SrcRect.u32Height);
 
 		Dst.phyAddr = dst->pixelsPa;
 		Dst.u32Width = dst->w;
@@ -924,18 +924,17 @@ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_
 			DstRect.u32Width = Dst.u32Width;
 			DstRect.u32Height = Dst.u32Height;
 		}
-		if (rotate & 1) FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Width);
-		else FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Height);
 
 		memset(&Opt, 0, sizeof(Opt));
 		if (src->flags & SDL_SRCALPHA) {
 			Opt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
 			Opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+			if (src->format->alpha == SDL_ALPHA_TRANSPARENT) return;
 			if (src->format->alpha != SDL_ALPHA_OPAQUE) {
 				Opt.u32GlobalSrcConstColor = (src->format->alpha << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
 				Opt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
 						   (E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
-			} else	Opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+			}
 		}
 		if (src->flags & SDL_SRCCOLORKEY) {
 			Opt.stSrcColorKeyInfo.bEnColorKey = TRUE;
@@ -951,6 +950,10 @@ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_
 		Opt.stClipRect.s32Ypos = dst->clip_rect.y;
 		Opt.stClipRect.u32Width = dst->clip_rect.w;
 		Opt.stClipRect.u32Height = dst->clip_rect.h;
+
+		FlushCacheNeeded(src->pixels, src->pitch, SrcRect.s32Ypos, SrcRect.u32Height);
+		if (rotate & 1) FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Width);
+		else FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Height);
 
 		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &Opt, &Fence);
 		if (!nowait) MI_GFX_WaitAllDone(FALSE, Fence);
@@ -993,11 +996,12 @@ void GFX_SetupOverlaySurface(SDL_Surface *src) {
 	if (src->flags & SDL_SRCALPHA) {
 		OvrOpt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
 		OvrOpt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+		if (src->format->alpha == SDL_ALPHA_TRANSPARENT) { ovrsurface = NULL; return; }
 		if (src->format->alpha != SDL_ALPHA_OPAQUE) {
 			OvrOpt.u32GlobalSrcConstColor = (src->format->alpha << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
 			OvrOpt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
 					   (E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
-		} else	OvrOpt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+		}
 	}
 	if (src->flags & SDL_SRCCOLORKEY) {
 		OvrOpt.stSrcColorKeyInfo.bEnColorKey = TRUE;

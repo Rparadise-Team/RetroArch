@@ -23,38 +23,50 @@
 #include <lists/dir_list.h>
 #endif
 #if defined(MIYOOMINI)
-#include "sys/ioctl.h"
 #include <fcntl.h>
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 #endif
 #include <stdlib.h>
 
 #include "dingux_utils.h"
 
-#define DINGUX_ALLOW_DOWNSCALING_FILE     "/sys/devices/platform/jz-lcd.0/allow_downscaling"
-#define DINGUX_KEEP_ASPECT_RATIO_FILE     "/sys/devices/platform/jz-lcd.0/keep_aspect_ratio"
-#define DINGUX_INTEGER_SCALING_FILE       "/sys/devices/platform/jz-lcd.0/integer_scaling"
-#define DINGUX_SHARPNESS_UPSCALING_FILE   "/sys/devices/platform/jz-lcd.0/sharpness_upscaling"
-#define DINGUX_SHARPNESS_DOWNSCALING_FILE "/sys/devices/platform/jz-lcd.0/sharpness_downscaling"
-#define DINGUX_BATTERY_CAPACITY_FILE      "/sys/class/power_supply/battery/capacity"
+#define DINGUX_ALLOW_DOWNSCALING_FILE                                          \
+    "/sys/devices/platform/jz-lcd.0/allow_downscaling"
+#define DINGUX_KEEP_ASPECT_RATIO_FILE                                          \
+    "/sys/devices/platform/jz-lcd.0/keep_aspect_ratio"
+#define DINGUX_INTEGER_SCALING_FILE                                            \
+    "/sys/devices/platform/jz-lcd.0/integer_scaling"
+#define DINGUX_SHARPNESS_UPSCALING_FILE                                        \
+    "/sys/devices/platform/jz-lcd.0/sharpness_upscaling"
+#define DINGUX_SHARPNESS_DOWNSCALING_FILE                                      \
+    "/sys/devices/platform/jz-lcd.0/sharpness_downscaling"
+#define DINGUX_BATTERY_CAPACITY_FILE "/sys/class/power_supply/battery/capacity"
 
 /* Base path defines */
-#define DINGUX_HOME_ENVAR                 "HOME"
-#define DINGUX_BASE_DIR                   "retroarch"
-#define DINGUX_BASE_DIR_HIDDEN            ".retroarch"
-#define DINGUX_RS90_MEDIA_PATH            "/media"
-#define DINGUX_RS90_DEFAULT_SD_PATH       "/media/mmcblk0p1"
-#define DINGUX_RS90_DATA_PATH             "/media/data"
+#define DINGUX_HOME_ENVAR "HOME"
+#define DINGUX_BASE_DIR "retroarch"
+#define DINGUX_BASE_DIR_HIDDEN ".retroarch"
+#define DINGUX_RS90_MEDIA_PATH "/media"
+#define DINGUX_RS90_DEFAULT_SD_PATH "/media/mmcblk0p1"
+#define DINGUX_RS90_DATA_PATH "/media/data"
 
 /* OpenDingux Beta defines */
-#define DINGUX_BATTERY_VOLTAGE_MIN        "/sys/class/power_supply/jz-battery/voltage_min_design"
-#define DINGUX_BATTERY_VOLTAGE_MAX        "/sys/class/power_supply/jz-battery/voltage_max_design"
-#define DINGUX_BATTERY_VOLTAGE_NOW        "/sys/class/power_supply/jz-battery/voltage_now"
-#define DINGUX_SCALING_MODE_ENVAR         "SDL_VIDEO_KMSDRM_SCALING_MODE"
-#define DINGUX_SCALING_SHARPNESS_ENVAR    "SDL_VIDEO_KMSDRM_SCALING_SHARPNESS"
-#define DINGUX_VIDEO_REFRESHRATE_ENVAR    "SDL_VIDEO_REFRESHRATE"
+#define DINGUX_BATTERY_VOLTAGE_MIN                                             \
+    "/sys/class/power_supply/jz-battery/voltage_min_design"
+#define DINGUX_BATTERY_VOLTAGE_MAX                                             \
+    "/sys/class/power_supply/jz-battery/voltage_max_design"
+#define DINGUX_BATTERY_VOLTAGE_NOW                                             \
+    "/sys/class/power_supply/jz-battery/voltage_now"
+#define DINGUX_SCALING_MODE_ENVAR "SDL_VIDEO_KMSDRM_SCALING_MODE"
+#define DINGUX_SCALING_SHARPNESS_ENVAR "SDL_VIDEO_KMSDRM_SCALING_SHARPNESS"
+#define DINGUX_VIDEO_REFRESHRATE_ENVAR "SDL_VIDEO_REFRESHRATE"
 
 /* Miyoo defines */
-#define MIYOO_BATTERY_VOLTAGE_NOW_FILE    "/sys/class/power_supply/miyoo-battery/voltage_now"
+#define MIYOO_BATTERY_VOLTAGE_NOW_FILE                                         \
+    "/sys/class/power_supply/miyoo-battery/voltage_now"
 
 /* RetroFW */
 #define RETROFW_BATTERY_VOLTAGE_NOW_FILE "/proc/jz/battery"
@@ -64,17 +76,16 @@
 bool dingux_ipu_set_downscaling_enable(bool enable)
 {
 #if !defined(DINGUX_BETA)
-   const char *path       = DINGUX_ALLOW_DOWNSCALING_FILE;
-   const char *enable_str = enable ? "1" : "0";
-   /* Check whether file exists */
-   if (!path_is_valid(path))
-      return false;
-   /* Write enable state to file */
-   if (!filestream_write_file(
-            path, enable_str, 1))
-      return false;
+    const char *path = DINGUX_ALLOW_DOWNSCALING_FILE;
+    const char *enable_str = enable ? "1" : "0";
+    /* Check whether file exists */
+    if (!path_is_valid(path))
+        return false;
+    /* Write enable state to file */
+    if (!filestream_write_file(path, enable_str, 1))
+        return false;
 #endif
-   return true;
+    return true;
 }
 
 /* Sets the video scaling mode when using the
@@ -98,35 +109,35 @@ bool dingux_ipu_set_downscaling_enable(bool enable)
 bool dingux_ipu_set_scaling_mode(bool keep_aspect, bool integer_scale)
 {
 #if defined(DINGUX_BETA)
-   const char *scaling_str = "0";
+    const char *scaling_str = "0";
 
-   /* integer_scale takes priority */
-   if (integer_scale)
-      scaling_str = "2";
-   else if (keep_aspect)
-      scaling_str = "1";
+    /* integer_scale takes priority */
+    if (integer_scale)
+        scaling_str = "2";
+    else if (keep_aspect)
+        scaling_str = "1";
 
-   return (setenv(DINGUX_SCALING_MODE_ENVAR, scaling_str, 1) == 0);
+    return (setenv(DINGUX_SCALING_MODE_ENVAR, scaling_str, 1) == 0);
 #else
-   const char *keep_aspect_path   = DINGUX_KEEP_ASPECT_RATIO_FILE;
-   const char *keep_aspect_str    = keep_aspect ? "1" : "0";
-   bool keep_aspect_success       = false;
+    const char *keep_aspect_path = DINGUX_KEEP_ASPECT_RATIO_FILE;
+    const char *keep_aspect_str = keep_aspect ? "1" : "0";
+    bool keep_aspect_success = false;
 
-   const char *integer_scale_path = DINGUX_INTEGER_SCALING_FILE;
-   const char *integer_scale_str  = integer_scale ? "1" : "0";
-   bool integer_scale_success     = false;
+    const char *integer_scale_path = DINGUX_INTEGER_SCALING_FILE;
+    const char *integer_scale_str = integer_scale ? "1" : "0";
+    bool integer_scale_success = false;
 
-   /* Set keep_aspect */
-   if (path_is_valid(keep_aspect_path))
-      keep_aspect_success = filestream_write_file(
-         keep_aspect_path, keep_aspect_str, 1);
+    /* Set keep_aspect */
+    if (path_is_valid(keep_aspect_path))
+        keep_aspect_success =
+            filestream_write_file(keep_aspect_path, keep_aspect_str, 1);
 
-   /* Set integer_scale */
-   if (path_is_valid(integer_scale_path))
-      integer_scale_success = filestream_write_file(
-         integer_scale_path, integer_scale_str, 1);
+    /* Set integer_scale */
+    if (path_is_valid(integer_scale_path))
+        integer_scale_success =
+            filestream_write_file(integer_scale_path, integer_scale_str, 1);
 
-   return (keep_aspect_success && integer_scale_success);
+    return (keep_aspect_success && integer_scale_success);
 #endif
 }
 
@@ -134,7 +145,7 @@ bool dingux_ipu_set_scaling_mode(bool keep_aspect, bool integer_scale)
  * using the IPU hardware scaler */
 bool dingux_ipu_set_filter_type(enum dingux_ipu_filter_type filter_type)
 {
-   /* Sharpness settings range is [0,32]
+    /* Sharpness settings range is [0,32]
     * - 0:      nearest-neighbour
     * - 1:      bilinear
     * - 2...32: bicubic (translating to a sharpness
@@ -142,42 +153,41 @@ bool dingux_ipu_set_filter_type(enum dingux_ipu_filter_type filter_type)
     * Default bicubic sharpness factor is
     * (-0.125 * 8) = -1.0 */
 #if !defined(DINGUX_BETA)
-   const char *upscaling_path   = DINGUX_SHARPNESS_UPSCALING_FILE;
-   const char *downscaling_path = DINGUX_SHARPNESS_DOWNSCALING_FILE;
-   bool upscaling_success       = false;
-   bool downscaling_success     = false;
+    const char *upscaling_path = DINGUX_SHARPNESS_UPSCALING_FILE;
+    const char *downscaling_path = DINGUX_SHARPNESS_DOWNSCALING_FILE;
+    bool upscaling_success = false;
+    bool downscaling_success = false;
 #endif
-   const char *sharpness_str    = "8";
+    const char *sharpness_str = "8";
 
-   /* Check filter type */
-   switch (filter_type)
-   {
-      case DINGUX_IPU_FILTER_BILINEAR:
-         sharpness_str = "1";
-         break;
-      case DINGUX_IPU_FILTER_NEAREST:
-         sharpness_str = "0";
-         break;
-      default:
-         /* sharpness_str is already set to 8
+    /* Check filter type */
+    switch (filter_type) {
+    case DINGUX_IPU_FILTER_BILINEAR:
+        sharpness_str = "1";
+        break;
+    case DINGUX_IPU_FILTER_NEAREST:
+        sharpness_str = "0";
+        break;
+    default:
+        /* sharpness_str is already set to 8
           * by default */
-         break;
-   }
+        break;
+    }
 
 #if defined(DINGUX_BETA)
-   return (setenv(DINGUX_SCALING_SHARPNESS_ENVAR, sharpness_str, 1) == 0);
+    return (setenv(DINGUX_SCALING_SHARPNESS_ENVAR, sharpness_str, 1) == 0);
 #else
-   /* Set upscaling sharpness */
-   if (path_is_valid(upscaling_path))
-      upscaling_success = filestream_write_file(
-         upscaling_path, sharpness_str, 1);
+    /* Set upscaling sharpness */
+    if (path_is_valid(upscaling_path))
+        upscaling_success =
+            filestream_write_file(upscaling_path, sharpness_str, 1);
 
-   /* Set downscaling sharpness */
-   if (path_is_valid(downscaling_path))
-      downscaling_success = filestream_write_file(
-         downscaling_path, sharpness_str, 1);
+    /* Set downscaling sharpness */
+    if (path_is_valid(downscaling_path))
+        downscaling_success =
+            filestream_write_file(downscaling_path, sharpness_str, 1);
 
-   return (upscaling_success && downscaling_success);
+    return (upscaling_success && downscaling_success);
 #endif
 }
 
@@ -191,50 +201,48 @@ bool dingux_ipu_set_filter_type(enum dingux_ipu_filter_type filter_type)
  * error), returns 0.0 */
 float dingux_set_video_refresh_rate(enum dingux_refresh_rate refresh_rate)
 {
-   float refresh_rate_float     = 60.0f;
-   const char *refresh_rate_str = "60";
+    float refresh_rate_float = 60.0f;
+    const char *refresh_rate_str = "60";
 
-   /* Check filter type */
-   switch (refresh_rate)
-   {
-      case DINGUX_REFRESH_RATE_50HZ:
-         refresh_rate_float     = 50.0f;
-         refresh_rate_str       = "50";
-         break;
-      default:
-         /* Refresh rate is already set to 60 Hz
+    /* Check filter type */
+    switch (refresh_rate) {
+    case DINGUX_REFRESH_RATE_50HZ:
+        refresh_rate_float = 50.0f;
+        refresh_rate_str = "50";
+        break;
+    default:
+        /* Refresh rate is already set to 60 Hz
           * by default */
-         break;
-   }
+        break;
+    }
 
-   if (setenv(DINGUX_VIDEO_REFRESHRATE_ENVAR, refresh_rate_str, 1) != 0)
-      return 0.0f;
+    if (setenv(DINGUX_VIDEO_REFRESHRATE_ENVAR, refresh_rate_str, 1) != 0)
+        return 0.0f;
 
-   return refresh_rate_float;
+    return refresh_rate_float;
 }
 
 /* Gets the currently set refresh rate of the
  * integral LCD panel. */
 bool dingux_get_video_refresh_rate(enum dingux_refresh_rate *refresh_rate)
 {
-   const char *refresh_rate_str = getenv(DINGUX_VIDEO_REFRESHRATE_ENVAR);
+    const char *refresh_rate_str = getenv(DINGUX_VIDEO_REFRESHRATE_ENVAR);
 
-   /* If environment variable is unset, refresh
+    /* If environment variable is unset, refresh
     * rate defaults to 60 Hz */
-   if (!refresh_rate_str)
-   {
-      *refresh_rate = DINGUX_REFRESH_RATE_60HZ;
-      return true;
-   }
+    if (!refresh_rate_str) {
+        *refresh_rate = DINGUX_REFRESH_RATE_60HZ;
+        return true;
+    }
 
-   if (string_is_equal(refresh_rate_str, "60"))
-      *refresh_rate = DINGUX_REFRESH_RATE_60HZ;
-   else if (string_is_equal(refresh_rate_str, "50"))
-      *refresh_rate = DINGUX_REFRESH_RATE_50HZ;
-   else
-      return false;
+    if (string_is_equal(refresh_rate_str, "60"))
+        *refresh_rate = DINGUX_REFRESH_RATE_60HZ;
+    else if (string_is_equal(refresh_rate_str, "50"))
+        *refresh_rate = DINGUX_REFRESH_RATE_50HZ;
+    else
+        return false;
 
-   return true;
+    return true;
 }
 #endif
 
@@ -243,221 +251,235 @@ bool dingux_get_video_refresh_rate(enum dingux_refresh_rate *refresh_rate)
 bool dingux_ipu_reset(void)
 {
 #if defined(DINGUX_BETA)
-   unsetenv(DINGUX_SCALING_MODE_ENVAR);
-   unsetenv(DINGUX_SCALING_SHARPNESS_ENVAR);
-   unsetenv(DINGUX_VIDEO_REFRESHRATE_ENVAR);
-   return true;
+    unsetenv(DINGUX_SCALING_MODE_ENVAR);
+    unsetenv(DINGUX_SCALING_SHARPNESS_ENVAR);
+    unsetenv(DINGUX_VIDEO_REFRESHRATE_ENVAR);
+    return true;
 #else
-   return dingux_ipu_set_scaling_mode(true, false) &&
-          dingux_ipu_set_filter_type(DINGUX_IPU_FILTER_BICUBIC);
+    return dingux_ipu_set_scaling_mode(true, false) &&
+           dingux_ipu_set_filter_type(DINGUX_IPU_FILTER_BICUBIC);
 #endif
 }
 
 #if defined(RETROFW)
 static uint64_t read_battery_ignore_size(const char *path)
 {
-   int64_t file_len   = 0;
-   char file_buf[20];
-   int sys_file_value = 0;
-   RFILE *file;
+    int64_t file_len = 0;
+    char file_buf[20];
+    int sys_file_value = 0;
+    RFILE *file;
 
-   /* Check whether file exists */
-   if (!path_is_valid(path))
-      return -1;
+    /* Check whether file exists */
+    if (!path_is_valid(path))
+        return -1;
 
-   memset(file_buf, 0, sizeof(file_buf));
+    memset(file_buf, 0, sizeof(file_buf));
 
-   if (!(file = filestream_open(path,
-         RETRO_VFS_FILE_ACCESS_READ,
-         RETRO_VFS_FILE_ACCESS_HINT_NONE)))
-      return -1;
+    if (!(file = filestream_open(path, RETRO_VFS_FILE_ACCESS_READ,
+                                 RETRO_VFS_FILE_ACCESS_HINT_NONE)))
+        return -1;
 
-   file_len = filestream_read(file, file_buf, sizeof(file_buf) - 1);
-   if (filestream_close(file) != 0)
-      if (file)
-         free(file);
+    file_len = filestream_read(file, file_buf, sizeof(file_buf) - 1);
+    if (filestream_close(file) != 0)
+        if (file)
+            free(file);
 
-   if (file_len <= 0)
-      return -1;
+    if (file_len <= 0)
+        return -1;
 
-   return strtoul(file_buf, NULL, 10);
+    return strtoul(file_buf, NULL, 10);
 }
 
 int retrofw_get_battery_level(enum frontend_powerstate *state)
 {
-   /* retrofw battery only provides "voltage_now". Values are based on gmenu2x with some interpolation */
-   uint32_t rawval = read_battery_ignore_size(RETROFW_BATTERY_VOLTAGE_NOW_FILE);
-   int voltage_now = rawval & 0x7fffffff;
-   if (voltage_now > 10000)
-   {
-      *state = FRONTEND_POWERSTATE_NONE;
-      return -1;
-   }
-   if (rawval & 0x80000000)
-   {
-      *state = FRONTEND_POWERSTATE_CHARGING;
-      if (voltage_now > 4000)
-         *state = FRONTEND_POWERSTATE_CHARGED;
-   }
-   else
-      *state = FRONTEND_POWERSTATE_ON_POWER_SOURCE;
-   if (voltage_now < 0)
-      return -1; /* voltage_now not available */
-   if (voltage_now > 4000)
-      return 100;
-   if (voltage_now > 3700)
-      return 40 + (voltage_now - 3700) / 5;
-   if (voltage_now > 3520)
-      return 20 + (voltage_now - 3520) / 9;
-   if (voltage_now > 3330)
-      return 1 + (voltage_now - 3330) * 10;
-   return 0;
+    /* retrofw battery only provides "voltage_now". Values are based on gmenu2x with some interpolation */
+    uint32_t rawval =
+        read_battery_ignore_size(RETROFW_BATTERY_VOLTAGE_NOW_FILE);
+    int voltage_now = rawval & 0x7fffffff;
+    if (voltage_now > 10000) {
+        *state = FRONTEND_POWERSTATE_NONE;
+        return -1;
+    }
+    if (rawval & 0x80000000) {
+        *state = FRONTEND_POWERSTATE_CHARGING;
+        if (voltage_now > 4000)
+            *state = FRONTEND_POWERSTATE_CHARGED;
+    }
+    else
+        *state = FRONTEND_POWERSTATE_ON_POWER_SOURCE;
+    if (voltage_now < 0)
+        return -1; /* voltage_now not available */
+    if (voltage_now > 4000)
+        return 100;
+    if (voltage_now > 3700)
+        return 40 + (voltage_now - 3700) / 5;
+    if (voltage_now > 3520)
+        return 20 + (voltage_now - 3520) / 9;
+    if (voltage_now > 3330)
+        return 1 + (voltage_now - 3330) * 10;
+    return 0;
 }
 #else
 static int dingux_read_battery_sys_file(const char *path)
 {
-   int64_t file_len   = 0;
-   char *file_buf     = NULL;
-   int sys_file_value = 0;
+    int64_t file_len = 0;
+    char *file_buf = NULL;
+    int sys_file_value = 0;
 
-   /* Check whether file exists */
-   if (!path_is_valid(path))
-      goto error;
+    /* Check whether file exists */
+    if (!path_is_valid(path))
+        goto error;
 
-   /* Read file */
-   if (!filestream_read_file(path, (void**)&file_buf, &file_len) ||
-       (file_len == 0) ||
-       !file_buf)
-      goto error;
+    /* Read file */
+    if (!filestream_read_file(path, (void **)&file_buf, &file_len) ||
+        (file_len == 0) || !file_buf)
+        goto error;
 
-   /* Convert to integer */
-   sys_file_value = atoi(file_buf);
-   free(file_buf);
-   file_buf = NULL;
+    /* Convert to integer */
+    sys_file_value = atoi(file_buf);
+    free(file_buf);
+    file_buf = NULL;
 
-   return sys_file_value;
+    return sys_file_value;
 
 error:
-   if (file_buf)
-   {
-      free(file_buf);
-      file_buf = NULL;
-   }
+    if (file_buf) {
+        free(file_buf);
+        file_buf = NULL;
+    }
 
-   return -1;
+    return -1;
 }
 
 /* Fetches internal battery level */
 int dingux_get_battery_level(void)
 {
 #if defined(DINGUX_BETA)
-   /* Taken from https://github.com/OpenDingux/gmenu2x/blob/master/src/battery.cpp
+    /* Taken from https://github.com/OpenDingux/gmenu2x/blob/master/src/battery.cpp
     * No 'capacity' file in sysfs - Do a dumb approximation of the capacity
     * using the current voltage reported and the min/max voltages of the
     * battery */
-   int voltage_min = 0;
-   int voltage_max = 0;
-   int voltage_now = 0;
+    int voltage_min = 0;
+    int voltage_max = 0;
+    int voltage_now = 0;
 
-   voltage_min = dingux_read_battery_sys_file(DINGUX_BATTERY_VOLTAGE_MIN);
-   if (voltage_min < 0)
-      return -1;
+    voltage_min = dingux_read_battery_sys_file(DINGUX_BATTERY_VOLTAGE_MIN);
+    if (voltage_min < 0)
+        return -1;
 
-   voltage_max = dingux_read_battery_sys_file(DINGUX_BATTERY_VOLTAGE_MAX);
-   if (voltage_max < 0)
-      return -1;
+    voltage_max = dingux_read_battery_sys_file(DINGUX_BATTERY_VOLTAGE_MAX);
+    if (voltage_max < 0)
+        return -1;
 
-   voltage_now = dingux_read_battery_sys_file(DINGUX_BATTERY_VOLTAGE_NOW);
-   if (voltage_now < 0)
-      return -1;
+    voltage_now = dingux_read_battery_sys_file(DINGUX_BATTERY_VOLTAGE_NOW);
+    if (voltage_now < 0)
+        return -1;
 
-   if ((voltage_max <= voltage_min) ||
-       (voltage_now <  voltage_min))
-      return -1;
+    if ((voltage_max <= voltage_min) || (voltage_now < voltage_min))
+        return -1;
 
-   return (int)(((voltage_now - voltage_min) * 100) / (voltage_max - voltage_min));
+    return (int)(((voltage_now - voltage_min) * 100) /
+                 (voltage_max - voltage_min));
 #elif defined(MIYOOMINI)
-    int percBat = 0;
-    
-    /* Check whether file exists */
-    if (path_is_valid("/customer/app/axp_test")){
-        /* It is a Miyoo Mini Plus */
-        char *cmd = "cd /customer/app/ ; ./axp_test";  
-        int batJsonSize = 100;
-        char buf[batJsonSize];
-        int battery_number;
+    // for miyoomini plus
+#define AXPDEV "/dev/i2c-1"
+#define AXPID (0x34)
+    static uint32_t mmplus = 2;
 
-        FILE *fp;      
-        fp = popen(cmd, "r");
-            if (fgets(buf, batJsonSize, fp) != NULL) {
-               sscanf(buf,  "{\"battery\":%d, \"voltage\":%*d, \"charging\":%*d}", &percBat);
+    if (mmplus) {
+        int axp_fd = open(AXPDEV, O_RDWR);
+        if (axp_fd >= 0) {
+            struct i2c_msg msg[2];
+            struct i2c_rdwr_ioctl_data packets;
+            unsigned char address = 0xB9;
+            unsigned char val;
+            if (mmplus == 2) {
+                ioctl(axp_fd, I2C_TIMEOUT, 5);
+                ioctl(axp_fd, I2C_RETRIES, 1);
+                mmplus = 1;
             }
-        pclose(fp);   
-    } 
-    else {
-       //It is a Miyoo mini
-       typedef struct {
-          int channel_value;
-          int adc_value;
-       } SAR_ADC_CONFIG_READ;
-       #define SARADC_IOC_MAGIC                     'a'
-       #define IOCTL_SAR_INIT                       _IO(SARADC_IOC_MAGIC, 0)
-       #define IOCTL_SAR_SET_CHANNEL_READ_VALUE     _IO(SARADC_IOC_MAGIC, 1)
-       static SAR_ADC_CONFIG_READ  adcCfg = {0,0};
-       static int sar_fd = 0;
-       if (!sar_fd) {
-          sar_fd = open("/dev/sar", O_WRONLY);
-          ioctl(sar_fd, IOCTL_SAR_INIT, NULL);
-       }
-       ioctl(sar_fd, IOCTL_SAR_SET_CHANNEL_READ_VALUE, &adcCfg);
-       if (adcCfg.adc_value >= 528){
-          percBat = adcCfg.adc_value-478;
-       }
-       else if ((adcCfg.adc_value >= 512) && (adcCfg.adc_value < 528)){
-          percBat = (int)(adcCfg.adc_value*2.125-1068);
-       }
-       else if ((adcCfg.adc_value >= 480) && (adcCfg.adc_value < 512)){
-          percBat = (int)(adcCfg.adc_value* 0.51613 - 243.742);
-       }
-       if (percBat>100){
-          percBat=100;
-       }        
+            msg[0].addr = AXPID;
+            msg[0].flags = 0;
+            msg[0].len = 1;
+            msg[0].buf = &address;
+            msg[1].addr = AXPID;
+            msg[1].flags = I2C_M_RD;
+            msg[1].len = 1;
+            msg[1].buf = &val;
+            packets.nmsgs = 2;
+            packets.msgs = &msg[0];
+            int ret = ioctl(axp_fd, I2C_RDWR, &packets);
+            close(axp_fd);
+            if (ret < 0)
+                mmplus = 0;
+            else
+                return (val & 0x7f);
+        }
     }
-  
-   return percBat;
+    // for miyoomini
+    int percBat = 0;
+    typedef struct {
+        int channel_value;
+        int adc_value;
+    } SAR_ADC_CONFIG_READ;
+#define SARADC_IOC_MAGIC 'a'
+#define IOCTL_SAR_INIT _IO(SARADC_IOC_MAGIC, 0)
+#define IOCTL_SAR_SET_CHANNEL_READ_VALUE _IO(SARADC_IOC_MAGIC, 1)
+    static SAR_ADC_CONFIG_READ adcCfg = {0, 0};
+    static int sar_fd = 0;
+    if (!sar_fd) {
+        sar_fd = open("/dev/sar", O_WRONLY);
+        ioctl(sar_fd, IOCTL_SAR_INIT, NULL);
+    }
+    ioctl(sar_fd, IOCTL_SAR_SET_CHANNEL_READ_VALUE, &adcCfg);
+    if (adcCfg.adc_value >= 528) {
+        percBat = adcCfg.adc_value - 478;
+    }
+    else if ((adcCfg.adc_value >= 512) && (adcCfg.adc_value < 528)) {
+        percBat = (int)(adcCfg.adc_value * 2.125 - 1068);
+    }
+    else if ((adcCfg.adc_value >= 480) && (adcCfg.adc_value < 512)) {
+        percBat = (int)(adcCfg.adc_value * 0.51613 - 243.742);
+    }
+    if (percBat > 100) {
+        percBat = 100;
+    }
+
+    return percBat;
 #elif defined(MIYOO)
-   /* miyoo-battery only provides "voltage_now". Results are based on
+    /* miyoo-battery only provides "voltage_now". Results are based on
     * value distribution while running a game at max load. */
-   int voltage_now = dingux_read_battery_sys_file(MIYOO_BATTERY_VOLTAGE_NOW_FILE);
-   if (voltage_now < 0)
-      return -1;     /* voltage_now not available */
-   if (voltage_now > 4300)
-      return 100;    /* 4320 */
-   if (voltage_now > 4200)
-      return 90;     /* 4230 */
-   if (voltage_now > 4100)
-      return 80;     /* 4140 */
-   if (voltage_now > 4000)
-      return 70;     /* 4050 */
-   if (voltage_now > 3900)
-      return 60;     /* 3960 */
-   if (voltage_now > 3800)
-      return 50;     /* 3870 */
-   if (voltage_now > 3700)
-      return 40;     /* 3780 */
-   if (voltage_now > 3600)
-      return 30;     /* 3690 */
-   if (voltage_now > 3550)
-      return 20;     /* 3600 */
-   if (voltage_now > 3500)
-      return 10;     /* 3510 */
-   if (voltage_now > 3400)
-      return 5;      /* 3420 */
-   if (voltage_now > 3300)
-      return 1;      /* 3330 */
-   return 0;         /* 3240 */
+    int voltage_now =
+        dingux_read_battery_sys_file(MIYOO_BATTERY_VOLTAGE_NOW_FILE);
+    if (voltage_now < 0)
+        return -1; /* voltage_now not available */
+    if (voltage_now > 4300)
+        return 100; /* 4320 */
+    if (voltage_now > 4200)
+        return 90; /* 4230 */
+    if (voltage_now > 4100)
+        return 80; /* 4140 */
+    if (voltage_now > 4000)
+        return 70; /* 4050 */
+    if (voltage_now > 3900)
+        return 60; /* 3960 */
+    if (voltage_now > 3800)
+        return 50; /* 3870 */
+    if (voltage_now > 3700)
+        return 40; /* 3780 */
+    if (voltage_now > 3600)
+        return 30; /* 3690 */
+    if (voltage_now > 3550)
+        return 20; /* 3600 */
+    if (voltage_now > 3500)
+        return 10; /* 3510 */
+    if (voltage_now > 3400)
+        return 5; /* 3420 */
+    if (voltage_now > 3300)
+        return 1; /* 3330 */
+    return 0;     /* 3240 */
 #else
-   return dingux_read_battery_sys_file(DINGUX_BATTERY_CAPACITY_FILE);
+    return dingux_read_battery_sys_file(DINGUX_BATTERY_CAPACITY_FILE);
 #endif
 }
 #endif
@@ -466,72 +488,68 @@ int dingux_get_battery_level(void)
  * directory */
 void dingux_get_base_path(char *path, size_t len)
 {
-   const char *home             = NULL;
+    const char *home = NULL;
 #if defined(RS90)
-   struct string_list *dir_list = NULL;
+    struct string_list *dir_list = NULL;
 #endif
 
-   if (!path || (len < 1))
-      return;
+    if (!path || (len < 1))
+        return;
 
 #if defined(RS90)
-   /* The RS-90 home directory is located on the
+    /* The RS-90 home directory is located on the
     * device's internal storage. This has limited
     * space (a total of only 256MB), such that it
     * is impractical to store cores and user files
     * here. We therefore attempt to use a base
     * path on the external microsd card */
 
-   /* Get list of directories in /media */
-   if ((dir_list = dir_list_new(DINGUX_RS90_MEDIA_PATH,
-         NULL, true, true, false, false)))
-   {
-      size_t i;
-      bool path_found = false;
+    /* Get list of directories in /media */
+    if ((dir_list = dir_list_new(DINGUX_RS90_MEDIA_PATH, NULL, true, true,
+                                 false, false))) {
+        size_t i;
+        bool path_found = false;
 
-      for (i = 0; i < dir_list->size; i++)
-      {
-         const char *dir_path = dir_list->elems[i].data;
-         int dir_type         = dir_list->elems[i].attr.i;
+        for (i = 0; i < dir_list->size; i++) {
+            const char *dir_path = dir_list->elems[i].data;
+            int dir_type = dir_list->elems[i].attr.i;
 
-         /* Skip files and invalid entries */
-         if ((dir_type != RARCH_DIRECTORY) ||
-             string_is_empty(dir_path) ||
-             string_is_equal(dir_path, DINGUX_RS90_DATA_PATH))
-            continue;
+            /* Skip files and invalid entries */
+            if ((dir_type != RARCH_DIRECTORY) || string_is_empty(dir_path) ||
+                string_is_equal(dir_path, DINGUX_RS90_DATA_PATH))
+                continue;
 
-         /* Build 'retroarch' subdirectory path */
-         snprintf(path, len, "%s%c%s", dir_path,
-               PATH_DEFAULT_SLASH_C(), DINGUX_BASE_DIR);
+            /* Build 'retroarch' subdirectory path */
+            snprintf(path, len, "%s%c%s", dir_path, PATH_DEFAULT_SLASH_C(),
+                     DINGUX_BASE_DIR);
 
-         /* We can use this subdirectory path if:
+            /* We can use this subdirectory path if:
           * - Directory corresponds to an unlabelled
           *   microsd card
           * - Subdirectory already exists */
-         if (string_is_equal(dir_path, DINGUX_RS90_DEFAULT_SD_PATH) ||
-             path_is_directory(path))
-         {
-            path_found = true;
-            break;
-         }
-      }
+            if (string_is_equal(dir_path, DINGUX_RS90_DEFAULT_SD_PATH) ||
+                path_is_directory(path)) {
+                path_found = true;
+                break;
+            }
+        }
 
-      dir_list_free(dir_list);
+        dir_list_free(dir_list);
 
-      if (path_found)
-         return;
-   }
+        if (path_found)
+            return;
+    }
 #endif
-   /* Get home directory
+    /* Get home directory
     *
     * If a home directory is found (which should
     * always be the case), base path is "$HOME/.retroarch"
     * > If home path is unset, use existing UNIX frontend
     *   driver default of "retroarch" (this will ultimately
     *   fail, but there is nothing else we can do...) */
-   if ((home = getenv(DINGUX_HOME_ENVAR)))
-      snprintf(path, len, "%s%c%s", home,
-            PATH_DEFAULT_SLASH_C(), DINGUX_BASE_DIR_HIDDEN);
-   else
-      strlcpy(path, DINGUX_BASE_DIR, len);
+    if ((home = getenv(DINGUX_HOME_ENVAR)))
+        snprintf(path, len, "%s%c%s", home, PATH_DEFAULT_SLASH_C(),
+                 DINGUX_BASE_DIR_HIDDEN);
+    else
+        strlcpy(path, DINGUX_BASE_DIR, len);
 }

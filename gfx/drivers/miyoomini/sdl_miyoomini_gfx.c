@@ -23,9 +23,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_video.h>
 
-#include <retro_assert.h>
 #include <gfx/video_frame.h>
-#include <retro_assert.h>
 #include <string/stdstring.h>
 #include <encodings/utf.h>
 #include <features/features_cpu.h>
@@ -405,20 +403,6 @@ void scalenn_32(void* data, void* __restrict src, void* __restrict dst, uint32_t
    }
 }
 
-/* Bridge to NEON scalers in scaler_neon.c */
-void scale1x_16(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
-     scale1x_n16(src, dst, sw, sh, sp, dp); }
-void scale1x_32(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
-     scale1x_n32(src, dst, sw, sh, sp, dp); }
-void scale2x_16(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
-     scale2x_n16(src, dst, sw, sh, sp, dp); }
-void scale2x_32(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
-     scale2x_n32(src, dst, sw, sh, sp, dp); }
-void scale4x_16(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
-     scale4x_n16(src, dst, sw, sh, sp, dp); }
-void scale4x_32(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
-     scale4x_n32(src, dst, sw, sh, sp, dp); }
-
 /* Clear border x3 screens for framebuffer (rotate180) */
 static void sdl_miyoomini_clear_border(void* buf, unsigned x, unsigned y, unsigned w, unsigned h) {
    if ( (x == 0) && (y == 0) && (w == SDL_MIYOOMINI_WIDTH) && (h == SDL_MIYOOMINI_HEIGHT) ) return;
@@ -456,12 +440,64 @@ static void sdl_miyoomini_clear_border(void* buf, unsigned x, unsigned y, unsign
    if (srb) memset(buf, 0, srb); /* last right + last bottom */
 }
 
+/* Set cpuclock */
+#define	BASE_REG_RIU_PA		(0x1F000000)
+#define	BASE_REG_MPLL_PA	(BASE_REG_RIU_PA + 0x103000*2)
+#define	PLL_SIZE		(0x1000)
+static void set_cpuclock(int clock) {
+	sync();
+	int fd_mem = open("/dev/mem", O_RDWR);
+	void* pll_map = mmap(0, PLL_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_mem, BASE_REG_MPLL_PA);
+
+	uint32_t post_div;
+	if (clock >= 800000) post_div = 2;
+	else if (clock >= 400000) post_div = 4;
+	else if (clock >= 200000) post_div = 8;
+	else post_div = 16;
+
+	static const uint64_t divsrc = 432000000llu * 524288;
+	uint32_t rate = (clock * 1000)/16 * post_div / 2;
+	uint32_t lpf = (uint32_t)(divsrc / rate);
+	volatile uint16_t* p16 = (uint16_t*)pll_map;
+
+	uint32_t cur_post_div = (p16[0x232] & 0x0F) + 1;
+	uint32_t tmp_post_div = cur_post_div;
+	if (post_div > cur_post_div) {
+		while (tmp_post_div != post_div) {
+			tmp_post_div <<= 1;
+			p16[0x232] = (p16[0x232] & 0xF0) | ((tmp_post_div-1) & 0x0F);
+		}
+	}
+
+	p16[0x2A8] = 0x0000;
+	p16[0x2AE] = 0x000F;
+	p16[0x2A4] = lpf&0xFFFF;
+	p16[0x2A6] = lpf>>16;
+	p16[0x2B0] = 0x0001;
+	p16[0x2B2] |= 0x1000;
+	p16[0x2A8] = 0x0001;
+	while( !(p16[0x2BA]&1) );
+	p16[0x2A0] = lpf&0xFFFF;
+	p16[0x2A2] = lpf>>16;
+
+	if (post_div < cur_post_div) {
+		while (tmp_post_div != post_div) {
+			tmp_post_div >>= 1;
+			p16[0x232] = (p16[0x232] & 0xF0) | ((tmp_post_div-1) & 0x0F);
+		}
+	}
+
+	munmap(pll_map, PLL_SIZE);
+	close(fd_mem);
+}
+
 /* Set CPU governor */
-enum cpugov { PERFORMANCE = 0, POWERSAVE = 1, ONDEMAND = 2 };
+enum cpugov { PERFORMANCE = 0, POWERSAVE = 1, ONDEMAND = 2, USERSPACE = 3 };
 static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
-   const char govstr[3][12] = { "performance", "powersave", "ondemand" };
+   const char govstr[4][12] = { "performance", "powersave", "ondemand", "userspace" };
    const char fn_min_freq[] = "/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq";
    const char fn_governor[] = "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor";
+   const char fn_setspeed[] = "/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed";
    static uint32_t minfreq = 0;
    FILE* fp;
 
@@ -479,6 +515,24 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
       fp = fopen(fn_min_freq, "w");
       if (fp) { fprintf(fp, "%d", minfreq); fclose(fp); }
       minfreq = 0;
+   }
+
+   /* set cpu clock to value in cpuclock.txt */
+   if (gov == PERFORMANCE) {
+      fp = fopen("/proc/self/cwd/cpuclock.txt", "r");
+      if (fp) {
+         int cpuclock = 0;
+         fscanf(fp, "%d", &cpuclock); fclose(fp);
+         if ((cpuclock >= 100)&&(cpuclock <= 2400)) {
+            fp = fopen(fn_governor, "w");
+            if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
+            fp = fopen(fn_setspeed, "w");
+            if (fp) { fprintf(fp, "%d", cpuclock * 1000); fclose(fp); }
+            set_cpuclock(cpuclock * 1000);
+            RARCH_LOG("[CPU]: Set clock: %d MHz\n", cpuclock);
+            return;
+         }
+      }
    }
 
    /* set governor */
@@ -573,9 +627,7 @@ static void sdl_miyoomini_input_driver_init(
 #endif
 }
 
-static void sdl_miyoomini_set_output(
-      sdl_miyoomini_video_t* vid,
-      unsigned width, unsigned height, bool rgb32) {
+static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width, unsigned height, bool rgb32) {
    vid->content_width  = width;
    vid->content_height = height;
    if (vid->rotate & 1) { width = vid->content_height; height = vid->content_width; }
@@ -583,8 +635,7 @@ static void sdl_miyoomini_set_output(
    /* Calculate scaling factor */
    uint32_t xmul = (SDL_MIYOOMINI_WIDTH<<16) / width;
    uint32_t ymul = (SDL_MIYOOMINI_HEIGHT<<16) / height;
-   uint32_t mul = xmul < ymul ? xmul : ymul;
-   uint32_t mul_int = (mul>>16);
+   uint32_t mul_int = (xmul < ymul ? xmul : ymul)>>16;
 
    /* Change to aspect/fullscreen scaler when integer & screen size is over (no crop) */
    if (vid->scale_integer && mul_int) {
@@ -626,36 +677,37 @@ static void sdl_miyoomini_set_output(
    if (!rgb32) { vid->video_x &= ~1; vid->video_w &= ~1; }
 
    /* Select scaler to use */
-   uint32_t scale_mul = 0;
+   uint32_t scale_xmul = 0, scale_ymul = 0;
    if ( (vid->filter_type != DINGUX_IPU_FILTER_NEAREST) || (vid->scale_integer && mul_int && vid->keep_aspect) ) {
-      scale_mul = 1;
+      scale_xmul = scale_ymul = 1;
       if ( (vid->scale_integer) || (vid->filter_type == DINGUX_IPU_FILTER_BICUBIC) ) {
-         if      ((xmul > ymul ? xmul : ymul) >= (640<<16)/256) scale_mul = 4; /* w <= 256 or h <= 192 */
-         else if ((xmul > ymul ? xmul : ymul) >= (640<<16)/512) scale_mul = 2; /* w <= 512 or h <= 384 */
+         // to be at least 80% of the post-scaling size
+         scale_xmul = ((vid->video_w<<2)/5 / width) +1;
+         scale_ymul = ((vid->video_h<<2)/5 / height) +1;
+         if ((scale_xmul == 3)||(scale_xmul > 4)) scale_xmul = 4; // 4x scaler is faster than 3x
+         if (scale_ymul > 4) scale_ymul = 4;
       }
    }
-   vid->frame_width  = scale_mul ? vid->content_width  * scale_mul : vid->video_w;
-   vid->frame_height = scale_mul ? vid->content_height * scale_mul : vid->video_h;
+   vid->frame_width  = scale_xmul ? vid->content_width  * scale_xmul : vid->video_w;
+   vid->frame_height = scale_ymul ? vid->content_height * scale_ymul : vid->video_h;
 
-   switch (scale_mul) {
-      case 0:
-         vid->scale_func = rgb32 ? scalenn_32 : scalenn_16;
-         break;
-      case 2:
-         vid->scale_func = rgb32 ? scale2x_32 : scale2x_16;
-         break;
-      case 4:
-         vid->scale_func = rgb32 ? scale4x_32 : scale4x_16;
-         break;
-      default:
-         vid->scale_func = rgb32 ? scale1x_32 : scale1x_16;
-         break;
+   static void (* const func[2][3][4])(void*, void* __restrict, void* __restrict, uint32_t, uint32_t, uint32_t, uint32_t) = {
+      { { &scale1x1_16, &scale1x2_16, &scale1x3_16, &scale1x4_16 },
+        { &scale2x1_16, &scale2x2_16, &scale2x3_16, &scale2x4_16 },
+        { &scale4x1_16, &scale4x2_16, &scale4x3_16, &scale4x4_16 } },
+      { { &scale1x1_32, &scale1x2_32, &scale1x3_32, &scale1x4_32 },
+        { &scale2x1_32, &scale2x2_32, &scale2x3_32, &scale2x4_32 },
+        { &scale4x1_32, &scale4x2_32, &scale4x3_32, &scale4x4_32 } }
+   };
+
+   if (!scale_xmul) {
+      vid->scale_func = rgb32 ? scalenn_32 : scalenn_16;
+   } else {
+      vid->scale_func = func[rgb32?1:0][(scale_xmul>2)?2:scale_xmul-1][scale_ymul-1];
    }
 
-/* for DEBUG
-   fprintf(stderr,"cw:%d ch:%d fw:%d fh:%d x:%d y:%d w:%d h:%d mul:%f scale_mul:%d\n",vid->content_width,vid->content_height,
-         vid->frame_width,vid->frame_height,vid->video_x,vid->video_y,vid->video_w,vid->video_h,(float)mul/(1<<16),scale_mul);
-*/
+   //RARCH_LOG("[SCALE] cw:%d ch:%d fw:%d fh:%d x:%d y:%d w:%d h:%d xmul:%d ymul:%d\n",vid->content_width,vid->content_height,
+   //   vid->frame_width,vid->frame_height,vid->video_x,vid->video_y,vid->video_w,vid->video_h,scale_xmul,scale_ymul);
 
    /* Attempt to change video mode */
    GFX_WaitAllDone();
@@ -715,7 +767,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
 
-   GFX_SetFlipFlags(vid->vsync ? GFX_BLOCKING|GFX_FLIPWAIT : 0);
+   GFX_SetFlipFlags(vid->vsync ? GFX_BLOCKING : 0);
 
    sdl_miyoomini_input_driver_init(input_drv_name,
          joypad_drv_name, input, input_data);
@@ -795,18 +847,14 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
                     (vid->content_height != height) )) {
          sdl_miyoomini_set_output(vid, width, height, vid->rgb32);
       }
-      /* WaitAllDone when frametime is too fast ( < 8.192ms ) */
-      static long recent_usec;
-      struct timeval tod;
-      gettimeofday(&tod, NULL);
-      if (tod.tv_usec < recent_usec) recent_usec -= 1000000;
-      if (tod.tv_usec - recent_usec < 8192) MI_GFX_WaitAllDone(FALSE, flipFence);
-      recent_usec = tod.tv_usec;
-      /* Blit frame to GFX surface */
+      /* WaitAllDone to make sure the most recent frame is drawn complete */
+      MI_GFX_WaitAllDone(FALSE, flipFence);
+      /* SW Blit frame to GFX surface with scaling */
       vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
+      /* HW Blit GFX surface to Framebuffer and Flip */
       GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
    } else {
-      scale2x_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels, RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0,0);
+      scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels, RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0,0);
       stOpt.eRotate = E_MI_GFX_ROTATE_180;
       GFX_Flip(vid->menuscreen);
       stOpt.eRotate = vid->rotate;
@@ -848,7 +896,7 @@ static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
    if (vid->vsync != vsync)
    {
       vid->vsync              = vsync;
-      GFX_SetFlipFlags(vsync ? GFX_BLOCKING|GFX_FLIPWAIT : 0);
+      GFX_SetFlipFlags(vsync ? GFX_BLOCKING : 0);
    }
 }
 
@@ -1004,14 +1052,18 @@ static bool sdl_miyoomini_overlay_load(void *data, const void *image_data, unsig
 
 	if (vid->overlay_surface) GFX_FreeSurface(vid->overlay_surface);
 	SDL_Surface *ostmp = SDL_CreateRGBSurfaceFrom(pixels, width, height, 32, width*4,
-				0x00FF0000, 0x0000FF00, 0x0000FF00, 0xFF000000);
+				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 	SDL_Surface *ostmp2 = GFX_DuplicateSurface(ostmp);
 	SDL_FreeSurface(ostmp);
 	vid->overlay_surface = GFX_CreateRGBSurface(0, 640, 480, 32,
 				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	ostmp2->flags &= ~SDL_SRCALPHA;
 	GFX_BlitSurfaceRotate(ostmp2, NULL, vid->overlay_surface, NULL, 2);
 	GFX_FreeSurface(ostmp2);
 
+	settings_t *settings = config_get_ptr();
+	vid->overlay_surface->flags |= SDL_SRCALPHA;
+	vid->overlay_surface->format->alpha = (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255;
 	GFX_SetupOverlaySurface(vid->overlay_surface);
 
 	return true;
@@ -1026,7 +1078,7 @@ static void sdl_miyoomini_overlay_set_alpha(void *data, unsigned idx, float mod)
 	if ((!idx)&&(vid)&&(vid->overlay_surface)) {
 		uint8_t value = mod * 0xFF;
 		if (!(vid->overlay_surface->flags & SDL_SRCALPHA)||(vid->overlay_surface->format->alpha != value)) {
-			SDL_SetAlpha(vid->overlay_surface, SDL_SRCALPHA, value);
+			vid->overlay_surface->format->alpha = value;
 			GFX_SetupOverlaySurface(vid->overlay_surface);
 		}
 	}
@@ -1069,9 +1121,6 @@ video_driver_t video_sdl_dingux = {
    NULL, /* read_frame_raw */
 #ifdef HAVE_OVERLAY
    sdl_miyoomini_gfx_get_overlay_interface,
-#endif
-#ifdef HAVE_VIDEO_LAYOUT
-   NULL, /* get_video_layout_render_interface */
 #endif
    sdl_miyoomini_get_poke_interface
 };

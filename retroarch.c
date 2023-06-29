@@ -211,6 +211,10 @@
 #include "lakka.h"
 #endif
 
+#if defined(MIYOOMINI)
+#include "miyoo.h"
+#endif
+
 #define _PSUPP(var, name, desc) printf("  %s:\n\t\t%s: %s\n", name, desc, var ? "yes" : "no")
 
 #define FAIL_CPU(simd_type) do { \
@@ -3758,11 +3762,7 @@ bool command_event(enum event_command cmd, void *data)
 #endif
       case CMD_EVENT_FULLSCREEN_TOGGLE:
 #if defined(MIYOOMINI)
-         settings->bools.video_dingux_ipu_keep_aspect = !settings->bools.video_dingux_ipu_keep_aspect;
-         if (!settings->bools.video_dingux_ipu_keep_aspect) {
-            settings->bools.video_scale_integer = !settings->bools.video_scale_integer;
-         }
-         video_driver_apply_state_changes();
+         miyoo_event_fullscreen_impl(settings);
 #else
          {
             audio_driver_state_t

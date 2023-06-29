@@ -4675,8 +4675,6 @@ static void input_config_save_keybinds_user_override(config_file_t *conf,
          save_keybind_axis   (conf, prefix, base, override_bind, true);
       if (bind->mbutton != override_bind->mbutton)
          save_keybind_mbutton(conf, prefix, base, override_bind, true);
-
-      RARCH_DBG("[Overrides]: %s = \"%s\"\n", key, btn);
    }
 }
 
@@ -5162,9 +5160,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
          {
             config_set_string(conf, bool_overrides[i].ident,
                   (*bool_overrides[i].ptr) ? "true" : "false");
-            RARCH_DBG("[Overrides]: %s = \"%s\"\n",
-                  bool_overrides[i].ident,
-                  (*bool_overrides[i].ptr) ? "true" : "false");
          }
       }
       for (i = 0; i < (unsigned)int_settings_size; i++)
@@ -5173,8 +5168,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
          {
             config_set_int(conf, int_overrides[i].ident,
                   (*int_overrides[i].ptr));
-            RARCH_DBG("[Overrides]: %s = \"%d\"\n",
-                  int_overrides[i].ident, *int_overrides[i].ptr);
          }
       }
       for (i = 0; i < (unsigned)uint_settings_size; i++)
@@ -5183,8 +5176,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
          {
             config_set_int(conf, uint_overrides[i].ident,
                   (*uint_overrides[i].ptr));
-            RARCH_DBG("[Overrides]: %s = \"%d\"\n",
-                  uint_overrides[i].ident, *uint_overrides[i].ptr);
          }
       }
       for (i = 0; i < (unsigned)size_settings_size; i++)
@@ -5193,8 +5184,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
          {
             config_set_int(conf, size_overrides[i].ident,
                   (int)(*size_overrides[i].ptr));
-            RARCH_DBG("[Overrides]: %s = \"%d\"\n",
-                  size_overrides[i].ident, *size_overrides[i].ptr);
          }
       }
       for (i = 0; i < (unsigned)float_settings_size; i++)
@@ -5203,8 +5192,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
          {
             config_set_float(conf, float_overrides[i].ident,
                   *float_overrides[i].ptr);
-            RARCH_DBG("[Overrides]: %s = \"%f\"\n",
-                  float_overrides[i].ident, *float_overrides[i].ptr);
          }
       }
 
@@ -5230,8 +5217,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
 #endif
             config_set_string(conf, array_overrides[i].ident,
                   array_overrides[i].ptr);
-            RARCH_DBG("[Overrides]: %s = \"%s\"\n",
-                  array_overrides[i].ident, *array_overrides[i].ptr);
          }
       }
 
@@ -5241,8 +5226,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
          {
             config_set_path(conf, path_overrides[i].ident,
                   path_overrides[i].ptr);
-            RARCH_DBG("[Overrides]: %s = \"%s\"\n",
-                  path_overrides[i].ident, *path_overrides[i].ptr);
          }
       }
 
@@ -5261,7 +5244,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
             strlcpy(cfg, "input_device_p", sizeof(cfg));
             strlcat(cfg, formatted_number, sizeof(cfg));
             config_set_int(conf, cfg, overrides->uints.input_device[i]);
-            RARCH_DBG("[Overrides]: %s = \"%u\"\n", cfg, overrides->uints.input_device[i]);
          }
 
          if (settings->uints.input_analog_dpad_mode[i]
@@ -5271,7 +5253,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
             strlcat(cfg, formatted_number,    sizeof(cfg));
             strlcat(cfg, "_analog_dpad_mode", sizeof(cfg));
             config_set_int(conf, cfg, overrides->uints.input_analog_dpad_mode[i]);
-            RARCH_DBG("[Overrides]: %s = \"%u\"\n", cfg, overrides->uints.input_analog_dpad_mode[i]);
          }
 
          if (settings->uints.input_joypad_index[i]
@@ -5281,7 +5262,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
             strlcat(cfg, formatted_number, sizeof(cfg));
             strlcat(cfg, "_joypad_index",  sizeof(cfg));
             config_set_int(conf, cfg, overrides->uints.input_joypad_index[i]);
-            RARCH_DBG("[Overrides]: %s = \"%u\"\n", cfg, overrides->uints.input_joypad_index[i]);
          }
 
          if (settings->uints.input_mouse_index[i]
@@ -5291,7 +5271,6 @@ int8_t config_save_overrides(enum override_type type, void *data, bool remove)
             strlcat(cfg, formatted_number, sizeof(cfg));
             strlcat(cfg, "_mouse_index",   sizeof(cfg));
             config_set_int(conf, cfg, overrides->uints.input_mouse_index[i]);
-            RARCH_DBG("[Overrides]: %s = \"%u\"\n", cfg, overrides->uints.input_mouse_index[i]);
          }
 
          for (j = 0; j < RARCH_BIND_LIST_END; j++)

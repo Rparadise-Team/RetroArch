@@ -39,7 +39,7 @@ RETRO_BEGIN_DECLS
  * > Play feature delivery (PFD) */
 enum core_updater_list_type
 {
-   CORE_UPDATER_LIST_TYPE_UNKNOWN = 1,
+   CORE_UPDATER_LIST_TYPE_UNKNOWN = 0,
    CORE_UPDATER_LIST_TYPE_BUILDBOT,
    CORE_UPDATER_LIST_TYPE_PFD
 };
