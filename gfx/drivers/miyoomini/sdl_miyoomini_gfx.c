@@ -30,6 +30,7 @@
 
 #include "gfx.c"
 #include "scaler_neon.c"
+#include <signal.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 
@@ -46,7 +47,10 @@
 #include "../../verbosity.h"
 #include "../../gfx/drivers_font_renderer/bitmap.h"
 #include "../../configuration.h"
+#include "../../file_path_special.h"
+#include "../../paths.h"
 #include "../../retroarch.h"
+#include "../../runloop.h"
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
@@ -440,6 +444,33 @@ static void sdl_miyoomini_clear_border(void* buf, unsigned x, unsigned y, unsign
    if (srb) memset(buf, 0, srb); /* last right + last bottom */
 }
 
+static FILE *__get_cpuclock_file(void)
+{
+   FILE *fp = NULL;
+   char config_directory[PATH_MAX_LENGTH];
+   char cpuclock_config_path[PATH_MAX_LENGTH];
+   rarch_system_info_t *system = &runloop_state_get_ptr()->system;
+   const char *core_name = system ? system->info.library_name : NULL;
+
+   if (!string_is_empty(core_name)) {
+      /* Get base config directory */
+      fill_pathname_application_special(config_directory, sizeof(config_directory), APPLICATION_SPECIAL_DIRECTORY_CONFIG);
+
+      // Get core config path for cpuclock.txt
+      fill_pathname_join_special_ext(cpuclock_config_path, config_directory, core_name, "cpuclock", ".txt", PATH_MAX_LENGTH);
+
+      fp = fopen(cpuclock_config_path, "r");
+      RARCH_LOG("[CPU]: Path %s: %s\n", fp ? "found" : "not found", cpuclock_config_path);
+   }
+   
+   if (!fp) {
+      fp = fopen("/proc/self/cwd/cpuclock.txt", "r");
+      RARCH_LOG("[CPU]: Path %s: ./cpuclock.txt\n", fp ? "found" : "not found");
+   }
+
+   return fp;
+}
+
 /* Set cpuclock */
 #define	BASE_REG_RIU_PA		(0x1F000000)
 #define	BASE_REG_MPLL_PA	(BASE_REG_RIU_PA + 0x103000*2)
@@ -519,7 +550,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 
    /* set cpu clock to value in cpuclock.txt */
    if (gov == PERFORMANCE) {
-      fp = fopen("/proc/self/cwd/cpuclock.txt", "r");
+      fp = __get_cpuclock_file();
       if (fp) {
          int cpuclock = 0;
          fscanf(fp, "%d", &cpuclock); fclose(fp);
@@ -538,6 +569,23 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
    /* set governor */
    fp = fopen(fn_governor, "w");
    if (fp) { fwrite(govstr[gov], 1, strlen(govstr[gov]), fp); fclose(fp); }
+}
+
+static void sdl_miyoomini_toggle_powersave(bool state) {
+   sdl_miyoomini_set_cpugovernor(state ? POWERSAVE : PERFORMANCE);
+}
+
+static void sdl_miyoomini_sighandler(int sig) {
+   switch (sig) {
+   case SIGSTOP:
+      sdl_miyoomini_toggle_powersave(true);
+      break;
+   case SIGCONT:
+      sdl_miyoomini_toggle_powersave(false);
+      break;
+   default:
+      break;
+   }
 }
 
 static void sdl_miyoomini_init_font_color(sdl_miyoomini_video_t *vid) {
@@ -591,6 +639,9 @@ static void sdl_miyoomini_input_driver_init(
    /* If input driver name is empty, cannot
     * initialise anything... */
    if (string_is_empty(input_drv_name)) return;
+
+   signal(SIGSTOP, sdl_miyoomini_sighandler);
+   signal(SIGCONT, sdl_miyoomini_sighandler);
 
    if (string_is_equal(input_drv_name, "sdl_dingux")) {
       *input_data = input_driver_init_wrap(&input_sdl_dingux,
@@ -869,10 +920,15 @@ static void sdl_miyoomini_set_texture_enable(void *data, bool state, bool full_s
    if (state == vid->menu_active) return;
    vid->menu_active = state;
 
+   sdl_miyoomini_toggle_powersave(state);
+
    if (state) {
-      sdl_miyoomini_set_cpugovernor(POWERSAVE);
+      system("playActivity stop_all &");
       vid->was_in_menu = true;
-   } else sdl_miyoomini_set_cpugovernor(PERFORMANCE);
+   }
+   else {
+      system("playActivity resume &");
+   }
 }
 
 static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool rgb32,
