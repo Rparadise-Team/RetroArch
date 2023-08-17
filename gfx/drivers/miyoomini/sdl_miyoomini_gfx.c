@@ -464,7 +464,7 @@ static FILE *__get_cpuclock_file(void)
    }
    
    if (!fp) {
-      fp = fopen("/proc/self/cwd/cpuclock.txt", "r");
+      fp = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
       RARCH_LOG("[CPU]: Path %s: ./cpuclock.txt\n", fp ? "found" : "not found");
    }
 
@@ -554,12 +554,12 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
       if (fp) {
          int cpuclock = 0;
          fscanf(fp, "%d", &cpuclock); fclose(fp);
-         if ((cpuclock >= 100)&&(cpuclock <= 2400)) {
+         if ((cpuclock >= 400000)&&(cpuclock <= 1200000)) {
             fp = fopen(fn_governor, "w");
             if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
             fp = fopen(fn_setspeed, "w");
-            if (fp) { fprintf(fp, "%d", cpuclock * 1000); fclose(fp); }
-            set_cpuclock(cpuclock * 1000);
+            if (fp) { fprintf(fp, "%d", cpuclock); fclose(fp); }
+            set_cpuclock(cpuclock);
             RARCH_LOG("[CPU]: Set clock: %d MHz\n", cpuclock);
             return;
          }
@@ -922,13 +922,13 @@ static void sdl_miyoomini_set_texture_enable(void *data, bool state, bool full_s
 
    sdl_miyoomini_toggle_powersave(state);
 
-   if (state) {
-      system("playActivity stop_all &");
-      vid->was_in_menu = true;
-   }
-   else {
-      system("playActivity resume &");
-   }
+  // if (state) {
+  //    system("playActivity stop_all &");
+  //    vid->was_in_menu = true;
+  // }
+  // else {
+  //   system("playActivity resume &");
+  // }
 }
 
 static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool rgb32,
