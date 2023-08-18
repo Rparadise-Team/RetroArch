@@ -922,10 +922,10 @@ static void sdl_miyoomini_set_texture_enable(void *data, bool state, bool full_s
 
    sdl_miyoomini_toggle_powersave(state);
 
-  // if (state) {
+  if (state) {
   //    system("playActivity stop_all &");
-  //    vid->was_in_menu = true;
-  // }
+     vid->was_in_menu = true;
+  }
   // else {
   //   system("playActivity resume &");
   // }
