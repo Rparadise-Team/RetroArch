@@ -529,6 +529,11 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
    const char fn_setspeed[] = "/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed";
    static uint32_t minfreq = 0;
    FILE* fp;
+   FILE *fps = NULL;
+   char config_directory[PATH_MAX_LENGTH];
+   char cpuclock_config_path[PATH_MAX_LENGTH];
+   rarch_system_info_t *system = &runloop_state_get_ptr()->system;
+   const char *core_name = system ? system->info.library_name : NULL;
 
    if (!minfreq) {
       /* save min_freq */
@@ -548,30 +553,25 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 
    /* set cpu clock to value in cpuclock.txt */
    if (gov == PERFORMANCE) {
-      FILE* fps;
-      char config_directory[PATH_MAX_LENGTH];
-      char cpuclock_config_path[PATH_MAX_LENGTH];
-      rarch_system_info_t *system = &runloop_state_get_ptr()->system;
-      const char *core_name = system ? system->info.library_name : NULL;
+	   
+	  if (!string_is_empty(core_name)) {
+      /* Get base config directory */
+      fill_pathname_application_special(config_directory, sizeof(config_directory), APPLICATION_SPECIAL_DIRECTORY_CONFIG);
 
-      if (!string_is_empty(core_name)) {
-          /* Get base config directory */
-          fill_pathname_application_special(config_directory, sizeof(config_directory), APPLICATION_SPECIAL_DIRECTORY_CONFIG);
+      // Get core config path for cpuclock.txt
+      fill_pathname_join_special_ext(cpuclock_config_path, config_directory, core_name, "cpuclock", ".txt", PATH_MAX_LENGTH);
 
-          // Get core config path for cpuclock.txt
-          fill_pathname_join_special_ext(cpuclock_config_path, config_directory, core_name, "cpuclock", ".txt", PATH_MAX_LENGTH);
-
-          fps = fopen(cpuclock_config_path, "r");
-          RARCH_LOG("[CPU]: Path %s: %s\n", fps ? "found" : "not found", cpuclock_config_path);
-         }
+      fps = fopen(cpuclock_config_path, "r");
+      }
 	   
       if (fps) {
          int cpuclock = 0;
 		 char str[16];
+		 RARCH_LOG("[CPU]: Path %s: %s\n", fps ? "found" : "not found", cpuclock_config_path);
          fscanf(fps, "%d", &cpuclock); fclose(fps);
          if ((cpuclock >= 400000)&&(cpuclock <= 1400000)) {
-            fps = fopen(fn_governor, "w");
-            if (fps) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fps); fclose(fps); }
+            fp = fopen(fn_governor, "w");
+            if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
             int fset = open(fn_setspeed, O_WRONLY);
 			sprintf(str, "%d", cpuclock);
             if (fset>=0) { write(fset, str, strlen(str)); close(fset); }
@@ -580,29 +580,28 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 			print_clock();
             return;
          } else {
-			int governor;
+			char *governor = "performance";
 			RARCH_LOG("[CPU]: invalid cpu config value\n");
 	        fps = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
-			fp = fopen("/mnt/SDCARD/.simplemenu/governor.sav", "r");
-			if (fp) { fscanf(fp, "%d", &governor); fclose(fp); }
+			RARCH_LOG("[CPU]: Path %s: ./cpu.sav\n", fps ? "found" : "not found");
+			fclose(fps);
 			fp = fopen(fn_governor, "w");
-            if (fp) { fprintf(fp, "%d", governor); fclose(fp); }
-            RARCH_LOG("[CPU]: Path %s: ./cpuclock.txt\n", fps ? "found" : "not found");
+            if (fp) { fprintf(fp, "%s", governor); fclose(fp); }
+			return;
       }
    }
 	   
-	  if (!fps) {
+      if (!fps) {
 		 int cpuclock = 0;
-		 int governor;
-		 fp = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
-         RARCH_LOG("[CPU]: Path %s: ./cpu.sav\n", fp ? "found" : "not found");
-		 fscanf(fp, "%d", &cpuclock); fclose(fp);
+		 char *governor = "performance";
+		 fps = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
+         RARCH_LOG("[CPU]: Path %s: ./cpu.sav\n", fps ? "found" : "not found");
+		 fscanf(fps, "%d", &cpuclock); fclose(fps);
 		 if ((cpuclock >= 400000)&&(cpuclock <= 1200000)) {
-			fp = fopen("/mnt/SDCARD/.simplemenu/governor.sav", "r");
-			if (fp) { fscanf(fp, "%d", &governor); fclose(fp); }
 			fp = fopen(fn_governor, "w");
-            if (fp) { fprintf(fp, "%d", governor); fclose(fp); }
+            if (fp) { fprintf(fp, "%s", governor); fclose(fp); }
             RARCH_LOG("[CPU]: Clock is: %d MHz\n", cpuclock / 1000);
+			return;
 		 }
 	  }
    }
