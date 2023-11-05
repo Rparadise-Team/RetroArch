@@ -136,9 +136,9 @@ static void* GFX_FlipThreadSingleHW(void* param) {
 		if (ovrsurface) {
 			MI_GFX_WaitAllDone(FALSE, Fence);
 #ifdef MMv4
-			OvrDst.phyAddr = finfo.smem_start + (752*target_offset*4);
-#else
 			OvrDst.phyAddr = finfo.smem_start + (640*target_offset*4);
+#else
+			OvrDst.phyAddr = finfo.smem_start + (752*target_offset*4);
 #endif
 			MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
 		}
