@@ -74,24 +74,15 @@ static void* GFX_FlipThread(void* param) {
 	while(1) {
 		while (!now_flipping) pthread_cond_wait(&flip_req, &flip_mx);
 		Fence = flipFence;
-#ifdef MMv4
-		do {	target_offset = vinfo.yoffset + 560;
-			if ( target_offset == 1680 ) target_offset = 0;
-#else
 		do {	target_offset = vinfo.yoffset + 480;
 			if ( target_offset == 1440 ) target_offset = 0;
-#endif
 			vinfo.yoffset = target_offset;
 			pthread_cond_signal(&flip_start);
 			pthread_mutex_unlock(&flip_mx);
 #ifdef	HAVE_OVERLAY
 			if (ovrsurface) {
 				MI_GFX_WaitAllDone(FALSE, flipFence);
-#ifdef MMv4
-				OvrDst.phyAddr = finfo.smem_start + (752*target_offset*4);
-#else
 				OvrDst.phyAddr = finfo.smem_start + (640*target_offset*4);
-#endif
 				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
 				MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0;
 				if (flip_callback) flip_callback(userdata_callback);
@@ -124,22 +115,13 @@ static void* GFX_FlipThreadSingleHW(void* param) {
 
 	while(1) {
 		MI_SYS_FlushInvCache(sHWsurface->pixels, sHWsize4K);
-#ifdef MMv4
-		target_offset = vinfo.yoffset ^ 560;
-		Dst.phyAddr = finfo.smem_start + (752*target_offset*4);
-#else
 		target_offset = vinfo.yoffset ^ 480;
 		Dst.phyAddr = finfo.smem_start + (640*target_offset*4);
-#endif
 		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &stOpt, &Fence);
 #ifdef	HAVE_OVERLAY
 		if (ovrsurface) {
 			MI_GFX_WaitAllDone(FALSE, Fence);
-#ifdef MMv4
 			OvrDst.phyAddr = finfo.smem_start + (640*target_offset*4);
-#else
-			OvrDst.phyAddr = finfo.smem_start + (752*target_offset*4);
-#endif
 			MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
 		}
 #endif
@@ -265,15 +247,9 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
 		if (flags & GFX_BLOCKING) {
 			while (now_flipping == 2) pthread_cond_wait(&flip_start, &flip_mx);
 		}
-#ifdef MMv4
-		target_offset = vinfo.yoffset + 560;
-		if ( target_offset == 1680 ) target_offset = 0;
-		stDst.phyAddr = finfo.smem_start + (752*target_offset*4);
-#else
 		target_offset = vinfo.yoffset + 480;
 		if ( target_offset == 1440 ) target_offset = 0;
 		stDst.phyAddr = finfo.smem_start + (640*target_offset*4);
-#endif
 		MI_GFX_BitBlit(&stSrc, &stSrcRect, &stDst, &stDstRect, &stOpt, &flipFence);
 
 		// Request Flip
@@ -353,13 +329,8 @@ SDL_Surface*	GFX_CreateRGBSurface(uint32_t flags, int width, int height, int dep
 	SDL_Surface*	surface;
 	MI_PHY		phyAddr;
 	void*		virAddr;
-#ifdef MMv4
-	if (!width) width = 752;
-	if (!height) height = 560;
-#else
 	if (!width) width = 640;
 	if (!height) height = 480;
-#endif
 	if (depth != 16) depth = 32;
 	int		pitch = width * (uint32_t)(depth/8);
 	uint32_t	size = pitch * height;
@@ -432,15 +403,9 @@ void	GFX_Init(void) {
 		fd_fb = open("/dev/fb0", O_RDWR);
 
 		// 640 x 480 x 32bpp x 3screen init
-#ifdef MMv4
-		SDL_SetVideoMode(752, 560, 32, SDL_SWSURFACE);
-		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
-		vinfo.yres_virtual = 1680; vinfo.yoffset = 0;
-#else
 		SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
 		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
 		vinfo.yres_virtual = 1440; vinfo.yoffset = 0;
-#endif
 		/* vinfo.xres = vinfo.xres_virtual = 640; vinfo.yres = 480;
 		vinfo.xoffset = vinfo.yoffset = vinfo.red.msb_right = vinfo.green.msb_right = 
 		vinfo.blue.msb_right = vinfo.transp.msb_right = vinfo.blue.offset = 0;
@@ -464,15 +429,6 @@ void	GFX_Init(void) {
 		// prepare for Flip
 		stDst.phyAddr = finfo.smem_start;
 		stDst.eColorFmt = E_MI_GFX_FMT_ARGB8888;
-#ifdef MMv4
-		stDst.u32Width = 752;
-		stDst.u32Height = 560;
-		stDst.u32Stride = 752*4;
-		stDstRect.s32Xpos = 0;
-		stDstRect.s32Ypos = 0;
-		stDstRect.u32Width = 752;
-		stDstRect.u32Height = 560;
-#else
 		stDst.u32Width = 640;
 		stDst.u32Height = 480;
 		stDst.u32Stride = 640*4;
@@ -480,7 +436,6 @@ void	GFX_Init(void) {
 		stDstRect.s32Ypos = 0;
 		stDstRect.u32Width = 640;
 		stDstRect.u32Height = 480;
-#endif
 #ifdef	HAVE_OVERLAY
 		// prepare for OverlaySurface
 		OvrSrcRect.s32Xpos = 0;
@@ -532,11 +487,7 @@ void	GFX_Quit(void) {
 #else
 		// copy current frame to initial frame
 		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
-#ifdef MMv4
-		if (vinfo.yoffset) MI_SYS_MemcpyPa(finfo.smem_start, finfo.smem_start + (752*vinfo.yoffset*4), 752*560*4);
-#else
 		if (vinfo.yoffset) MI_SYS_MemcpyPa(finfo.smem_start, finfo.smem_start + (640*vinfo.yoffset*4), 640*480*4);
-#endif
 #endif
 		// reset yoffset
 		vinfo.yoffset = 0;
@@ -560,13 +511,8 @@ void	GFX_Quit(void) {
 //
 SDL_Surface*	GFX_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
 	if (!fd_fb) GFX_Init();
-#ifdef MMv4
-	if (!width) width = 752;
-	if (!height) height = 560;
-#else
 	if (!width) width = 640;
 	if (!height) height = 480;
-#endif
 	if (bpp != 16) bpp = 32;
 
 	// reinit Flip thread
@@ -641,56 +587,6 @@ void	GFX_CopySurface(SDL_Surface *src, SDL_Surface *dst) {
 //
 //	Rotate 640x480x32bpp surface NEON / for duplicate FB
 //
-#ifdef MMv4
-void	RotateSurfaceNEON(void* src) {
-	asm volatile (
-	"	add r1,%0,#(752*280*4)	;"
-	"	mov r2,r1		;"
-	"	mov r3,r1		;"
-	"1:	vldmia r1,{q0-q7}	;"
-	"	vrev64.32 d31,d0	;"
-	"	vrev64.32 d30,d1	;"
-	"	vrev64.32 d29,d2	;"
-	"	vrev64.32 d28,d3	;"
-	"	vrev64.32 d27,d4	;"
-	"	vrev64.32 d26,d5	;"
-	"	vrev64.32 d25,d6	;"
-	"	vrev64.32 d24,d7	;"
-	"	vrev64.32 d23,d8	;"
-	"	vrev64.32 d22,d9	;"
-	"	vrev64.32 d21,d10	;"
-	"	vrev64.32 d20,d11	;"
-	"	vrev64.32 d19,d12	;"
-	"	vrev64.32 d18,d13	;"
-	"	vrev64.32 d17,d14	;"
-	"	vrev64.32 d16,d15	;"
-	"	vldmdb r3!,{q0-q7}	;"
-	"	vstmdb r2!,{q8-q15}	;"
-	"	vrev64.32 d31,d0	;"
-	"	vrev64.32 d30,d1	;"
-	"	vrev64.32 d29,d2	;"
-	"	vrev64.32 d28,d3	;"
-	"	vrev64.32 d27,d4	;"
-	"	vrev64.32 d26,d5	;"
-	"	vrev64.32 d25,d6	;"
-	"	vrev64.32 d24,d7	;"
-	"	vrev64.32 d23,d8	;"
-	"	vrev64.32 d22,d9	;"
-	"	vrev64.32 d21,d10	;"
-	"	vrev64.32 d20,d11	;"
-	"	vrev64.32 d19,d12	;"
-	"	vrev64.32 d18,d13	;"
-	"	vrev64.32 d17,d14	;"
-	"	vrev64.32 d16,d15	;"
-	"	vstmia r1!,{q8-q15}	;"
-	"	cmp %0,r2		;"
-	"	bne 1b			"
-	:: "r"(src)
-	: "r1","r2","r3","q0","q1","q2","q3","q4","q5","q6","q7",
-	    "q8","q9","q10","q11","q12","q13","q14","q15","memory","cc"
-	);
-}
-#else
 void	RotateSurfaceNEON(void* src) {
 	asm volatile (
 	"	add r1,%0,#(640*240*4)	;"
@@ -739,7 +635,6 @@ void	RotateSurfaceNEON(void* src) {
 	    "q8","q9","q10","q11","q12","q13","q14","q15","memory","cc"
 	);
 }
-#endif
 
 //
 //	Duplicate GFX Surface from SDL_Surface or FB
@@ -752,21 +647,12 @@ SDL_Surface*	GFX_DuplicateSurface(SDL_Surface *src) {
 			src->format->Rmask, src->format->Gmask, src->format->Bmask, src->format->Amask);
 		if (dst) GFX_CopySurface(src, dst);
 	} else {
-#ifdef MMv4
-		dst = GFX_CreateRGBSurface(0, 752, 560, 32, 0,0,0,0);
-		if (dst) {
-			MI_GFX_WaitAllDone(TRUE, 0);
-			MI_SYS_MemcpyPa(dst->pixelsPa, finfo.smem_start + 752*vinfo.yoffset*4, 752*560*4);
-			RotateSurfaceNEON(dst->pixels);
-		}
-#else
 		dst = GFX_CreateRGBSurface(0, 640, 480, 32, 0,0,0,0);
 		if (dst) {
 			MI_GFX_WaitAllDone(TRUE, 0);
 			MI_SYS_MemcpyPa(dst->pixelsPa, finfo.smem_start + 640*vinfo.yoffset*4, 640*480*4);
 			RotateSurfaceNEON(dst->pixels);
 		}
-#endif
 	}
 	return dst;
 }
@@ -782,13 +668,8 @@ void	GFX_UpdateRectExec(SDL_Surface *screen, int x, int y, int w, int h, uint32_
 			if (!sHWsurface) {
 				MI_GFX_Rect_t DstRectPush = stDstRect;
 				// for rotate180
-#ifdef MMv4
-				stDstRect.s32Xpos = 752-(x+w);
-				stDstRect.s32Ypos = 560-(y+h);
-#else
 				stDstRect.s32Xpos = 640-(x+w);
 				stDstRect.s32Ypos = 480-(y+h);
-#endif
 				// for RetroArch rotate function
 				stDstRect.u32Width = (stOpt.eRotate&1) ? h : w;
 				stDstRect.u32Height = (stOpt.eRotate&1) ? w : h;

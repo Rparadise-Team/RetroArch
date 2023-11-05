@@ -55,20 +55,10 @@
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-#ifdef MMv4
-#define SDL_MIYOOMINI_WIDTH  752
-#define SDL_MIYOOMINI_HEIGHT 560
-#else
 #define SDL_MIYOOMINI_WIDTH  640
 #define SDL_MIYOOMINI_HEIGHT 480
-#endif
-#ifdef MMv4
-#define RGUI_MENU_WIDTH  376
-#define RGUI_MENU_HEIGHT 280
-#else
 #define RGUI_MENU_WIDTH  320
 #define RGUI_MENU_HEIGHT 240
-#endif
 #define SDL_NUM_FONT_GLYPHS 256
 #define OSD_TEXT_Y_MARGIN 4
 #define OSD_TEXT_LINES_MAX 3	/* 1 .. 7 */
@@ -1161,13 +1151,8 @@ static bool sdl_miyoomini_overlay_load(void *data, const void *image_data, unsig
 				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 	SDL_Surface *ostmp2 = GFX_DuplicateSurface(ostmp);
 	SDL_FreeSurface(ostmp);
-#ifdef MMv4
-	vid->overlay_surface = GFX_CreateRGBSurface(0, 752, 560, 32,
-				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-#else
 	vid->overlay_surface = GFX_CreateRGBSurface(0, 640, 480, 32,
 				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-#endif
 	ostmp2->flags &= ~SDL_SRCALPHA;
 	GFX_BlitSurfaceRotate(ostmp2, NULL, vid->overlay_surface, NULL, 2);
 	GFX_FreeSurface(ostmp2);
