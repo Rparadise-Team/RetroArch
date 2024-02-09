@@ -29,6 +29,10 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_NETPLAY,
    "Join or host a net-play session."
    )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_QUIT_RETROARCH,
+   "Quit RetroArch. Killing the program in any hard way (SIGKILL, etc.) will terminate RetroArch without saving the configuration in any case. On Unix-likes, SIGINT/SIGTERM allows a clean deinitialisation which includes configuration save if enabled."
+   )
 
 /* Main Menu > Load Core */
 
@@ -132,6 +136,9 @@ MSG_HASH(
 
 /* Settings > Drivers */
 
+
+#ifdef HAVE_MICROPHONE
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_RESAMPLER_DRIVER,
    "Audio Re-sampler"
@@ -167,6 +174,18 @@ MSG_HASH(
    MENU_ENUM_LABEL_HELP_SUSPEND_SCREENSAVER_ENABLE,
    "Suspends the screensaver. Is a hint that does not necessarily have to be honoured by the video driver."
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_VIDEO_BLACK_FRAME_INSERTION,
+   "Insert black frame(s) between frames. Can greatly reduce motion blur by emulating CRT scan out, but at cost of brightness. Do not combine with Swap Interval > 1 (Auto is OK), Frame Delay, or Sync to Exact Content Framerate."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_VIDEO_BLACK_FRAME_INSERTION,
+   "Inserts black frame(s) in between frames for enhanced motion clarity. Only use option designated for your current display refresh rate. Not for use at refresh rates that are non-multiples of 60Hz such as 144Hz, 165Hz, etc. Do not combine with Swap Interval > 1 (Auto is OK), Frame Delay, or Sync to Exact Content Framerate. Leaving system VRR on is OK, just not that setting. If you notice -any- temporary image retention, you should disable at 120hz, and for higher hz adjust the dark frames setting[...]"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_VIDEO_BFI_DARK_FRAMES,
+   "Adjusts the number of frames displayed in the BFI sequence that are black. More black frames increases motion clarity but reduces brightness. Not applicable at 120hz as there is only one total extra 60hz frame, so it must be black otherwise BFI would not be active at all."
+   )
 #if defined(DINGUX)
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_DINGUX_IPU_FILTER_TYPE,
@@ -200,9 +219,13 @@ MSG_HASH(
    "Apply a CPU-powered video filter. Might come at a high performance cost. Some video filters might only work for cores that use 32-bit or 16-bit colour."
    )
 MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_VIDEO_NOTCH_WRITE_OVER,
-   "Enable full-screen over notch in Android devices"
-)
+   MENU_ENUM_LABEL_HELP_VIDEO_FILTER,
+   "Apply a CPU-powered video filter. Might come at a high performance cost. Some video filters might only work for cores that use 32-bit or 16-bit colour. Dynamically linked video filter libraries can be selected."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_VIDEO_FILTER_BUILTIN,
+   "Apply a CPU-powered video filter. Might come at a high performance cost. Some video filters might only work for cores that use 32-bit or 16-bit colour. Built-in video filter libraries can be selected."
+   )
 
 /* Settings > Video > CRT SwitchRes */
 
@@ -365,6 +388,8 @@ MSG_HASH(
 
 /* Settings > Audio */
 
+#ifdef HAVE_MICROPHONE
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_RESAMPLER_SETTINGS,
    "Re-sampler"
@@ -404,6 +429,22 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_AUDIO_LATENCY,
    "Desired audio latency in milliseconds. Might not be honoured if the audio driver cannot provide the given latency."
    )
+
+#ifdef HAVE_MICROPHONE
+/* Settings > Audio > Input */
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MICROPHONE_RESAMPLER_QUALITY,
+   "Re-sampler Quality"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MICROPHONE_RESAMPLER_QUALITY,
+   "Lower this value to favour performance/lower latency over audio quality, increase for better audio quality at the expense of performance/lower latency."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MICROPHONE_LATENCY,
+   "Desired audio input latency in milliseconds. Might not be honoured if the microphone driver can't provide given latency."
+   )
+#endif
 
 /* Settings > Audio > Resampler */
 
@@ -451,6 +492,10 @@ MSG_HASH(
 /* Settings > Input */
 
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_INPUT_POLL_TYPE_BEHAVIOR,
+   "Polling Behaviour (Restart Required)"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_REMAP_BINDS_ENABLE,
    "Remap the Controls for This Core"
    )
@@ -490,6 +535,14 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_TURBO_MODE,
    "Select the general behaviour of turbo mode."
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_INPUT_ALLOW_TURBO_DPAD,
+   "If enabled, digital directional inputs (also known as D-Pad or 'hatswitch') can be turbo."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_INPUT_RETROPAD_BINDS,
+   "Libretro uses a virtual gamepad abstraction known as the 'RetroPad' to communicate from frontends (like RetroArch) to cores and vice versa. This menu determines how the virtual RetroPad is mapped to the physical input devices and which virtual input ports these devices occupy.\nIf a physical input device is recognised and autoconfigured correctly, users probably do not need to use this menu at all, and for core-specific input changes, should use the Quick Menu's 'Controls' submenu instead."
+   )
 
 /* Settings > Input > Haptic Feedback/Vibration */
 
@@ -515,6 +568,10 @@ MSG_HASH(
 
 /* Settings > Input > Hotkeys */
 
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_INPUT_META_ENABLE_HOTKEY,
+   "When assigned, the 'Hotkey Enable' key must be held before any other hotkeys are recognised. Allows controller buttons to be mapped to hotkey functions without affecting normal input. Assigning the modifier to controller only will not require it for keyboard hotkeys, and vice versa, but both modifiers work for both devices."
+   )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_HOTKEY_BLOCK_DELAY,
    "Add a delay in frames before normal input is blocked after pressing the assigned 'Hot-key Enable' key. Allows normal input from the 'Hot-key Enable' key to be captured when it is mapped to another action (e.g. RetroPad 'Select')."
@@ -786,6 +843,9 @@ MSG_HASH(
    "Show the Mouse Cursor With Overlay"
    )
 
+/* Settings > On-Screen Display > On-Screen Overlay > Keyboard Overlay */
+
+
 /* Settings > On-Screen Display > Video Layout */
 
 
@@ -973,7 +1033,7 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MENU_WALLPAPER,
-   "Select an image to set as the menu background."
+   "Select an image to set as menu background. Manual and dynamic images will override 'Colour Theme'."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MENU_USE_PREFERRED_SYSTEM_COLOR_THEME,
@@ -990,6 +1050,10 @@ MSG_HASH(
 
 /* Settings > AI Service */
 
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_AI_SERVICE_TEXT_PADDING,
+   "Vertical padding to apply to the text overlay, when the service is in Text mode. More padding will push the text towards the centre of the screen."
+   )
 
 /* Settings > Accessibility */
 
@@ -1001,10 +1065,6 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CHEEVOS_LEADERBOARDS_ENABLE,
    "Leader-boards"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_CHEEVOS_LEADERBOARDS_ENABLE,
-   "Game specific leader-boards. Has no effect if 'Hardcore Mode' is disabled."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CHEEVOS_RICHPRESENCE_ENABLE,
@@ -1177,7 +1237,7 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_PLAYLIST_SUBLABEL_RUNTIME_TYPE,
    "Select which type of runtime log record to display on playlist sub-labels.\nThe corresponding runtime log must be enabled with the 'Saving' options menu."
    )
-
+   
 /* Settings > Playlists > Playlist Management */
 
 MSG_HASH(
@@ -1228,10 +1288,6 @@ MSG_HASH(
 
 /* Settings > Directory */
 
-MSG_HASH( /* FIXME Not RGUI specific */
-   MENU_ENUM_LABEL_VALUE_RGUI_CONFIG_DIRECTORY,
-   "Configurations"
-   )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RECORDING_CONFIG_DIRECTORY,
    "Recording Configurations"
@@ -1455,6 +1511,10 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_SHADER_APPLY_CHANGES,
    "Changes to the shader configuration will take effect immediately. Use this if you've changed the amount of shader passes, filtering, FBO scale, etc."
    )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_SHADER_APPLY_CHANGES,
+   "After changing shader settings such as the amount of shader passes, filtering, FBO scale, use this to apply changes.\nChanging these shader settings is a somewhat expensive operation so it has to be done explicitly.\nWhen you apply shaders, the shader settings are saved to a temporary file (retroarch.slangp/.cgp/.glslp) and loaded. The file persists after RetroArch exits and is saved to the Shader Directory."
+   )
 
 /* Quick Menu > Shaders > Save */
 
@@ -1554,7 +1614,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RGUI_MENU_COLOR_THEME,
-   "Menu Colour Theme"
+   "Colour Theme"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_RGUI_MENU_COLOR_THEME,
@@ -1563,14 +1623,6 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MENU_RGUI_TRANSPARENCY,
    "Enable background display of running content while Quick Menu is active. Disabling transparency may alter theme colours."
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_MENU_RGUI_INLINE_THUMBNAILS,
-   "Enable display of inline downscaled thumbnails while viewing playlists. When disabled, 'Top Thumbnail' may still be toggled full-screen by pressing RetroPad Y."
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_THUMBNAILS_RGUI,
-   "Type of thumbnail to display at the top right of playlists. This thumbnail may be toggled full-screen by pressing RetroPad Y."
    )
 
 /* RGUI: Settings Options */
@@ -1586,6 +1638,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RGUI_ASPECT_RATIO_16_10_CENTRE,
    "16:10 (Centred)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_RGUI_ASPECT_RATIO_21_9_CENTRE,
+   "21:9 (Centred)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RGUI_ASPECT_RATIO_3_2_CENTRE,
@@ -1627,24 +1683,28 @@ MSG_HASH(
    "Type of thumbnail to display on the left side."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_XMB_ALPHA_FACTOR,
+   "Colour Theme Alpha Factor"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MENU_FONT_COLOR_RED,
-   "Menu Font Colour (Red)"
+   "Font Colour (Red)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MENU_FONT_COLOR_GREEN,
-   "Menu Font Colour (Green)"
+   "Font Colour (Green)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MENU_FONT_COLOR_BLUE,
-   "Menu Font Colour (Blue)"
+   "Font Colour (Blue)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_XMB_MENU_COLOR_THEME,
-   "Menu Colour Theme"
+   "Colour Theme"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_XMB_MENU_COLOR_THEME,
-   "Select a different background colour gradient theme."
+   "Select a different background colour theme."
    )
 
 /* XMB: Settings Options */
@@ -1654,7 +1714,7 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_OZONE_MENU_COLOR_THEME,
-   "Menu Colour Theme"
+   "Colour Theme"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_OZONE_MENU_COLOR_THEME,
@@ -1689,11 +1749,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MATERIALUI_MENU_COLOR_THEME,
-   "Menu Colour Theme"
+   "Colour Theme"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MATERIALUI_MENU_COLOR_THEME,
-   "Select a different background colour gradient theme."
+   "Select a different background colour theme."
    )
 
 /* MaterialUI: Settings Options */
@@ -2155,18 +2215,11 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_VALUE_CPU_PERF_MODE_MIN_POWER,
    "Use the lowest frequency available to save power. Useful on battery powered devices, but performance will be significantly reduced."
    )
-
-#ifdef HAVE_LAKKA_SWITCH
 MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_SWITCH_GPU_PROFILE,
-   "GPU Over-clock"
+   MENU_ENUM_LABEL_HELP_GAMEMODE_ENABLE,
+   "Enabling Linux GameMode can improve latency, fix audio crackling issues and maximise overall performance by automatically configuring your CPU and GPU for best performance.\nThe GameMode software needs to be installed for this to work. See https://github.com/FeralInteractive/gamemode for information on how to install GameMode."
    )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_SWITCH_GPU_PROFILE,
-   "Over-clock or under-clock the Switch GPU."
-   )
-#endif
-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
+#ifdef HAVE_LIBNX
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SWITCH_CPU_PROFILE,
    "CPU Over-clock"
@@ -2177,11 +2230,29 @@ MSG_HASH(
    )
 #endif
 #ifdef HAVE_LAKKA
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_TIMEZONE,
+   "Displays a list of available time zones. After selecting a time zone, time and date is adjusted to the selected time zone. It assumes, that system/hardware clock is set to UTC."
+   )
+#ifdef HAVE_LAKKA_SWITCH
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_SWITCH_OC_ENABLE,
+   "CPU Over-clock"
+   )
+#endif
+#endif
+#ifdef HAVE_LAKKA_SWITCH
 #endif
 #ifdef GEKKO
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_MOUSE_SCALE,
    "Adjust x/y scale for Wii-mote light gun speed."
+   )
+#endif
+#ifdef UDEV_TOUCH_SUPPORT
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_INPUT_TOUCH_VMOUSE_TRACKBALL,
+   "Enable along with Mouse to utilise the touch screen as a trackball, adding inertia to the pointer."
    )
 #endif
 #ifdef HAVE_ODROIDGO2

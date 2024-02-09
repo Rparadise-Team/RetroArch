@@ -32,14 +32,14 @@ static ui_companion_driver_t ui_companion_null = {
    NULL, /* deinit */
    NULL, /* toggle */
    NULL, /* event_command */
-   NULL, /* notify_content_loaded */
-   NULL, /* notify_list_loaded */
    NULL, /* notify_refresh */
    NULL, /* msg_queue_push */
    NULL, /* render_messagebox */
    NULL, /* get_main_window */
    NULL, /* log_msg */
    NULL, /* is_active */
+   NULL, /* get_app_icons */
+   NULL, /* set_app_icon */
    NULL, /* browser_window */
    NULL, /* msg_window */
    NULL, /* window */
@@ -53,6 +53,9 @@ static const ui_companion_driver_t *ui_companion_drivers[] = {
 #endif
 #if defined(OSX)
    &ui_companion_cocoa,
+#endif
+#if defined(IOS)
+   &ui_companion_cocoatouch,
 #endif
    &ui_companion_null,
    NULL
@@ -176,23 +179,6 @@ void ui_companion_driver_notify_refresh(void)
       if (ui_companion_qt.notify_refresh && (uico_st->flags & UICO_ST_FLAG_QT_IS_INITED))
          ui_companion_qt.notify_refresh(uico_st->qt_data);
 #endif
-}
-
-void ui_companion_driver_notify_list_loaded(
-      file_list_t *list, file_list_t *menu_list)
-{
-   uico_driver_state_t *uico_st    = &uico_driver_st;
-   const ui_companion_driver_t *ui = uico_st->drv;
-   if (ui && ui->notify_list_loaded)
-      ui->notify_list_loaded(uico_st->data, list, menu_list);
-}
-
-void ui_companion_driver_notify_content_loaded(void)
-{
-   uico_driver_state_t *uico_st    = &uico_driver_st;
-   const ui_companion_driver_t *ui = uico_st->drv;
-   if (ui && ui->notify_content_loaded)
-      ui->notify_content_loaded(uico_st->data);
 }
 
 const ui_msg_window_t *ui_companion_driver_get_msg_window_ptr(void)

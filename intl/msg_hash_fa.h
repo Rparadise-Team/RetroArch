@@ -183,19 +183,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RESTART_RETROARCH,
-   "ریستارت رتروآرچ"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_RESTART_RETROARCH,
-   "بازآغاز کردن برنامه."
+   "بازآغاز کردن"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_QUIT_RETROARCH,
-   "خروج از رتروآرچ"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_QUIT_RETROARCH,
-   "از برنامه خارج می‌شود."
+   "خروج"
    )
 
 /* Main Menu > Load Core */
@@ -965,10 +957,6 @@ MSG_HASH(
    "صدا"
    )
 MSG_HASH(
-   MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
-   "تنظیمات خروجی صدا را تغییر دهید."
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_SETTINGS,
    "ورودی"
    )
@@ -1007,6 +995,14 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_SAVING_SETTINGS,
    "تنظیمات ذخیره کردن را تغییر دهید."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_USERNAME,
+   "نام کاربری"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_PASSWORD,
+   "گذرواژه"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_LOGGING_SETTINGS,
@@ -1164,6 +1160,7 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_JOYPAD_DRIVER,
    "درایور دستهٔ بازی برای استفاده."
    )
+
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_DRIVER,
    "ویدیو"
@@ -1180,6 +1177,8 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_AUDIO_DRIVER,
    "درایور صدا برای استفاده."
    )
+#ifdef HAVE_MICROPHONE
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_RESAMPLER_DRIVER,
    "بازنمونه‌گیر صدا"
@@ -1223,10 +1222,6 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MENU_DRIVER,
    "فهرست"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_MENU_DRIVER,
-   "درایور فهرست برای استفاده."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RECORD_DRIVER,
@@ -1304,10 +1299,6 @@ MSG_HASH(
    "درج فریم سیاه"
    )
 MSG_HASH(
-   MENU_ENUM_SUBLABEL_VIDEO_BLACK_FRAME_INSERTION,
-   "یک فریم سیاه را بین فریم‌ها درج کن. برای جلوگیری از ایجاد حالت سایه در نمایشگرهای با نرخ تازه‌سازی بالا مفید است."
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_GPU_SCREENSHOT,
    "نماگرفت پردازندهٔ گرافیکی"
    )
@@ -1345,10 +1336,6 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CRT_SWITCH_X_AXIS_CENTERING,
    "مرکز کردن محور X"
-   )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_CRT_SWITCH_HIRES_MENU,
-   "استفاده از گزینگان با تفکیک‌پذیری بالا"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CRT_SWITCH_RESOLUTION_USE_CUSTOM_REFRESH_RATE,
@@ -1505,6 +1492,8 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_AUDIO_OUTPUT_SETTINGS,
    "تنظیمات خروجی صدا را تغییر دهید."
    )
+#ifdef HAVE_MICROPHONE
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_RESAMPLER_SETTINGS,
    "بازنمونه‌گیر"
@@ -1572,6 +1561,18 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_DEVICE,
    "دستگاه"
    )
+
+#ifdef HAVE_MICROPHONE
+/* Settings > Audio > Input */
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MICROPHONE_DEVICE,
+   "دستگاه"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MICROPHONE_RESAMPLER_QUALITY,
+   "کیفیت بازنمونه‌گیر"
+   )
+#endif
 
 /* Settings > Audio > Resampler */
 
@@ -1699,16 +1700,8 @@ MSG_HASH(
    "کلیدهای میانبر"
    )
 MSG_HASH(
-   MENU_ENUM_SUBLABEL_INPUT_HOTKEY_BINDS,
-   "تنظیمات کلیدهای میانبر را تغییر دهید."
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_USER_BINDS,
    "کنترل‌های درگاه %u"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_INPUT_USER_BINDS,
-   "کنترل‌های این درگاه را تغییر دهید."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_QUIT_PRESS_TWICE,
@@ -1926,6 +1919,9 @@ MSG_HASH(
 #if defined(ANDROID)
 #endif
 
+/* Settings > On-Screen Display > On-Screen Overlay > Keyboard Overlay */
+
+
 /* Settings > On-Screen Display > Video Layout */
 
 
@@ -2019,10 +2015,6 @@ MSG_HASH(
 
 /* Settings > User Interface > Appearance */
 
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_THUMBNAILS,
-   "تصاویر بندانگشتی"
-   )
 
 /* Settings > AI Service */
 
@@ -2089,7 +2081,7 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_PLAYLIST_SUBLABEL_LAST_PLAYED,
    "واپسین بازی:"
    )
-
+   
 /* Settings > Playlists > Playlist Management */
 
 
@@ -2367,10 +2359,6 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_SHADERS_ENABLE,
    "سایه‌زن‌های ویدیو"
    )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_VIDEO_SHADER_PRESET_REMOVE,
-   "حذف"
-   )
 
 /* Quick Menu > Shaders > Save */
 
@@ -2424,6 +2412,10 @@ MSG_HASH(
 
 /* RGUI: Settings > User Interface > Appearance */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MENU_RGUI_ASPECT_RATIO,
+   "نسبت تصویر"
+   )
 
 /* RGUI: Settings Options */
 
@@ -2433,6 +2425,10 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RGUI_UPSCALE_AUTO,
+   "خودکار"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_RGUI_ASPECT_RATIO_AUTO,
    "خودکار"
    )
 MSG_HASH(
@@ -2569,10 +2565,6 @@ MSG_HASH(
    "پیشینه"
    )
 MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_RUN_MUSIC,
-   "اجرا"
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_USER,
    "کاربر"
    )
@@ -2659,18 +2651,21 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_META_RESTART_KEY,
    "ریستارت رتروآرچ"
    )
-
-#ifdef HAVE_LAKKA_SWITCH
-#endif
-#if defined(HAVE_LAKKA_SWITCH) || defined(HAVE_LIBNX)
+#ifdef HAVE_LIBNX
 #endif
 #ifdef HAVE_LAKKA
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_BLUETOOTH_ENABLE,
    "بلوتوث"
    )
+#ifdef HAVE_LAKKA_SWITCH
+#endif
+#endif
+#ifdef HAVE_LAKKA_SWITCH
 #endif
 #ifdef GEKKO
+#endif
+#ifdef UDEV_TOUCH_SUPPORT
 #endif
 #ifdef HAVE_ODROIDGO2
 #else

@@ -52,6 +52,9 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
 
        switch (msg)
        {
+          case MENU_ENUM_LABEL_INPUT_RETROPAD_BINDS:
+             strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_INPUT_RETROPAD_BINDS), len);
+             break;
           case MENU_ENUM_LABEL_ACCOUNTS_RETRO_ACHIEVEMENTS:
              strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_ACCOUNTS_RETRO_ACHIEVEMENTS), len);
              break;
@@ -157,6 +160,26 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
                    strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_INPUT_DRIVER_NO_DETAILS), len);
              }
              break;
+          case MENU_ENUM_LABEL_JOYPAD_DRIVER:
+             {
+                const char *lbl = settings ? settings->arrays.input_joypad_driver : NULL;
+
+                if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_UDEV)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_UDEV), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_LINUXRAW)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_LINUXRAW), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_DINPUT)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_DINPUT), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_XINPUT)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_XINPUT), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_SDL)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_SDL), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_PARPORT)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_PARPORT), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_JOYPAD_DRIVER_HID)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_JOYPAD_DRIVER_HID), len);
+             }
+             break;
           case MENU_ENUM_LABEL_MENU_DRIVER:
              {
                 const char *lbl = settings ? settings->arrays.menu_driver : NULL;
@@ -244,6 +267,22 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
                    strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NO_INFORMATION_AVAILABLE), len);
              }
              break;
+#ifdef HAVE_MICROPHONE
+          case MENU_ENUM_LABEL_MICROPHONE_RESAMPLER_DRIVER:
+             {
+                const char *lbl = settings ? settings->arrays.microphone_resampler : NULL;
+
+                if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_AUDIO_RESAMPLER_DRIVER_SINC)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_AUDIO_RESAMPLER_DRIVER_SINC), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_AUDIO_RESAMPLER_DRIVER_CC)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_AUDIO_RESAMPLER_DRIVER_CC), len);
+                else if (string_is_equal(lbl, msg_hash_to_str(MENU_ENUM_LABEL_AUDIO_RESAMPLER_DRIVER_NEAREST)))
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_AUDIO_RESAMPLER_DRIVER_NEAREST), len);
+                else
+                   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NO_INFORMATION_AVAILABLE), len);
+             }
+             break;
+#endif
           case MENU_ENUM_LABEL_VIDEO_SHADER_PRESET:
              strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_VIDEO_SHADER_PRESET), len);
              break;
@@ -258,6 +297,9 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
              break;
           case MENU_ENUM_LABEL_CONFIG_SAVE_ON_EXIT:
              strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_CONFIG_SAVE_ON_EXIT), len);
+             break;
+          case MENU_ENUM_LABEL_QUIT_RETROARCH:
+             strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_QUIT_RETROARCH), len);
              break;
           case MENU_ENUM_LABEL_VIDEO_SHADER_FILTER_PASS:
              strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_VIDEO_SHADER_FILTER_PASS), len);
@@ -380,6 +422,9 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
           case MENU_ENUM_LABEL_VIDEO_BLACK_FRAME_INSERTION:
              strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_VIDEO_BLACK_FRAME_INSERTION), len);
              break;
+          case MENU_ENUM_LABEL_VIDEO_BFI_DARK_FRAMES:
+             strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_VIDEO_BFI_DARK_FRAMES), len);
+             break;
           case MENU_ENUM_LABEL_SAVEFILE_DIRECTORY:
              strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_HELP_SAVEFILE_DIRECTORY), len);
              break;
@@ -444,6 +489,9 @@ int msg_hash_get_help_us_enum(enum msg_hash_enums msg, char *s, size_t len)
                 else
                    strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NO_INFORMATION_AVAILABLE), len);
              }
+             break;
+          case MENU_ENUM_LABEL_INPUT_ALLOW_TURBO_DPAD:
+             strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_INPUT_ALLOW_TURBO_DPAD), len);
              break;
           default:
              if (string_is_empty(s))

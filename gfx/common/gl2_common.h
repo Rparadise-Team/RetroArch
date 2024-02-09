@@ -32,9 +32,15 @@
 #include <formats/image.h>
 
 #include "../video_driver.h"
-#include "../video_coord_array.h"
 
 RETRO_BEGIN_DECLS
+
+#define GL2_BIND_TEXTURE(id, wrap_mode, mag_filter, min_filter) \
+   glBindTexture(GL_TEXTURE_2D, id); \
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode); \
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode); \
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter); \
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter)
 
 #if defined(HAVE_PSGL)
 #define RARCH_GL_FRAMEBUFFER GL_FRAMEBUFFER_OES
@@ -179,7 +185,8 @@ enum gl2_flags
    GL2_FLAG_OVERLAY_FULLSCREEN     = (1 << 18),
    GL2_FLAG_MENU_TEXTURE_ENABLE    = (1 << 19),
    GL2_FLAG_MENU_TEXTURE_FULLSCREEN= (1 << 20),
-   GL2_FLAG_NONE                   = (1 << 21)
+   GL2_FLAG_NONE                   = (1 << 21),
+   GL2_FLAG_FRAME_DUPE_LOCK        = (1 << 22)
 };
 
 struct gl2
@@ -248,15 +255,9 @@ struct gl2
    struct video_tex_info prev_info[GFX_MAX_TEXTURES]; /* unsigned alignment */
    struct video_fbo_rect fbo_rect[GFX_MAX_SHADERS];   /* unsigned alignment */
 
+   char device_str[128];
    bool pbo_readback_valid[4];
 };
-
-#define GL2_BIND_TEXTURE(id, wrap_mode, mag_filter, min_filter) \
-   glBindTexture(GL_TEXTURE_2D, id); \
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode); \
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode); \
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter); \
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter)
 
 bool gl2_load_luts(
       const void *shader_data,

@@ -68,6 +68,8 @@
    strlcpy(var, newvar, sizeof(var)); \
 }
 
+RETRO_BEGIN_DECLS
+
 enum crt_switch_type
 {
    CRT_SWITCH_NONE = 0,
@@ -80,12 +82,11 @@ enum crt_switch_type
 enum override_type
 {
    OVERRIDE_NONE = 0,
+   OVERRIDE_AS,
    OVERRIDE_CORE,
    OVERRIDE_CONTENT_DIR,
    OVERRIDE_GAME
 };
-
-RETRO_BEGIN_DECLS
 
 typedef struct settings
 {
@@ -105,7 +106,6 @@ typedef struct settings
       int location_update_interval_distance;
       int state_slot;
       int replay_slot;
-      int audio_wasapi_sh_buffer_length;
       int crt_switch_center_adjust;
       int crt_switch_porch_adjust;
 #ifdef HAVE_VULKAN
@@ -159,6 +159,20 @@ typedef struct settings
       unsigned audio_output_sample_rate;
       unsigned audio_block_frames;
       unsigned audio_latency;
+
+#ifdef HAVE_WASAPI
+      unsigned audio_wasapi_sh_buffer_length;
+#endif
+
+#ifdef HAVE_MICROPHONE
+      unsigned microphone_sample_rate;
+      unsigned microphone_block_frames;
+      unsigned microphone_latency;
+      unsigned microphone_resampler_quality;
+#ifdef HAVE_WASAPI
+      unsigned microphone_wasapi_sh_buffer_length;
+#endif
+#endif
 
       unsigned fps_update_interval;
       unsigned memory_update_interval;
@@ -325,9 +339,13 @@ typedef struct settings
       unsigned ai_service_mode;
       unsigned ai_service_target_lang;
       unsigned ai_service_source_lang;
+      unsigned ai_service_poll_delay;
+      unsigned ai_service_text_position;
+      unsigned ai_service_text_padding;
 
       unsigned core_updater_auto_backup_history_size;
       unsigned video_black_frame_insertion;
+      unsigned video_bfi_dark_frames;
       unsigned video_autoswitch_refresh_rate;
       unsigned quit_on_close_content;
 
@@ -350,6 +368,7 @@ typedef struct settings
       float placeholder;
       float video_aspect_ratio;
       float video_refresh_rate;
+      float video_autoswitch_pal_threshold;
       float crt_video_refresh_rate;
       float video_font_size;
       float video_msg_pos_x;
@@ -382,6 +401,7 @@ typedef struct settings
       float audio_mixer_volume; /* dB scale. */
 
       float input_overlay_opacity;
+      float input_osk_overlay_opacity;
 
       float input_overlay_scale_landscape;
       float input_overlay_aspect_adjust_landscape;
@@ -418,6 +438,7 @@ typedef struct settings
       char wifi_driver[32];
       char led_driver[32];
       char location_driver[32];
+      char cloud_sync_driver[32];
       char menu_driver[32];
       char cheevos_username[32];
       char cheevos_password[256];
@@ -435,6 +456,12 @@ typedef struct settings
 
       char input_keyboard_layout[64];
 
+#ifdef HAVE_MICROPHONE
+      char microphone_driver[32];
+      char microphone_resampler[32];
+      char microphone_device[255];
+#endif
+
 #ifdef ANDROID
       char input_android_physical_keyboard[255];
 #endif
@@ -444,6 +471,10 @@ typedef struct settings
       char netplay_mitm_server[255];
 
       char translation_service_url[2048];
+
+      char webdav_url[255];
+      char webdav_username[255];
+      char webdav_password[255];
 
       char youtube_stream_key[PATH_MAX_LENGTH];
       char twitch_stream_key[PATH_MAX_LENGTH];
@@ -486,6 +517,7 @@ typedef struct settings
       char path_cheat_database[PATH_MAX_LENGTH];
       char path_content_database[PATH_MAX_LENGTH];
       char path_overlay[PATH_MAX_LENGTH];
+      char path_osk_overlay[PATH_MAX_LENGTH];
       char path_record_config[PATH_MAX_LENGTH];
       char path_stream_config[PATH_MAX_LENGTH];
       char path_menu_wallpaper[PATH_MAX_LENGTH];
@@ -509,6 +541,7 @@ typedef struct settings
       char directory_libretro[PATH_MAX_LENGTH];
       char directory_input_remapping[PATH_MAX_LENGTH];
       char directory_overlay[PATH_MAX_LENGTH];
+      char directory_osk_overlay[PATH_MAX_LENGTH];
       char directory_resampler[PATH_MAX_LENGTH];
       char directory_screenshot[PATH_MAX_LENGTH];
       char directory_system[PATH_MAX_LENGTH];
@@ -531,6 +564,7 @@ typedef struct settings
       char directory_bottom_assets[PATH_MAX_LENGTH];
 #endif
       char log_dir[PATH_MAX_LENGTH];
+      char app_icon[PATH_MAX_LENGTH];
    } paths;
 
    bool modified;
@@ -551,6 +585,7 @@ typedef struct settings
       bool video_ctx_scaling;
       bool video_force_aspect;
       bool video_frame_delay_auto;
+      bool video_frame_rest;
       bool video_crop_overscan;
       bool video_aspect_ratio_auto;
       bool video_dingux_ipu_keep_aspect;
@@ -595,9 +630,25 @@ typedef struct settings
       bool audio_enable_menu_scroll;
       bool audio_sync;
       bool audio_rate_control;
+      bool audio_fastforward_mute;
+      bool audio_fastforward_speedup;
+#ifdef TARGET_OS_IOS
+      bool audio_respect_silent_mode;
+#endif
+
+#ifdef HAVE_WASAPI
       bool audio_wasapi_exclusive_mode;
       bool audio_wasapi_float_format;
-      bool audio_fastforward_mute;
+#endif
+
+#ifdef HAVE_MICROPHONE
+      /* Microphone */
+      bool microphone_enable;
+#ifdef HAVE_WASAPI
+      bool microphone_wasapi_exclusive_mode;
+      bool microphone_wasapi_float_format;
+#endif
+#endif
 
       /* Input */
       bool input_remap_binds_enable;
@@ -611,6 +662,7 @@ typedef struct settings
       bool input_overlay_show_mouse_cursor;
       bool input_overlay_auto_rotate;
       bool input_overlay_auto_scale;
+      bool input_osk_overlay_auto_scale;
       bool input_descriptor_label_show;
       bool input_descriptor_hide_unbound;
       bool input_all_users_control_menu;
@@ -621,8 +673,17 @@ typedef struct settings
       bool input_small_keyboard_enable;
       bool input_keyboard_gamepad_enable;
       bool input_auto_mouse_grab;
+      bool input_allow_turbo_dpad;
+      bool input_hotkey_device_merge;
 #if defined(HAVE_DINPUT) || defined(HAVE_WINRAWINPUT)
       bool input_nowinkey_enable;
+#endif
+#ifdef UDEV_TOUCH_SUPPORT
+      bool input_touch_vmouse_pointer;
+      bool input_touch_vmouse_mouse;
+      bool input_touch_vmouse_touchpad;
+      bool input_touch_vmouse_trackball;
+      bool input_touch_vmouse_gesture;
 #endif
 
       /* Frame time counter */
@@ -640,6 +701,7 @@ typedef struct settings
       bool notification_show_remap_load;
       bool notification_show_config_override_load;
       bool notification_show_set_initial_disk;
+      bool notification_show_save_state;
       bool notification_show_fast_forward;
 #ifdef HAVE_SCREENSHOTS
       bool notification_show_screenshot;
@@ -659,13 +721,11 @@ typedef struct settings
       bool menu_core_enable;
       bool menu_show_sublabels;
       bool menu_dynamic_wallpaper_enable;
-      bool menu_throttle;
       bool menu_mouse_enable;
       bool menu_pointer_enable;
       bool menu_navigation_wraparound_enable;
       bool menu_navigation_browser_filter_supported_extensions_enable;
       bool menu_show_advanced_settings;
-      bool menu_throttle_framerate;
       bool menu_linear_filter;
       bool menu_horizontal_animation;
       bool menu_scroll_fast;
@@ -691,7 +751,10 @@ typedef struct settings
       bool menu_show_latency;
       bool menu_show_rewind;
       bool menu_show_overlays;
+#if 0
+/* Thumbnailpack removal */
       bool menu_show_legacy_thumbnail_updater;
+#endif
       bool menu_materialui_icons_enable;
       bool menu_materialui_playlist_icons_enable;
       bool menu_materialui_switch_icons;
@@ -829,6 +892,11 @@ typedef struct settings
       bool cheevos_visibility_unlock;
       bool cheevos_visibility_mastery;
       bool cheevos_visibility_account;
+      bool cheevos_visibility_lboard_start;
+      bool cheevos_visibility_lboard_submit;
+      bool cheevos_visibility_lboard_cancel;
+      bool cheevos_visibility_lboard_trackers;
+      bool cheevos_visibility_progress_tracker;
 
       /* Camera */
       bool camera_allow;
@@ -859,6 +927,10 @@ typedef struct settings
       bool steam_rich_presence_enable;
 #endif
 
+      /* Cloud Sync */
+      bool cloud_sync_enable;
+      bool cloud_sync_destructive;
+
       /* Misc. */
       bool discord_enable;
       bool threaded_data_runloop_enable;
@@ -869,6 +941,7 @@ typedef struct settings
       bool rewind_enable;
       bool fastforward_frameskip;
       bool vrr_runloop_enable;
+      bool menu_throttle_framerate;
       bool apply_cheats_after_toggle;
       bool apply_cheats_after_load;
       bool run_ahead_enabled;
@@ -903,6 +976,7 @@ typedef struct settings
       bool game_specific_options;
       bool auto_overrides_enable;
       bool auto_remaps_enable;
+      bool initial_disk_change_enable;
       bool global_core_options;
       bool auto_shaders_enable;
 
@@ -921,6 +995,11 @@ typedef struct settings
       bool screenshots_in_content_dir;
       bool systemfiles_in_content_dir;
       bool ssh_enable;
+#ifdef HAVE_LAKKA_SWITCH
+      bool switch_oc;
+      bool switch_cec;
+      bool bluetooth_ertm_disable;
+#endif
       bool samba_enable;
       bool bluetooth_enable;
       bool localap_enable;
@@ -940,6 +1019,7 @@ typedef struct settings
       bool playlist_show_entry_idx;
       bool playlist_fuzzy_archive_match;
       bool playlist_portable_paths;
+      bool playlist_use_filename;
 
       bool quit_press_twice;
       bool vibrate_on_keypress;
@@ -953,6 +1033,7 @@ typedef struct settings
       bool log_to_file_timestamp;
 
       bool scan_without_core_match;
+      bool scan_serial_and_crc;
 
       bool ai_service_enable;
       bool ai_service_pause;
@@ -1027,6 +1108,17 @@ const char *config_get_default_video(void);
  * Returns: Default audio driver.
  **/
 const char *config_get_default_audio(void);
+
+#if defined(HAVE_MICROPHONE)
+/**
+ * config_get_default_microphone:
+ *
+ * Gets default microphone driver.
+ *
+ * Returns: Default microphone driver.
+ **/
+const char *config_get_default_microphone(void);
+#endif
 
 /**
  * config_get_default_audio_resampler:
@@ -1141,7 +1233,8 @@ bool config_save_file(const char *path);
  *
  * Returns: true (1) on success, (-1) if nothing to write, otherwise returns false (0).
  **/
-int8_t config_save_overrides(enum override_type type, void *data, bool remove);
+int8_t config_save_overrides(enum override_type type,
+      void *data, bool remove, const char *path);
 
 /* Replaces currently loaded configuration file with
  * another one. Will load a dummy core to flush state

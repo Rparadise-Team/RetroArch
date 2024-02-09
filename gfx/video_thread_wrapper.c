@@ -1166,7 +1166,7 @@ static void thread_set_texture_enable(void *data, bool state, bool full_screen)
 }
 
 static void thread_set_osd_msg(void *data,
-      const char *msg, const void *params, void *font)
+      const char *msg, const struct font_params *params, void *font)
 {
    thread_video_t *thr = (thread_video_t*)data;
 
@@ -1431,6 +1431,11 @@ unsigned video_thread_texture_load(void *data, custom_command_method_t func)
 
    if (!thr)
       return 0;
+
+   /* if we're already on the video thread, just call the function, otherwise
+    * we may deadlock with ourself waiting for the packet to be processed. */
+   if (sthread_get_thread_id(thr->thread) == sthread_get_current_thread_id())
+      return func(data);
 
    pkt.type                       = CMD_CUSTOM_COMMAND;
    pkt.data.custom_command.method = func;

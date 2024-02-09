@@ -66,6 +66,7 @@ HAVE_CHD = 0 # disabled due to static libretro-common and libchdr conflicts betw
 HAVE_STB_VORBIS = 1
 HAVE_IBXM = 1
 HAVE_CORE_INFO_CACHE = 1
+HAVE_XDELTA = 0 # disabled because <lzma.h> isn't available (or we haven't figured out how to install it)
 
 HAVE_RGUI = 1
 HAVE_MATERIALUI = 0
@@ -75,8 +76,9 @@ HAVE_OZONE = 0
 
 OBJ := \
     frontend/drivers/platform_dos.o \
-    gfx/drivers/vga_gfx.o gfx/drivers_font/vga_font.o \
-    input/drivers/dos_input.o input/drivers_joypad/dos_joypad.o
+    gfx/drivers/vga_gfx.o \
+    input/drivers/dos_input.o \
+    input/drivers_joypad/dos_joypad.o
 
 include Makefile.common
 

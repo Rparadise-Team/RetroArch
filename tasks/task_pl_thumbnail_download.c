@@ -74,7 +74,8 @@ typedef struct pl_thumb_handle
    unsigned type_idx;
 
    enum pl_thumb_status status;
-
+   enum playlist_thumbnail_name_flags name_flags;
+   
    uint8_t flags;
 } pl_thumb_handle_t;
 
@@ -87,6 +88,45 @@ typedef struct pl_entry_id
 /*********************/
 /* Utility Functions */
 /*********************/
+
+/* Fetches the thumbnail subdirectory (Named_Snaps,
+ * Named_Titles, Named_Boxarts) corresponding to the
+ * specified 'type index' (1, 2, 3).
+ * Returns true if 'type index' is valid */
+static bool gfx_thumbnail_get_sub_directory(
+      unsigned type_idx, const char **sub_directory)
+{
+   if (!sub_directory)
+      return false;
+   
+   switch (type_idx)
+   {
+      case 1:
+         *sub_directory = "Named_Snaps";
+         return true;
+      case 2:
+         *sub_directory = "Named_Titles";
+         return true;
+      case 3:
+         *sub_directory = "Named_Boxarts";
+         return true;
+      case 0:
+      default:
+         break;
+   }
+   
+   return false;
+}
+
+/* Fetches current database name.
+ * Returns true if database name is valid. */
+static void gfx_thumbnail_get_db_name(
+      gfx_thumbnail_path_data_t *path_data, const char **db_name)
+{
+   if (!string_is_empty(path_data->content_db_name))
+      *db_name = path_data->content_db_name;
+}
+
 
 /* Fetches local and remote paths for current thumbnail
  * of current type */
@@ -114,14 +154,14 @@ static bool get_thumbnail_paths(
       return false;
    
    /* Extract required strings */
-   gfx_thumbnail_get_system(pl_thumb->thumbnail_path_data, &system);
+   gfx_thumbnail_get_system( pl_thumb->thumbnail_path_data, &system);
    gfx_thumbnail_get_db_name(pl_thumb->thumbnail_path_data, &db_name);
-   if (!gfx_thumbnail_get_img_name(pl_thumb->thumbnail_path_data, &img_name))
+   if (!gfx_thumbnail_get_img_name(pl_thumb->thumbnail_path_data, &img_name, pl_thumb->name_flags))
       return false;
    if (!gfx_thumbnail_get_sub_directory(pl_thumb->type_idx, &sub_dir))
       return false;
    
-   /* Dermine system name */
+   /* Determine system name */
    if (string_is_empty(db_name))
    {
       if (string_is_empty(system))
@@ -204,6 +244,13 @@ void cb_http_task_download_pl_thumbnail(
    if (!data || !data->data || string_is_empty(transf->path))
       goto finish;
 
+   /* Skip if data can't be good */
+   if (data->status != 200)
+   {
+      err = "File not found.";
+      goto finish;
+   }
+
    /* Create output directory, if required */
    strlcpy(output_dir, transf->path, sizeof(output_dir));
    path_basedir_wrapper(output_dir);
@@ -223,12 +270,12 @@ void cb_http_task_download_pl_thumbnail(
 
 finish:
 
-   /* Log any error messages */
    if (!string_is_empty(err))
-   {
-      RARCH_ERR("Download of '%s' failed: %s\n",
-            (transf ? transf->path: "unknown"), err);
-   }
+      RARCH_ERR("[Thumbnail]: Download \"%s\" failed: %s\n",
+            (transf ? transf->path : "unknown"), err);
+   else
+      RARCH_LOG("[Thumbnail]: Download \"%s\".\n",
+            (transf ? transf->path : "unknown"));
 
    if (transf)
       free(transf);
@@ -319,7 +366,8 @@ static void free_pl_thumb_handle(pl_thumb_handle_t *pl_thumb)
 static void task_pl_thumbnail_download_handler(retro_task_t *task)
 {
    pl_thumb_handle_t *pl_thumb = NULL;
-   
+   enum playlist_thumbnail_name_flags next_flag = PLAYLIST_THUMBNAIL_FLAG_INVALID;
+
    if (!task)
       goto task_finished;
    
@@ -374,6 +422,8 @@ static void task_pl_thumbnail_download_handler(retro_task_t *task)
             /* Start iterating over thumbnail type */
             pl_thumb->type_idx  = 1;
             pl_thumb->status    = PL_THUMB_ITERATE_TYPE;
+            playlist_update_thumbnail_name_flag(pl_thumb->playlist, pl_thumb->list_index, PLAYLIST_THUMBNAIL_FLAG_FULL_NAME);
+            pl_thumb->name_flags = PLAYLIST_THUMBNAIL_FLAG_FULL_NAME;
          }
          else
          {
@@ -403,13 +453,25 @@ static void task_pl_thumbnail_download_handler(retro_task_t *task)
          /* Check whether all thumbnail types have been processed */
          if (pl_thumb->type_idx > 3)
          {
-            /* Time to move on to the next entry */
-            pl_thumb->list_index++;
-            if (pl_thumb->list_index < pl_thumb->list_size)
-               pl_thumb->status = PL_THUMB_ITERATE_ENTRY;
-            else
-               pl_thumb->status = PL_THUMB_END;
-            break;
+            next_flag = playlist_get_next_thumbnail_name_flag(pl_thumb->playlist,pl_thumb->list_index);
+            if (next_flag == PLAYLIST_THUMBNAIL_FLAG_NONE) {
+               if (pl_thumb->playlist )
+               /* Time to move on to the next entry */
+               pl_thumb->list_index++;
+               if (pl_thumb->list_index < pl_thumb->list_size)
+                  pl_thumb->status = PL_THUMB_ITERATE_ENTRY;
+               else
+                  pl_thumb->status = PL_THUMB_END;
+               break;
+            } else {
+               /* Increment the name flag to cover the 3 supported naming conventions. 
+                * Side-effect: all combinations will be tried (3x3 requests for 1 playlist entry)
+                * even if some files were already downloaded, but that may be useful if later on
+                * different view priorities are implemented. */
+               pl_thumb->type_idx = 1;
+               playlist_update_thumbnail_name_flag(pl_thumb->playlist, pl_thumb->list_index, next_flag);
+               pl_thumb->name_flags = next_flag;
+            }
          }
 
          /* Download current thumbnail */
@@ -607,8 +669,13 @@ static void cb_task_pl_entry_thumbnail_refresh_menu(
    
    if (do_refresh)
    {
-      unsigned i = (unsigned)pl_thumb->list_index;
-      menu_driver_ctl(RARCH_MENU_CTL_REFRESH_THUMBNAIL_IMAGE, &i);
+      struct menu_state *menu_st = menu_state_get_ptr();
+      unsigned i                 = (unsigned)pl_thumb->list_index;
+      if (     menu_st->driver_ctx 
+            && menu_st->driver_ctx->refresh_thumbnail_image)
+         menu_st->driver_ctx->refresh_thumbnail_image(
+               menu_st->userdata, i);
+
    }
    
 #endif
@@ -765,7 +832,8 @@ bool task_push_pl_entry_thumbnail_download(
    gfx_thumbnail_path_data_t *
          thumbnail_path_data     = NULL;
    const char *dir_thumbnails    = NULL;
-   
+   enum playlist_thumbnail_name_flags next_flag = PLAYLIST_THUMBNAIL_FLAG_INVALID;
+
    /* Sanity check */
    if (!settings || !task || !pl_thumb || !playlist || !entry_id)
       goto error;
@@ -820,7 +888,19 @@ bool task_push_pl_entry_thumbnail_download(
    if (!gfx_thumbnail_set_content_playlist(
          thumbnail_path_data, playlist, idx))
       goto error;
-   
+
+   /* Apply flexible thumbnail naming: ROM file name - database name - short name */
+   next_flag = playlist_get_next_thumbnail_name_flag(playlist,idx);
+   playlist_update_thumbnail_name_flag(playlist, idx, next_flag);
+   if (next_flag == PLAYLIST_THUMBNAIL_FLAG_NONE) {
+      runloop_msg_queue_push(
+         msg_hash_to_str(MSG_NO_THUMBNAIL_DOWNLOAD_POSSIBLE),
+         1, 100, true,
+         NULL, MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);   
+      goto error;
+
+   }
+
    /* Configure handle
     * > Note: playlist_config is unused by this task */
    pl_thumb->system              = NULL;
@@ -832,6 +912,7 @@ bool task_push_pl_entry_thumbnail_download(
    pl_thumb->list_size           = playlist_size(playlist);
    pl_thumb->list_index          = idx;
    pl_thumb->type_idx            = 1;
+   pl_thumb->name_flags          = next_flag;
    pl_thumb->status              = PL_THUMB_BEGIN;
 
    if (overwrite)

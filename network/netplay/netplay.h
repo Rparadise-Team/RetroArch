@@ -147,6 +147,7 @@ typedef struct
    struct netplay_room host_room;
    struct netplay_room *room_list;
    struct netplay_rooms *rooms_data;
+   struct retro_netpacket_callback *core_netpacket_interface;
    /* Used while Netplay is running */
    netplay_t *data;
    netplay_client_info_t *client_info;
@@ -193,6 +194,8 @@ bool init_netplay_deferred(const char *server, unsigned port,
 void deinit_netplay(void);
 
 bool netplay_driver_ctl(enum rarch_netplay_ctl_state state, void *data);
+
+bool netplay_is_spectating(void);
 
 #ifdef HAVE_NETPLAYDISCOVERY
 /** Initialize Netplay discovery */
