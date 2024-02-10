@@ -6,16 +6,12 @@
 
 #ifndef RC_DISABLE_LUA
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+RC_BEGIN_C_DECLS
 
 #include <lua.h>
 #include <lauxlib.h>
 
-#ifdef __cplusplus
-}
-#endif
+RC_END_C_DECLS
 
 #endif /* RC_DISABLE_LUA */
 
@@ -68,10 +64,10 @@ static int rc_parse_operand_lua(rc_operand_t* self, const char** memaddr, rc_par
   return RC_OK;
 }
 
-static int rc_parse_operand_memory(rc_operand_t* self, const char** memaddr, rc_parse_state_t* parse, int is_indirect) {
+static int rc_parse_operand_memory(rc_operand_t* self, const char** memaddr, rc_parse_state_t* parse, uint8_t is_indirect) {
   const char* aux = *memaddr;
-  unsigned address;
-  char size;
+  uint32_t address;
+  uint8_t size;
   int ret;
 
   switch (*aux) {
@@ -115,7 +111,7 @@ static int rc_parse_operand_memory(rc_operand_t* self, const char** memaddr, rc_
       size = self->size;
   }
 
-  self->value.memref = rc_alloc_memref(parse, address, size, (char)is_indirect);
+  self->value.memref = rc_alloc_memref(parse, address, size, is_indirect);
   if (parse->offset < 0)
     return parse->offset;
 
@@ -123,7 +119,7 @@ static int rc_parse_operand_memory(rc_operand_t* self, const char** memaddr, rc_
   return RC_OK;
 }
 
-int rc_parse_operand(rc_operand_t* self, const char** memaddr, int is_indirect, rc_parse_state_t* parse) {
+int rc_parse_operand(rc_operand_t* self, const char** memaddr, uint8_t is_indirect, rc_parse_state_t* parse) {
   const char* aux = *memaddr;
   char* end;
   int ret;
@@ -238,7 +234,7 @@ int rc_parse_operand(rc_operand_t* self, const char** memaddr, int is_indirect, 
 
     case '0':
       if (aux[1] == 'x' || aux[1] == 'X') { /* hex integer constant */
-        /* fall through */
+        /* fallthrough */ /* to default */
     default:
         ret = rc_parse_operand_memory(self, &aux, parse, is_indirect);
 
@@ -247,8 +243,7 @@ int rc_parse_operand(rc_operand_t* self, const char** memaddr, int is_indirect, 
 
         break;
       }
-
-      /* fall through for case '0' where not '0x' */
+      /* fallthrough */ /* to case '1' for case '0' where not '0x' */
     case '1': case '2': case '3': case '4': case '5': /* unsigned integer constant */
     case '6': case '7': case '8': case '9':
       value = strtoul(aux, &end, 10);
@@ -286,11 +281,11 @@ typedef struct {
 rc_luapeek_t;
 
 static int rc_luapeek(lua_State* L) {
-  unsigned address = (unsigned)luaL_checkinteger(L, 1);
-  unsigned num_bytes = (unsigned)luaL_checkinteger(L, 2);
+  uint32_t address = (uint32_t)luaL_checkinteger(L, 1);
+  uint32_t num_bytes = (uint32_t)luaL_checkinteger(L, 2);
   rc_luapeek_t* luapeek = (rc_luapeek_t*)lua_touserdata(L, 3);
 
-  unsigned value = luapeek->peek(address, num_bytes, luapeek->ud);
+  uint32_t value = luapeek->peek(address, num_bytes, luapeek->ud);
 
   lua_pushinteger(L, value);
   return 1;
@@ -301,6 +296,7 @@ static int rc_luapeek(lua_State* L) {
 int rc_operand_is_float_memref(const rc_operand_t* self) {
   switch (self->size) {
     case RC_MEMSIZE_FLOAT:
+    case RC_MEMSIZE_FLOAT_BE:
     case RC_MEMSIZE_MBF32:
     case RC_MEMSIZE_MBF32_LE:
       return 1;
@@ -329,7 +325,7 @@ int rc_operand_is_float(const rc_operand_t* self) {
   return rc_operand_is_float_memref(self);
 }
 
-unsigned rc_transform_operand_value(unsigned value, const rc_operand_t* self) {
+uint32_t rc_transform_operand_value(uint32_t value, const rc_operand_t* self) {
   switch (self->type)
   {
     case RC_OPERAND_BCD:
@@ -450,10 +446,10 @@ void rc_evaluate_operand(rc_typed_value_t* result, rc_operand_t* self, rc_eval_s
 
         if (lua_pcall(eval_state->L, 2, 1, 0) == LUA_OK) {
           if (lua_isboolean(eval_state->L, -1)) {
-            result->value.u32 = (unsigned)lua_toboolean(eval_state->L, -1);
+            result->value.u32 = (uint32_t)lua_toboolean(eval_state->L, -1);
           }
           else {
-            result->value.u32 = (unsigned)lua_tonumber(eval_state->L, -1);
+            result->value.u32 = (uint32_t)lua_tonumber(eval_state->L, -1);
           }
         }
 

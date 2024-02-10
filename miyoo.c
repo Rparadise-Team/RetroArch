@@ -20,10 +20,10 @@ static int res_x = 0, res_y = 0;
  * @brief Displays an on-screen notification of the current scaling option.
  * 
  * The 4 states are:
- * 1. Integer scaling: OFF (Original) - resolution
- * 2. Integer scaling: OFF (4:3) - resolution
- * 3. Integer scaling: ON (Original) - resolution
- * 4. Integer scaling: ON (4:3) - resolution
+ * 1. Integer scaling: OFF (Original)
+ * 2. Integer scaling: OFF (4:3)
+ * 3. Integer scaling: ON (Original)
+ * 4. Integer scaling: ON (4:3)
  * 
  * @param settings 
  */
@@ -34,7 +34,7 @@ static void show_miyoo_fullscreen_notification(settings_t *settings)
 
     msg[0] = '\0';
 
-    if (res_x == 0 || res_y == 0) {
+   if (res_x == 0 || res_y == 0) {
         const char *fb_device = "/dev/fb0";
         int fb = open(fb_device, O_RDWR);
 

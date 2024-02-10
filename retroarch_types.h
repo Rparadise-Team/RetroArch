@@ -62,14 +62,13 @@ enum rarch_ctl_state
    RARCH_CTL_UNSET_BPS_PREF,
    RARCH_CTL_UNSET_UPS_PREF,
    RARCH_CTL_UNSET_IPS_PREF,
+   RARCH_CTL_UNSET_XDELTA_PREF,
 
 #ifdef HAVE_CONFIGFILE
    /* Block config read */
    RARCH_CTL_SET_BLOCK_CONFIG_READ,
    RARCH_CTL_UNSET_BLOCK_CONFIG_READ,
 #endif
-
-   RARCH_CTL_HAS_SET_SUBSYSTEMS,
 
    RARCH_CTL_SET_WINDOWED_SCALE,
 
@@ -124,8 +123,10 @@ enum rarch_override_setting
    RARCH_OVERRIDE_SETTING_UPS_PREF,
    RARCH_OVERRIDE_SETTING_BPS_PREF,
    RARCH_OVERRIDE_SETTING_IPS_PREF,
+   RARCH_OVERRIDE_SETTING_XDELTA_PREF,
    RARCH_OVERRIDE_SETTING_LIBRETRO_DEVICE,
    RARCH_OVERRIDE_SETTING_LOG_TO_FILE,
+   RARCH_OVERRIDE_SETTING_DATABASE_SCAN,
    RARCH_OVERRIDE_SETTING_LAST
 };
 
@@ -225,11 +226,6 @@ typedef struct retro_ctx_serialize_info
    void *data;
    size_t size;
 } retro_ctx_serialize_info_t;
-
-typedef struct retro_ctx_size_info
-{
-   size_t size;
-} retro_ctx_size_info_t;
 
 typedef struct retro_callbacks
 {

@@ -217,7 +217,7 @@ static bool dinput_joypad_get_vidpid_from_xinput_index(
       int32_t index, int32_t *vid,
       int32_t *pid, int32_t *dinput_index)
 {
-   int i;
+   size_t i;
 
    for (i = 0; i < ARRAY_SIZE(g_xinput_pad_indexes); i++)
    {
@@ -241,6 +241,11 @@ static BOOL CALLBACK enum_joypad_cb_hybrid(
    LPDIRECTINPUTDEVICE8 *pad = NULL;
    if (g_joypad_cnt == MAX_USERS)
       return DIENUM_STOP;
+
+   while (!g_xinput_states[g_last_xinput_pad_idx].connected && g_last_xinput_pad_idx < 3) 
+   {
+      g_last_xinput_pad_idx++;
+   }
 
    pad = &g_pads[g_joypad_cnt].joypad;
 

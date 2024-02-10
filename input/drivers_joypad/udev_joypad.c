@@ -506,6 +506,12 @@ static void udev_joypad_poll(void)
             /* Hotplug removal */
             else if (string_is_equal(action, "remove"))
                udev_joypad_remove_device(devnode);
+            /* Device change */
+            else if  (string_is_equal(action, "change"))
+            {
+               udev_joypad_remove_device(devnode);
+               udev_check_device(dev, devnode);
+            }
          }
 
          udev_device_unref(dev);
@@ -672,7 +678,7 @@ static int32_t udev_joypad_button(unsigned port, uint16_t joykey)
 {
    const struct udev_joypad *pad        = (const struct udev_joypad*)
       &udev_pads[port];
-   if (port >= DEFAULT_MAX_PADS)
+   if (port >= MAX_USERS)
       return 0;
    return udev_joypad_button_state(pad, port, joykey);
 }
@@ -736,7 +742,7 @@ static int16_t udev_joypad_state(
    int16_t ret                          = 0;
    uint16_t port_idx                    = joypad_info->joy_idx;
 
-   if (port_idx < DEFAULT_MAX_PADS)
+   if (port_idx < MAX_USERS)
    {
       unsigned i;
       const struct udev_joypad *pad     = (const struct udev_joypad*)

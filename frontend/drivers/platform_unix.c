@@ -82,6 +82,7 @@
 #include "../../msg_hash.h"
 #include "../../paths.h"
 #include "../../retroarch.h"
+#include "../../translation_defines.h"
 #include "../../verbosity.h"
 
 #ifdef HAVE_MENU
@@ -167,10 +168,10 @@ int system_property_get(const char *command,
    char *curpos                 = NULL;
    size_t buf_pos               = strlcpy(cmd, command, sizeof(cmd));
 
-   cmd[buf_pos]                 = ' ';
-   cmd[buf_pos+1]               = '\0';
+   cmd[  buf_pos]               = ' ';
+   cmd[++buf_pos]               = '\0';
 
-   buf_pos                      = strlcat(cmd, args, sizeof(cmd));
+   strlcpy(cmd + buf_pos, args, sizeof(cmd) - buf_pos);
 
    if (!(pipe = popen(cmd, "r")))
    {
@@ -203,33 +204,6 @@ int system_property_get(const char *command,
 #ifdef ANDROID
 /* forward declaration */
 bool android_run_events(void *data);
-
-void android_dpi_get_density(char *s, size_t len)
-{
-   static bool inited_once             = false;
-   static bool inited2_once            = false;
-   static char string[PROP_VALUE_MAX]  = {0};
-   static char string2[PROP_VALUE_MAX] = {0};
-   if (!inited_once)
-   {
-      system_property_get("getprop", "ro.sf.lcd_density", string);
-      inited_once = true;
-   }
-
-   if (!string_is_empty(string))
-   {
-      strlcpy(s, string, len);
-      return;
-   }
-
-   if (!inited2_once)
-   {
-      system_property_get("wm", "density", string2);
-      inited2_once = true;
-   }
-
-   strlcpy(s, string2, len);
-}
 
 void android_app_write_cmd(struct android_app *android_app, int8_t cmd)
 {
@@ -823,6 +797,23 @@ static void check_proc_acpi_sysfs_battery(const char *node,
       }
    }
 
+   fill_pathname_join_special(path, basenode, "type", sizeof(path));
+ 
+   if (!filestream_exists(path))
+      goto status;
+
+   if (filestream_read_file(path, (void**)&buf, &length) != 1)
+      goto status;
+
+    if (buf)
+   {
+      if (strstr((char*)buf, "Battery"))
+      *have_battery = true;
+      free(buf);
+      buf = NULL;
+   }
+
+status:     
    fill_pathname_join_special(path, basenode, "status", sizeof(path));
 
    if (!filestream_exists(path))
@@ -1582,6 +1573,8 @@ static void frontend_unix_get_env(int *argc,
                   "shaders", sizeof(g_defaults.dirs[DEFAULT_DIR_SHADER]));
             fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_OVERLAY], app_dir,
                   "overlays", sizeof(g_defaults.dirs[DEFAULT_DIR_OVERLAY]));
+            fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_OSK_OVERLAY], app_dir,
+                  "overlays/keyboards", sizeof(g_defaults.dirs[DEFAULT_DIR_OSK_OVERLAY]));
 
             fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CORE], app_dir,
                   "cores", sizeof(g_defaults.dirs[DEFAULT_DIR_CORE]));
@@ -1741,13 +1734,13 @@ static void frontend_unix_get_env(int *argc,
 
    if (xdg)
    {
-      strlcpy(base_path, xdg, sizeof(base_path));
-      strlcat(base_path, "/retroarch", sizeof(base_path));
+      size_t _len = strlcpy(base_path, xdg, sizeof(base_path));
+      strlcpy(base_path + _len, "/retroarch", sizeof(base_path) - _len);
    }
    else if (home)
    {
-      strlcpy(base_path, home, sizeof(base_path));
-      strlcat(base_path, "/.config/retroarch", sizeof(base_path));
+      size_t _len = strlcpy(base_path, home, sizeof(base_path));
+      strlcpy(base_path + _len, "/.config/retroarch", sizeof(base_path) - _len);
    }
    else
       strlcpy(base_path, "retroarch", sizeof(base_path));
@@ -1885,7 +1878,9 @@ static void frontend_unix_get_env(int *argc,
    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CHEATS], base_path,
          "cheats", sizeof(g_defaults.dirs[DEFAULT_DIR_CHEATS]));
    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_OVERLAY], base_path,
-         "overlay", sizeof(g_defaults.dirs[DEFAULT_DIR_OVERLAY]));
+         "overlays", sizeof(g_defaults.dirs[DEFAULT_DIR_OVERLAY]));
+   fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_OSK_OVERLAY], base_path,
+         "overlays/keyboards", sizeof(g_defaults.dirs[DEFAULT_DIR_OSK_OVERLAY]));
    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CORE_ASSETS], base_path,
          "downloads", sizeof(g_defaults.dirs[DEFAULT_DIR_CORE_ASSETS]));
    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_SCREENSHOT], base_path,
@@ -2255,21 +2250,23 @@ static int frontend_unix_parse_drive_list(void *data, bool load_content)
 
    if (xdg)
    {
-      strlcpy(base_path, xdg, sizeof(base_path));
-      strlcat(base_path, "/retroarch", sizeof(base_path));
+      size_t _len = strlcpy(base_path, xdg, sizeof(base_path));
+      strlcpy(base_path + _len, "/retroarch", sizeof(base_path) - _len);
    }
    else if (home)
    {
-      strlcpy(base_path, home, sizeof(base_path));
-      strlcat(base_path, "/.config/retroarch", sizeof(base_path));
+      size_t _len = strlcpy(base_path, home, sizeof(base_path));
+      strlcpy(base_path + _len, "/.config/retroarch", sizeof(base_path) - _len);
    }
 #endif
 
-   strlcpy(udisks_media_path, "/run/media", sizeof(udisks_media_path));
-   if (user)
    {
-      strlcat(udisks_media_path, "/", sizeof(udisks_media_path));
-      strlcat(udisks_media_path, user, sizeof(udisks_media_path));
+      size_t _len = strlcpy(udisks_media_path, "/run/media", sizeof(udisks_media_path));
+      if (user)
+      {
+         _len += strlcpy(udisks_media_path + _len, "/", sizeof(udisks_media_path) - _len);
+         strlcpy(udisks_media_path + _len, user, sizeof(udisks_media_path) - _len);
+      }
    }
 
    if (!string_is_empty(base_path))
@@ -2642,10 +2639,10 @@ static void frontend_unix_watch_path_for_changes(struct string_list *list, int f
       return;
    }
 
-   inotify_data = (inotify_data_t*)calloc(1, sizeof(*inotify_data));
-   inotify_data->fd = fd;
+   inotify_data            = (inotify_data_t*)calloc(1, sizeof(*inotify_data));
+   inotify_data->fd        = fd;
 
-   inotify_data->wd_list = int_vector_list_new();
+   inotify_data->wd_list   = int_vector_list_new();
    inotify_data->path_list = string_list_new();
 
    /* handle other flags here as new ones are added */
@@ -2685,7 +2682,7 @@ static bool frontend_unix_check_for_path_changes(path_change_data_t *change_data
    {
       i = 0;
 
-      while (i < length && i < sizeof(buffer))
+      while (i < length && i < (int)sizeof(buffer))
       {
          struct inotify_event *event = (struct inotify_event *)&buffer[i];
 
@@ -2702,7 +2699,7 @@ static bool frontend_unix_check_for_path_changes(path_change_data_t *change_data
              * to disk, to make sure that the new data is
              * immediately available when the file is re-read.
              */
-            for (j = 0; j < inotify_data->wd_list->count; j++)
+            for (j = 0; j < (int)inotify_data->wd_list->count; j++)
             {
                if (inotify_data->wd_list->data[j] == event->wd)
                {
@@ -2792,13 +2789,154 @@ static bool is_narrator_running_unix(void)
    return (kill(speak_pid, 0) == 0);
 }
 
+/**
+ * Returns the espeak-compatible string representation of the translation language enum value.
+ */
+static const char* espeak_get_str(enum translation_lang id)
+{
+   switch (id)
+   {
+      case TRANSLATION_LANG_EN:
+         return "en";
+      case TRANSLATION_LANG_ES:
+         return "es";
+      case TRANSLATION_LANG_FR:
+         return "fr";
+      case TRANSLATION_LANG_IT:
+         return "it";
+      case TRANSLATION_LANG_DE:
+         return "de";
+      case TRANSLATION_LANG_JP:
+         return "ja";
+      case TRANSLATION_LANG_NL:
+         return "nl";
+      case TRANSLATION_LANG_CS:
+         return "cs";
+      case TRANSLATION_LANG_DA:
+         return "da";
+      case TRANSLATION_LANG_SV:
+         return "sv";
+      case TRANSLATION_LANG_HR:
+         return "hr";
+      case TRANSLATION_LANG_KO:
+         return "ko";
+      case TRANSLATION_LANG_ZH_CN:
+      case TRANSLATION_LANG_ZH_TW:
+         return "cmn";
+      case TRANSLATION_LANG_CA:
+         return "ca";
+      case TRANSLATION_LANG_BG:
+         return "bg";
+      case TRANSLATION_LANG_BN:
+         return "bn";
+      case TRANSLATION_LANG_EU:
+         return "eu";
+      case TRANSLATION_LANG_AZ:
+         return "az";
+      case TRANSLATION_LANG_AR:
+         return "ar";
+      case TRANSLATION_LANG_SQ:
+         return "sq";
+      case TRANSLATION_LANG_AF:
+         return "af";
+      case TRANSLATION_LANG_EO:
+         return "eo";
+      case TRANSLATION_LANG_ET:
+         return "et";
+      case TRANSLATION_LANG_FI:
+         return "fi";
+      case TRANSLATION_LANG_KA:
+         return "ka";
+      case TRANSLATION_LANG_EL:
+         return "el";
+      case TRANSLATION_LANG_GU:
+         return "gu";
+      case TRANSLATION_LANG_HT:
+         return "ht";
+      case TRANSLATION_LANG_HE:
+         return "he";
+      case TRANSLATION_LANG_HI:
+         return "hi";
+      case TRANSLATION_LANG_HU:
+         return "hu";
+      case TRANSLATION_LANG_IS:
+         return "is";
+      case TRANSLATION_LANG_ID:
+         return "id";
+      case TRANSLATION_LANG_GA:
+         return "ga";
+      case TRANSLATION_LANG_KN:
+         return "kn";
+      case TRANSLATION_LANG_LA:
+         return "la";
+      case TRANSLATION_LANG_LV:
+         return "lv";
+      case TRANSLATION_LANG_LT:
+         return "lt";
+      case TRANSLATION_LANG_MK:
+         return "mk";
+      case TRANSLATION_LANG_MS:
+         return "ms";
+      case TRANSLATION_LANG_MT:
+         return "mt";
+      case TRANSLATION_LANG_NO:
+         return "nb";
+      case TRANSLATION_LANG_FA:
+         return "fa";
+      case TRANSLATION_LANG_PL:
+         return "pl";
+      case TRANSLATION_LANG_PT:
+         return "pt";
+      case TRANSLATION_LANG_RO:
+         return "ro";
+      case TRANSLATION_LANG_RU:
+         return "ru";
+      case TRANSLATION_LANG_SR:
+         return "sr";
+      case TRANSLATION_LANG_SK:
+         return "sk";
+      case TRANSLATION_LANG_SL:
+         return "sl";
+      case TRANSLATION_LANG_SW:
+         return "sw";
+      case TRANSLATION_LANG_TA:
+         return "ta";
+      case TRANSLATION_LANG_TE:
+         return "te";
+      case TRANSLATION_LANG_TH:
+         return "th";
+      case TRANSLATION_LANG_TR:
+         return "tr";
+      case TRANSLATION_LANG_UK:
+         return "uk";
+      case TRANSLATION_LANG_BE:
+         return "be";
+      case TRANSLATION_LANG_UR:
+         return "ur";
+      case TRANSLATION_LANG_VI:
+         return "vi";
+      case TRANSLATION_LANG_CY:
+         return "cy";
+      case TRANSLATION_LANG_AST:
+      case TRANSLATION_LANG_TL:
+      case TRANSLATION_LANG_GL:
+      case TRANSLATION_LANG_YI:
+      case TRANSLATION_LANG_DONT_CARE:
+      case TRANSLATION_LANG_LAST:
+         break;
+   }
+   return "en";
+}
+
 static bool accessibility_speak_unix(int speed,
       const char* speak_text, int priority)
 {
    int pid;
-   const char *language   = get_user_language_iso639_1(true);
-   char* voice_out        = (char*)malloc(3+strlen(language));
-   char* speed_out        = (char*)malloc(3+3);
+   settings_t *settings   = config_get_ptr();
+   unsigned target_lang   = settings->uints.ai_service_target_lang;
+   const char *language   = espeak_get_str((enum translation_lang)target_lang);
+   char* voice_out        = (char*)malloc(3 + strlen(language));
+   char* speed_out        = (char*)malloc(3 + 3);
    const char* speeds[10] = {"80", "100", "125", "150", "170", "210", "260", "310", "380", "450"};
 
    if (speed < 1)
@@ -2809,7 +2947,7 @@ static bool accessibility_speak_unix(int speed,
    voice_out[0] = '-';
    voice_out[1] = 'v';
    voice_out[2] = '\0';
-   strlcat(voice_out, language, 5);
+   strlcat(voice_out, language, 3 + strlen(language));
 
    speed_out[0] = '-';
    speed_out[1] = 's';
@@ -2831,28 +2969,32 @@ static bool accessibility_speak_unix(int speed,
    }
 
    pid = fork();
-   if (pid < 0)
+   switch (pid)
    {
-      /* error */
-      RARCH_LOG("ERROR: could not fork for espeak.\n");
-   }
-   else if (pid > 0)
-   {
-      /* parent process */
-      speak_pid = pid;
+      case 0:
+         {
+            /* child process: replace process with the espeak command */
+            char* cmd[] = { (char*) "espeak", NULL, NULL, NULL, NULL };
+            cmd[1] = voice_out;
+            cmd[2] = speed_out;
+            cmd[3] = (char*)speak_text;
+            execvp("espeak", cmd);
 
-      /* Tell the system that we'll ignore the exit status of the child
-       * process.  This prevents zombie processes. */
-      signal(SIGCHLD,SIG_IGN);
-   }
-   else
-   {
-      /* child process: replace process with the espeak command */
-      char* cmd[] = { (char*) "espeak", NULL, NULL, NULL, NULL};
-      cmd[1] = voice_out;
-      cmd[2] = speed_out;
-      cmd[3] = (char*)speak_text;
-      execvp("espeak", cmd);
+            RARCH_WARN("Could not execute espeak.\n");
+            /* Prevent interfere with the parent process */
+            _exit(EXIT_FAILURE);
+         }
+      case -1:
+         RARCH_ERR("Could not fork for espeak.\n");
+      default:
+         {
+            /* parent process */
+            speak_pid = pid;
+
+            /* Tell the system that we'll ignore the exit status of the child
+             * process.  This prevents zombie processes. */
+            signal(SIGCHLD, SIG_IGN);
+	 }
    }
 
 end:
