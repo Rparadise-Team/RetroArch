@@ -1751,9 +1751,9 @@
 #elif defined(__i386__) || defined(__i486__) || defined(__i686__)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/linux/x86/latest/"
 #elif defined(__arm__) && __ARM_ARCH == 7 && defined(__ARM_PCS_VFP)
-#define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/linux/armhf/latest/"
+#define DEFAULT_BUILDBOT_SERVER_URL "https://raw.githubusercontent.com/Rparadise-Team/Koriki/cores/armhf/"
 #else
-#define DEFAULT_BUILDBOT_SERVER_URL ""
+#define DEFAULT_BUILDBOT_SERVER_URL "https://raw.githubusercontent.com/Rparadise-Team/Koriki/cores/armhf/"
 #endif
 #elif defined(WIIU)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/nintendo/wiiu/latest/"
