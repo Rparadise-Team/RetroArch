@@ -5,6 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,13 +34,45 @@ char* load_configMM(char const* path) {
     return buffer;
 }
 
-int getVolumeMM(char const *key) 
+int getValueMM(char const *key) 
 {
     cJSON* request_json = NULL;
     cJSON* item = NULL;
     int result = 0;
 
-    const char *settings_file = "/appconfigs/system.json";
+    const char *settings_file = getenv("SETTINGS_FILE");
+	if (settings_file == NULL) {
+		FILE* pipe = popen("dmesg | fgrep '[FSP] Flash is detected (0x1100, 0x68, 0x40, 0x18) ver1.1'", "r");
+		if (!pipe) {
+			FILE* configv4 = fopen("/appconfigs/system.json.old", "r");
+			if (!configv4) {
+				settings_file = "/appconfigs/system.json";
+			} else {
+				settings_file = "/mnt/SDCARD/system.json";
+			}
+			
+			pclose(configv4);
+			
+		} else {
+			char buffer[64];
+			int flash_detected = 0;
+			
+			while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+				if (strstr(buffer, "[FSP] Flash is detected (0x1100, 0x68, 0x40, 0x18) ver1.1") != NULL) {
+					flash_detected = 1;
+					break;
+				}
+			}
+			
+			pclose(pipe);
+			
+			if (flash_detected) {
+				settings_file = "/mnt/SDCARD/system.json";
+			} else {
+				settings_file = "/appconfigs/system.json";
+			}
+		}
+	}
 
     char *request_body = load_configMM(settings_file);
     request_json = cJSON_Parse(request_body);
@@ -52,8 +85,66 @@ int getVolumeMM(char const *key)
 int setVolumeMM()
 {
   // set volumen lever save from last sesion
-    int volume = getVolumeMM("vol");
+    int volume = getValueMM("vol");
     int set = 0;
     set = ((volume*3)+40); //tinymix work in 100-40 // 0-(-60)
 	return set;
+}
+
+int getVolumeMM()
+{
+  // set volumen lever save from last sesion
+    int volume = getValueMM("vol");
+    int set = 0;
+    set = ((volume*3)-60);
+	return set;
+}
+
+int setBrightnessMM()
+{
+  // set Brightness lever save from last sesion
+    int brightness = getValueMM("brightness");
+    int set = 0;
+    set = (brightness*10);
+	return set;
+}
+
+void set_snd_level(int target_vol) {
+    int current_vol;
+    time_t start_time;
+    double elapsed_time;
+
+    start_time = time(NULL);
+    while (1) {
+        FILE *file = fopen("/proc/mi_modules/mi_ao/mi_ao0", "w");
+        if (file) {
+            fprintf(file, "set_ao_volume 0 %d\n", target_vol);
+            fprintf(file, "set_ao_volume 1 %d\n", target_vol);
+            fclose(file);
+            break;
+        }
+        usleep(200000);
+        elapsed_time = difftime(time(NULL), start_time);
+        if (elapsed_time >= 30) {
+            printf("Timed out waiting for /proc/mi_modules/mi_ao/mi_ao0\n");
+            return;
+        }
+    }
+
+    start_time = time(NULL);
+    while (1) {
+        current_vol = getVolumeMM();
+
+        if (current_vol == target_vol) {
+            printf("Volume set to %ddB\n", current_vol);
+            return;
+        }
+
+        usleep(200000);
+        elapsed_time = difftime(time(NULL), start_time);
+        if (elapsed_time >= 30) {
+            printf("Timed out trying to set volume\n");
+            return;
+        }
+    }
 }
