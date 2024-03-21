@@ -1,3 +1,4 @@
 char* load_configMM(char const* path);
-int getVolumeMM(char const *key);
+int getValueMM(char const *key);
 int setVolumeMM();
+int setBrightnessMM();

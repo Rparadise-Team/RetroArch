@@ -33,13 +33,45 @@ char* load_configMM(char const* path) {
     return buffer;
 }
 
-int getVolumeMM(char const *key) 
+int getValueMM(char const *key) 
 {
     cJSON* request_json = NULL;
     cJSON* item = NULL;
     int result = 0;
 
-    const char *settings_file = "/appconfigs/system.json";
+    const char *settings_file = getenv("SETTINGS_FILE");
+	if (settings_file == NULL) {
+		FILE* pipe = popen("dmesg | fgrep '[FSP] Flash is detected (0x1100, 0x68, 0x40, 0x18) ver1.1'", "r");
+		if (!pipe) {
+			FILE* configv4 = fopen("/appconfigs/system.json.old", "r");
+			if (!configv4) {
+				settings_file = "/appconfigs/system.json";
+			} else {
+				settings_file = "/mnt/SDCARD/system.json";
+			}
+			
+			pclose(configv4);
+			
+		} else {
+			char buffer[64];
+			int flash_detected = 0;
+			
+			while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+				if (strstr(buffer, "[FSP] Flash is detected (0x1100, 0x68, 0x40, 0x18) ver1.1") != NULL) {
+					flash_detected = 1;
+					break;
+				}
+			}
+			
+			pclose(pipe);
+			
+			if (flash_detected) {
+				settings_file = "/mnt/SDCARD/system.json";
+			} else {
+				settings_file = "/appconfigs/system.json";
+			}
+		}
+	}
 
     char *request_body = load_configMM(settings_file);
     request_json = cJSON_Parse(request_body);
@@ -52,8 +84,17 @@ int getVolumeMM(char const *key)
 int setVolumeMM()
 {
   // set volumen lever save from last sesion
-    int volume = getVolumeMM("vol");
+    int volume = getValueMM("vol");
     int set = 0;
     set = ((volume*3)+40); //tinymix work in 100-40 // 0-(-60)
+	return set;
+}
+
+int setBrightnessMM()
+{
+  // set Brightness lever save from last sesion
+    int brightness = getValueMM("brightness");
+    int set = 0;
+    set = (brightness*10);
 	return set;
 }
