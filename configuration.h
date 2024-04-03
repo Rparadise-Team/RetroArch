@@ -135,6 +135,9 @@ typedef struct settings
       int menu_xmb_title_margin;
       int menu_xmb_title_margin_horizontal_offset;
 #endif
+#ifdef HAVE_OVERLAY
+      int input_overlay_lightgun_port;
+#endif
    } ints;
 
    struct
@@ -319,6 +322,12 @@ typedef struct settings
       unsigned input_overlay_show_inputs_port;
       unsigned input_overlay_dpad_diagonal_sensitivity;
       unsigned input_overlay_abxy_diagonal_sensitivity;
+      unsigned input_overlay_lightgun_trigger_delay;
+      unsigned input_overlay_lightgun_two_touch_input;
+      unsigned input_overlay_lightgun_three_touch_input;
+      unsigned input_overlay_lightgun_four_touch_input;
+      unsigned input_overlay_mouse_hold_msec;
+      unsigned input_overlay_mouse_dtap_msec;
 #endif
 
       unsigned run_ahead_frames;
@@ -346,6 +355,7 @@ typedef struct settings
       unsigned core_updater_auto_backup_history_size;
       unsigned video_black_frame_insertion;
       unsigned video_bfi_dark_frames;
+      unsigned video_shader_subframes;
       unsigned video_autoswitch_refresh_rate;
       unsigned quit_on_close_content;
 
@@ -416,6 +426,9 @@ typedef struct settings
       float input_overlay_y_separation_portrait;
       float input_overlay_x_offset_portrait;
       float input_overlay_y_offset_portrait;
+
+      float input_overlay_mouse_speed;
+      float input_overlay_mouse_swipe_threshold;
 
       float slowmotion_ratio;
       float fastforward_ratio;
@@ -542,7 +555,6 @@ typedef struct settings
       char directory_input_remapping[PATH_MAX_LENGTH];
       char directory_overlay[PATH_MAX_LENGTH];
       char directory_osk_overlay[PATH_MAX_LENGTH];
-      char directory_resampler[PATH_MAX_LENGTH];
       char directory_screenshot[PATH_MAX_LENGTH];
       char directory_system[PATH_MAX_LENGTH];
       char directory_cache[PATH_MAX_LENGTH];
@@ -563,11 +575,15 @@ typedef struct settings
 #ifdef _3DS
       char directory_bottom_assets[PATH_MAX_LENGTH];
 #endif
+#ifdef HAVE_TEST_DRIVERS
+      char test_input_file_joypad[PATH_MAX_LENGTH];
+#endif
       char log_dir[PATH_MAX_LENGTH];
       char app_icon[PATH_MAX_LENGTH];
    } paths;
 
    bool modified;
+   bool skip_window_positions;
 
    struct
    {
@@ -595,6 +611,7 @@ typedef struct settings
       bool video_shader_watch_files;
       bool video_shader_remember_last_dir;
       bool video_shader_preset_save_reference_enable;
+      bool video_scan_subframes;
       bool video_threaded;
       bool video_font_enable;
       bool video_disable_composition;
@@ -663,6 +680,11 @@ typedef struct settings
       bool input_overlay_auto_rotate;
       bool input_overlay_auto_scale;
       bool input_osk_overlay_auto_scale;
+      bool input_overlay_pointer_enable;
+      bool input_overlay_lightgun_trigger_on_touch;
+      bool input_overlay_lightgun_allow_offscreen;
+      bool input_overlay_mouse_hold_to_drag;
+      bool input_overlay_mouse_dtap_to_drag;
       bool input_descriptor_label_show;
       bool input_descriptor_hide_unbound;
       bool input_all_users_control_menu;
@@ -701,6 +723,7 @@ typedef struct settings
       bool notification_show_remap_load;
       bool notification_show_config_override_load;
       bool notification_show_set_initial_disk;
+      bool notification_show_disk_control;
       bool notification_show_save_state;
       bool notification_show_fast_forward;
 #ifdef HAVE_SCREENSHOTS
@@ -762,6 +785,7 @@ typedef struct settings
       bool menu_materialui_auto_rotate_nav_bar;
       bool menu_materialui_dual_thumbnail_list_view_enable;
       bool menu_materialui_thumbnail_background_enable;
+	  bool menu_rgui_fullscreen_stretch;
       bool menu_rgui_background_filler_thickness_enable;
       bool menu_rgui_border_filler_thickness_enable;
       bool menu_rgui_border_filler_enable;
@@ -1207,6 +1231,16 @@ bool config_unload_override(void);
 bool config_load_remap(const char *directory_input_remapping,
       void *data);
 
+/**
+ * config_get_autoconf_profile_filename:
+ * @device_name       : Input device name
+ * @user              : Controller number to save
+ * Fills buf with the autoconf profile file name (including driver dir if needed).
+ **/
+
+void config_get_autoconf_profile_filename(
+      const char *device_name, unsigned user,
+      char *buf, size_t len_buf);
 /**
  * config_save_autoconf_profile:
  * @device_name       : Input device name

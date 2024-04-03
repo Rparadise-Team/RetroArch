@@ -4075,6 +4075,11 @@ static const gfx_ctx_driver_t *gl2_get_context(gl2_t *gl)
       major                             = 3;
       minor                             = 0;
    }
+   else
+   {
+      major                             = 2;
+      minor                             = 0;
+   }
 #else
    enum gfx_ctx_api api                 = GFX_CTX_OPENGL_API;
 #endif
@@ -4277,9 +4282,20 @@ static void *gl2_init(const video_info_t *video,
                &mode_width, &mode_height);
 
 #if defined(DINGUX)
+#if defined(MMIYOOV4)
+   mode_width  = 752;
+   mode_height = 560;
+#else
+#if defined(MIYOOMINI)
+   mode_width  = 640;
+   mode_height = 480;
+#else
    mode_width  = 320;
    mode_height = 240;
 #endif
+#endif
+#endif
+
    full_x      = mode_width;
    full_y      = mode_height;
    interval    = 0;
@@ -4338,7 +4354,14 @@ static void *gl2_init(const video_info_t *video,
       goto error;
 
    if (!string_is_empty(version))
-      sscanf(version, "%d.%d", &gl->version_major, &gl->version_minor);
+   {
+      if (string_starts_with(version, "OpenGL ES "))
+         sscanf(version, "OpenGL ES %d.%d", &gl->version_major, &gl->version_minor);
+      else if (string_starts_with(version, "OpenGL "))
+         sscanf(version, "OpenGL %d.%d", &gl->version_major, &gl->version_minor);
+      else
+         sscanf(version, "%d.%d", &gl->version_major, &gl->version_minor);
+   }
 
    {
       size_t len    = 0;
@@ -4445,9 +4468,20 @@ static void *gl2_init(const video_info_t *video,
             &mode_width, &mode_height);
 
 #if defined(DINGUX)
-   mode_width     = 320;
-   mode_height    = 240;
+#if defined(MMIYOOV4)
+   mode_width  = 752;
+   mode_height = 560;
+#else
+#if defined(MIYOOMINI)
+   mode_width  = 640;
+   mode_height = 480;
+#else
+   mode_width  = 320;
+   mode_height = 240;
 #endif
+#endif
+#endif
+
    temp_width     = mode_width;
    temp_height    = mode_height;
 

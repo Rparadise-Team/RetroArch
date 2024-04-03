@@ -16,7 +16,11 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 #if defined(MIYOOMINI)
+#if defined(MMIYOOV4)
+#include "miyoomini/sdl_mmiyoov4_gfx.c"
+#else
 #include "miyoomini/sdl_miyoomini_gfx.c"
+#endif
 #else
 
 #include <stdlib.h>
