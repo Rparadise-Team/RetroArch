@@ -32,12 +32,11 @@
 #include <audio/conversion/float_to_s16.h>
 
 #if (defined(__ARM_NEON__) || defined(HAVE_NEON))
+#include <arm_neon.h>
 static bool float_to_s16_neon_enabled = false;
 #ifdef HAVE_ARM_NEON_ASM_OPTIMIZATIONS
 void convert_float_s16_asm(int16_t *out,
       const float *in, size_t samples);
-#else
-#include <arm_neon.h>
 #endif
 
 void convert_float_to_s16(int16_t *out,
