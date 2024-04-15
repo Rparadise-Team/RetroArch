@@ -118,7 +118,9 @@ void set_snd_level(int target_vol) {
     while (1) {
         FILE *file = fopen("/proc/mi_modules/mi_ao/mi_ao0", "w");
         if (file) {
-            fprintf(file, "set_ao_volume 0 %d; set_ao_volume 1 %d\n", target_vol, target_vol);
+			char command[150];
+            snprintf(command, sizeof(command), "echo \"set_ao_volume 0 %d\" > /proc/mi_modules/mi_ao/mi_ao0 && echo \"set_ao_volume 1 %d\" > /proc/mi_modules/mi_ao/mi_ao0", target_vol, target_vol);
+			system(command);
             fclose(file);
             break;
         }
