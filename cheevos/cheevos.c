@@ -107,7 +107,8 @@ static rcheevos_locals_t rcheevos_locals =
    0,    /* menuitem_count */
 #endif
 #ifdef HAVE_RC_CLIENT
-   true,/* hardcore_allowed */
+   true, /* hardcore_allowed */
+   false,/* hardcore_being_enabled */
 #else
  #ifdef HAVE_GFX_WIDGETS
    0,    /* active_lboard_trackers */
@@ -216,11 +217,9 @@ static int rcheevos_init_memory(rcheevos_locals_t* locals)
    unsigned console_id;
 
 #ifdef HAVE_RC_CLIENT
-   /* we can't initialize memory without knowing which console to initialize for */
+   /* if no game is loaded, fallback to a default mapping (SYSTEM RAM followed by SAVE RAM) */
    game = rc_client_get_game_info(locals->client);
-   if (!game || !game->console_id)
-      return 0;
-   console_id = game->console_id;
+   console_id = game ? game->console_id : 0;
 #else
    console_id = locals->game.console_id;
 #endif
@@ -341,8 +340,7 @@ static rcheevos_racheevo_t* rcheevos_find_cheevo(unsigned id)
 static bool rcheevos_is_game_loaded(void)
 {
 #ifdef HAVE_RC_CLIENT
-   const rc_client_game_t* game = rc_client_get_game_info(rcheevos_locals.client);
-   return (game && game->id);
+   return rc_client_is_game_loaded(rcheevos_locals.client);
 #else
    return rcheevos_locals.loaded;
 #endif
@@ -1191,7 +1189,13 @@ void rcheevos_refresh_memory(void)
 bool rcheevos_hardcore_active(void)
 {
 #ifdef HAVE_RC_CLIENT
-   return rcheevos_locals.client && rc_client_get_hardcore_enabled(rcheevos_locals.client);
+   /* normal hardcore check */
+   if (rcheevos_locals.client && rc_client_get_hardcore_enabled(rcheevos_locals.client))
+      return true;
+
+   /* if we're trying to enable hardcore, pretend it's on so the caller can decide to disable
+    * it (by calling rcheevos_pause_hardcore) before we actually turn it on. */
+   return rcheevos_locals.hardcore_being_enabled;
 #else
    return rcheevos_locals.hardcore_active;
 #endif
@@ -1223,6 +1227,7 @@ bool rcheevos_unload(void)
 
 #ifdef HAVE_GFX_WIDGETS
    rcheevos_hide_widgets(gfx_widgets_ready());
+   gfx_widget_set_cheevos_set_loading(false);
 #endif
 
 #ifdef HAVE_RC_CLIENT
@@ -1528,6 +1533,7 @@ static void rcheevos_toggle_hardcore_active(rcheevos_locals_t* locals)
    if (!was_enabled)
    {
 #ifdef HAVE_RC_CLIENT
+      locals->hardcore_being_enabled = true;
       locals->hardcore_allowed = true;
 #else
       /* Activate hardcore */
@@ -1538,7 +1544,10 @@ static void rcheevos_toggle_hardcore_active(rcheevos_locals_t* locals)
       rcheevos_validate_config_settings();
 #ifdef HAVE_RC_CLIENT
       if (!locals->hardcore_allowed)
+      {
+         locals->hardcore_being_enabled = false;
          return;
+      }
 #else
       if (!locals->hardcore_active)
          return;
@@ -1549,8 +1558,11 @@ static void rcheevos_toggle_hardcore_active(rcheevos_locals_t* locals)
       cheat_manager_apply_cheats();
  #ifdef HAVE_RC_CLIENT
       if (!locals->hardcore_allowed)
+      {
+         locals->hardcore_being_enabled = false;
          return;
- #else
+      }
+#else
       if (!locals->hardcore_active)
          return;
  #endif
@@ -1592,6 +1604,7 @@ static void rcheevos_toggle_hardcore_active(rcheevos_locals_t* locals)
       }
 
 #ifdef HAVE_RC_CLIENT
+      locals->hardcore_being_enabled = false;
       rc_client_set_hardcore_enabled(locals->client, 1);
 #endif
    }
@@ -2443,6 +2456,10 @@ static void rcheevos_client_load_game_callback(int result,
    const rc_client_game_t* game = rc_client_get_game_info(client);
    char msg[256];
 
+#if defined(HAVE_GFX_WIDGETS)
+   gfx_widget_set_cheevos_set_loading(false);
+#endif
+
    if (result != RC_OK || !game)
    {
       if (result == RC_NO_GAME_LOADED)
@@ -3258,6 +3275,11 @@ bool rcheevos_load(const void *data)
 
    /* provide hooks for reading files */
    rc_hash_reset_cdreader_hooks();
+
+#if defined(HAVE_GFX_WIDGETS)
+   if (settings->bools.cheevos_verbose_enable)
+      gfx_widget_set_cheevos_set_loading(true);
+#endif
 
    rc_client_begin_identify_and_load_game(rcheevos_locals.client, RC_CONSOLE_UNKNOWN,
       info->path, info->data, info->size, rcheevos_client_load_game_callback, NULL);

@@ -41,18 +41,13 @@ namespace glslang {
 void TInfoSinkBase::append(const char* s)
 {
     if (outputStream & EString) {
-        if (s == nullptr)
+        if (s == NULL)
             sink.append("(null)");
         else {
             checkMem(strlen(s));
             sink.append(s);
         }
     }
-
-//#ifdef _WIN32
-//    if (outputStream & EDebugger)
-//        OutputDebugString(s);
-//#endif
 
     if (outputStream & EStdOut)
         fprintf(stdout, "%s", s);
@@ -65,15 +60,6 @@ void TInfoSinkBase::append(int count, char c)
         sink.append(count, c);
     }
 
-//#ifdef _WIN32
-//    if (outputStream & EDebugger) {
-//        char str[2];
-//        str[0] = c;
-//        str[1] = '\0';
-//        OutputDebugString(str);
-//    }
-//#endif
-
     if (outputStream & EStdOut)
         fprintf(stdout, "%c", c);
 }
@@ -85,11 +71,6 @@ void TInfoSinkBase::append(const TPersistString& t)
         sink.append(t);
     }
 
-//#ifdef _WIN32
-//    if (outputStream & EDebugger)
-//        OutputDebugString(t.c_str());
-//#endif
-
     if (outputStream & EStdOut)
         fprintf(stdout, "%s", t.c_str());
 }
@@ -100,11 +81,6 @@ void TInfoSinkBase::append(const TString& t)
         checkMem(t.size());
         sink.append(t.c_str());
     }
-
-//#ifdef _WIN32
-//    if (outputStream & EDebugger)
-//        OutputDebugString(t.c_str());
-//#endif
 
     if (outputStream & EStdOut)
         fprintf(stdout, "%s", t.c_str());

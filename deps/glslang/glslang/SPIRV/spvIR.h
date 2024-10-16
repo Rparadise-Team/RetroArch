@@ -49,7 +49,6 @@
 #include "spirv.hpp"
 
 #include <algorithm>
-#include <cassert>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -85,8 +84,8 @@ const MemorySemanticsMask MemorySemanticsAllMemory =
 
 class Instruction {
 public:
-    Instruction(Id resultId, Id typeId, Op opCode) : resultId(resultId), typeId(typeId), opCode(opCode), block(nullptr) { }
-    explicit Instruction(Op opCode) : resultId(NoResult), typeId(NoType), opCode(opCode), block(nullptr) { }
+    Instruction(Id resultId, Id typeId, Op opCode) : resultId(resultId), typeId(typeId), opCode(opCode), block(NULL) { }
+    explicit Instruction(Op opCode) : resultId(NoResult), typeId(NoType), opCode(opCode), block(NULL) { }
     virtual ~Instruction() {}
     void addIdOperand(Id id) { operands.push_back(id); }
     void addImmediateOperand(unsigned int immediate) { operands.push_back(immediate); }
@@ -183,16 +182,17 @@ public:
     bool isUnreachable() const { return unreachable; }
     // Returns the block's merge instruction, if one exists (otherwise null).
     const Instruction* getMergeInstruction() const {
-        if (instructions.size() < 2) return nullptr;
+        if (instructions.size() < 2) return NULL;
         const Instruction* nextToLast = (instructions.cend() - 2)->get();
-        switch (nextToLast->getOpCode()) {
+        switch (nextToLast->getOpCode())
+        {
             case OpSelectionMerge:
             case OpLoopMerge:
                 return nextToLast;
             default:
-                return nullptr;
+                break;
         }
-        return nullptr;
+        return NULL;
     }
 
     bool isTerminated() const
@@ -265,7 +265,6 @@ public:
     void removeBlock(Block* block)
     {
         auto found = find(blocks.begin(), blocks.end(), block);
-        assert(found != blocks.end());
         blocks.erase(found);
         delete block;
     }
@@ -334,7 +333,6 @@ public:
     spv::Id getTypeId(Id resultId) const { return idToInstruction[resultId]->getTypeId(); }
     StorageClass getStorageClass(Id typeId) const
     {
-        assert(idToInstruction[typeId]->getOpCode() == spv::OpTypePointer);
         return (StorageClass)idToInstruction[typeId]->getImmediateOperand(0);
     }
 

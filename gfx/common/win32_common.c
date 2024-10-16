@@ -1091,14 +1091,12 @@ static LRESULT CALLBACK wnd_proc_common_internal(HWND hwnd,
             unsigned keysym       = (lparam >> 16) & 0xff;
             bool extended         = (lparam >> 24) & 0x1;
 
+            /* NumLock vs Pause correction */
+            if (keysym == 0x45 && (wparam == VK_NUMLOCK || wparam == VK_PAUSE))
+               extended = !extended;
+
             /* extended keys will map to dinput if the high bit is set */
             if (extended)
-               keysym |= 0x80;
-
-            /* NumLock vs Pause correction */
-            if (GetKeyState(VK_NUMLOCK) & 0x80 && extended)
-               keysym &= ~0x80;
-            else if (GetKeyState(VK_PAUSE) & 0x80 && !extended)
                keysym |= 0x80;
 
             keycode = input_keymaps_translate_keysym_to_rk(keysym);
@@ -1344,14 +1342,12 @@ static LRESULT CALLBACK wnd_proc_common_dinput_internal(HWND hwnd,
             unsigned keysym       = (lparam >> 16) & 0xff;
             bool extended         = (lparam >> 24) & 0x1;
 
+            /* NumLock vs Pause correction */
+            if (keysym == 0x45 && (wparam == VK_NUMLOCK || wparam == VK_PAUSE))
+               extended = !extended;
+
             /* extended keys will map to dinput if the high bit is set */
             if (extended)
-               keysym |= 0x80;
-
-            /* NumLock vs Pause correction */
-            if (GetKeyState(VK_NUMLOCK) & 0x80 && extended)
-               keysym &= ~0x80;
-            else if (GetKeyState(VK_PAUSE) & 0x80 && !extended)
                keysym |= 0x80;
 
             keycode = input_keymaps_translate_keysym_to_rk(keysym);
@@ -1958,11 +1954,11 @@ void win32_clip_window(bool state)
          free(info);
       }
       info = NULL;
+
+      ClipCursor(&clip_rect);
    }
    else
-      GetWindowRect(GetDesktopWindow(), &clip_rect);
-
-   ClipCursor(&clip_rect);
+      ClipCursor(NULL);
 }
 #endif
 
@@ -2326,7 +2322,7 @@ bool win32_suspend_screensaver(void *data, bool enable)
 
 static bool win32_monitor_set_fullscreen(
       unsigned width, unsigned height,
-      unsigned refresh, char *dev_name)
+      unsigned refresh, bool interlaced, char *dev_name)
 {
    DEVMODE devmode;
    memset(&devmode, 0, sizeof(devmode));
@@ -2337,6 +2333,11 @@ static bool win32_monitor_set_fullscreen(
    devmode.dmFields           = DM_PELSWIDTH
                               | DM_PELSHEIGHT
                               | DM_DISPLAYFREQUENCY;
+#if !(_MSC_VER && (_MSC_VER < 1600))
+   devmode.dmDisplayFlags     = interlaced ? DM_INTERLACED : 0;
+   if (interlaced)
+      devmode.dmFields       |= DM_DISPLAYFLAGS;
+#endif
    return win32_change_display_settings(dev_name, &devmode,
          CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL;
 }
@@ -2380,7 +2381,7 @@ void win32_set_style(MONITORINFOEX *current_mon, HMONITOR *hm_to_use,
          *style          = WS_POPUP | WS_VISIBLE;
 
          if (win32_monitor_set_fullscreen(*width, *height,
-               (int)refresh_rate, current_mon->szDevice))
+               (int)refresh_rate, false, current_mon->szDevice))
          {
             RARCH_LOG("[Video]: Fullscreen set to %ux%u @ %uHz on device %s.\n",
                   *width, *height, (int)refresh_rate, current_mon->szDevice);

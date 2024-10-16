@@ -129,8 +129,6 @@ void TIntermediate::merge(TInfoSink& infoSink, TIntermediate& unit)
             error(infoSink, "Contradictory layout max_vertices values");
         else if (language == EShLangTessControl)
             error(infoSink, "Contradictory layout vertices values");
-        else
-            assert(0);
     }
 
     if (vertexSpacing == EvsNone)
@@ -237,7 +235,6 @@ void TIntermediate::mergeLinkerObjects(TInfoSink& infoSink, TIntermSequence& lin
         for (std::size_t linkObj = 0; linkObj < initialNumLinkerObjects; ++linkObj) {
             TIntermSymbol* symbol = linkerObjects[linkObj]->getAsSymbolNode();
             TIntermSymbol* unitSymbol = unitLinkerObjects[unitLinkObj]->getAsSymbolNode();
-            assert(symbol && unitSymbol);
             if (symbol->getName() == unitSymbol->getName()) {
                 // filter out copy
                 merge = false;
@@ -391,7 +388,7 @@ void TIntermediate::mergeErrorCheck(TInfoSink& infoSink, const TIntermSymbol& sy
 //
 void TIntermediate::finalCheck(TInfoSink& infoSink, bool keepUncalled)
 {
-    if (getTreeRoot() == nullptr)
+    if (getTreeRoot() == NULL)
         return;
 
     if (numEntryPoints < 1) {
@@ -497,8 +494,8 @@ void TIntermediate::finalCheck(TInfoSink& infoSink, bool keepUncalled)
             error(infoSink, "At least one shader must specify a layout(max_vertices = value)");
         break;
     case EShLangFragment:
-        // for GL_ARB_post_depth_coverage, EarlyFragmentTest is set automatically in 
-        // ParseHelper.cpp. So if we reach here, this must be GL_EXT_post_depth_coverage 
+        // for GL_ARB_post_depth_coverage, EarlyFragmentTest is set automatically in
+        // ParseHelper.cpp. So if we reach here, this must be GL_EXT_post_depth_coverage
         // requiring explicit early_fragment_tests
         if (getPostDepthCoverage() && !getEarlyFragmentTests())
             error(infoSink, "post_depth_coverage requires early_fragment_tests");
@@ -682,7 +679,7 @@ void TIntermediate::checkCallGraphBodies(TInfoSink& infoSink, bool keepUncalled)
     if (! keepUncalled) {
         for (int f = 0; f < (int)functionSequence.size(); ++f) {
             if (! reachable[f])
-                functionSequence[f] = nullptr;
+                functionSequence[f] = NULL;
         }
         functionSequence.erase(std::remove(functionSequence.begin(), functionSequence.end(), nullptr), functionSequence.end());
     }
@@ -722,10 +719,6 @@ TIntermSequence& TIntermediate::findLinkerObjects() const
 {
     // Get the top-level globals
     TIntermSequence& globals = treeRoot->getAsAggregate()->getSequence();
-
-    // Get the last member of the sequences, expected to be the linker-object lists
-    assert(globals.back()->getAsAggregate()->getOp() == EOpLinkerObjects);
-
     return globals.back()->getAsAggregate()->getSequence();
 }
 
@@ -968,7 +961,6 @@ int TIntermediate::computeTypeLocationSize(const TType& type, EShLanguage stage)
         return type.getMatrixCols() * computeTypeLocationSize(columnType, stage);
     }
 
-    assert(0);
     return 1;
 }
 
@@ -1011,7 +1003,6 @@ int TIntermediate::addXfbBufferOffset(const TType& type)
 {
     const TQualifier& qualifier = type.getQualifier();
 
-    assert(qualifier.hasXfbOffset() && qualifier.hasXfbBuffer());
     TXfbBuffer& buffer = xfbBuffers[qualifier.layoutXfbBuffer];
 
     // compute the range
@@ -1047,7 +1038,6 @@ unsigned int TIntermediate::computeTypeXfbSize(const TType& type, bool& contains
 
     if (type.isArray()) {
         // TODO: perf: this can be flattened by using getCumulativeArraySize(), and a deref that discards all arrayness
-        assert(type.isSizedArray());
         TType elementType(type, 0);
         return type.getOuterArraySize() * computeTypeXfbSize(elementType, containsDouble);
     }
@@ -1083,10 +1073,8 @@ unsigned int TIntermediate::computeTypeXfbSize(const TType& type, bool& contains
         numComponents = type.getVectorSize();
     else if (type.isMatrix())
         numComponents = type.getMatrixCols() * type.getMatrixRows();
-    else {
-        assert(0);
+    else
         numComponents = 1;
-    }
 
     if (type.getBasicType() == EbtDouble) {
         containsDouble = true;
@@ -1268,7 +1256,6 @@ int TIntermediate::getBaseAlignment(const TType& type, int& size, int& stride, b
         return alignment;
     }
 
-    assert(0);  // all cases should be covered above
     size = baseAlignmentVec4Std140;
     return baseAlignmentVec4Std140;
 }

@@ -170,7 +170,7 @@ typedef struct gfx_ctx_wayland_data
    struct libdecor *libdecor_context;
    struct libdecor_frame *libdecor_frame;
 #ifdef HAVE_DYLIB
-   struct dylib_t *libdecor;
+   dylib_t libdecor;
 #define RA_WAYLAND_SYM(rc,fn,params) rc (*fn) params;
 #include "../../gfx/common/wayland/libdecor_sym.h"
 #endif
@@ -219,6 +219,7 @@ typedef struct gfx_ctx_wayland_data
    bool maximized;
    bool resize;
    bool configured;
+   bool ignore_configuration;
    bool activated;
    bool reported_display_size;
    bool swap_complete;

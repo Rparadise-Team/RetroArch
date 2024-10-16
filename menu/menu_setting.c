@@ -106,7 +106,7 @@
 #include "../lakka.h"
 #ifdef HAVE_LAKKA_SWITCH
 #include "../lakka-switch.h"
-#endif 
+#endif
 #include "../retroarch.h"
 #include "../gfx/video_display_server.h"
 #ifdef HAVE_CHEATS
@@ -797,6 +797,7 @@ static void setting_get_string_representation_uint(rarch_setting_t *setting,
             *setting->value.target.unsigned_integer);
 }
 
+#if defined(HAVE_NETWORKING)
 static void setting_get_string_representation_color_rgb(rarch_setting_t *setting,
       char *s, size_t len)
 {
@@ -804,6 +805,7 @@ static void setting_get_string_representation_color_rgb(rarch_setting_t *setting
       snprintf(s, len, "#%06X",
          *setting->value.target.unsigned_integer & 0xFFFFFF);
 }
+#endif
 
 static void setting_get_string_representation_size_in_mb(
       rarch_setting_t *setting, char *s, size_t len)
@@ -1254,19 +1256,32 @@ static void setting_get_string_representation_st_dir(rarch_setting_t *setting,
       char *s, size_t len)
 {
    if (setting)
+#if IOS
+   {
+      if (*setting->value.target.string)
+         fill_pathname_abbreviate_special(s, setting->value.target.string, len);
+      else
+         strlcpy(s, setting->dir.empty_path, len);
+   }
+#else
       strlcpy(s,
              *setting->value.target.string
             ? setting->value.target.string
             : setting->dir.empty_path,
             len);
+#endif
 }
 
 static void setting_get_string_representation_st_path(rarch_setting_t *setting,
       char *s, size_t len)
 {
    if (setting)
+#if IOS
+      fill_pathname_abbreviate_special(s, path_basename(setting->value.target.string), len);
+#else
       fill_pathname(s, path_basename(setting->value.target.string),
             "", len);
+#endif
 }
 
 static void setting_get_string_representation_st_string(rarch_setting_t *setting,
@@ -3026,42 +3041,6 @@ static void setting_get_string_representation_uint_ai_service_mode(
       case 2:
          enum_idx = MENU_ENUM_LABEL_VALUE_AI_SERVICE_NARRATOR_MODE;
          break;
-      case 3:
-         enum_idx = MENU_ENUM_LABEL_VALUE_AI_SERVICE_TEXT_MODE;
-         break;
-      case 4:
-         enum_idx = MENU_ENUM_LABEL_VALUE_AI_SERVICE_TEXT_NARRATOR_MODE;
-         break;
-      case 5:
-         enum_idx = MENU_ENUM_LABEL_VALUE_AI_SERVICE_IMAGE_NARRATOR_MODE;
-         break;
-      default:
-         break;
-   }
-
-   if (enum_idx != 0)
-      strlcpy(s, msg_hash_to_str(enum_idx), len);
-}
-
-static void setting_get_string_representation_uint_ai_service_text_position(
-      rarch_setting_t *setting,
-      char *s, size_t len)
-{
-   enum msg_hash_enums enum_idx = MSG_UNKNOWN;
-   if (!setting)
-      return;
-
-   switch (*setting->value.target.unsigned_integer)
-   {
-      case 0:
-         enum_idx = MENU_ENUM_LABEL_VALUE_NONE;
-         break;
-      case 1:
-         enum_idx = MENU_ENUM_LABEL_VALUE_AI_SERVICE_TEXT_POSITION_BOTTOM;
-         break;
-      case 2:
-         enum_idx = MENU_ENUM_LABEL_VALUE_AI_SERVICE_TEXT_POSITION_TOP;
-         break;
       default:
          break;
    }
@@ -4218,9 +4197,9 @@ static void setting_get_string_representation_uint_xmb_icon_theme(
          strlcpy(s,
                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUI), len);
          break;
-      case XMB_ICON_THEME_RETROACTIVE:
+      case XMB_ICON_THEME_FLATUX:
          strlcpy(s,
-               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_RETROACTIVE), len);
+               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_FLATUX), len);
          break;
       case XMB_ICON_THEME_RETROSYSTEM:
          strlcpy(s,
@@ -4229,10 +4208,6 @@ static void setting_get_string_representation_uint_xmb_icon_theme(
       case XMB_ICON_THEME_PIXEL:
          strlcpy(s,
                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_PIXEL), len);
-         break;
-      case XMB_ICON_THEME_NEOACTIVE:
-         strlcpy(s,
-               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_XMB_ICON_THEME_NEOACTIVE), len);
          break;
       case XMB_ICON_THEME_SYSTEMATIC:
          strlcpy(s,
@@ -6482,7 +6457,7 @@ static void setting_get_string_representation_black_frame_insertion(rarch_settin
    switch (*setting->value.target.unsigned_integer)
    {
       case 0:
-         strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_VIDEO_BLACK_FRAME_INSERTION_VALUE_OFF), len);
+         strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_OFF), len);
          break;
       case 1:
          strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_VIDEO_BLACK_FRAME_INSERTION_VALUE_120), len);
@@ -6541,7 +6516,7 @@ static void setting_get_string_representation_shader_subframes(rarch_setting_t *
    switch (*setting->value.target.unsigned_integer)
    {
       case 1:
-         strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_VIDEO_SHADER_SUBFRAMES_VALUE_OFF), len);
+         strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_OFF), len);
          break;
       case 2:
          strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_VIDEO_SHADER_SUBFRAMES_VALUE_120), len);
@@ -7157,6 +7132,8 @@ static void setting_get_string_representation_uint_user_language(
 
    LANG_DATA(HUNGARIAN)
    LANG_DATA(BELARUSIAN)
+   LANG_DATA(GALICIAN)
+   LANG_DATA(NORWEGIAN)
 
    if (*msg_hash_get_uint(MSG_HASH_USER_LANGUAGE) == RETRO_LANGUAGE_ENGLISH)
       strlcpy(s, modes[*msg_hash_get_uint(MSG_HASH_USER_LANGUAGE)], len);
@@ -8301,7 +8278,7 @@ static void general_write_handler(rarch_setting_t *setting)
                *setting->value.target.fraction);
          break;
       case MENU_ENUM_LABEL_VIDEO_BLACK_FRAME_INSERTION:
-         /* If enabling BFI, auto disable other sync settings 
+         /* If enabling BFI, auto disable other sync settings
             that do not work together with BFI */
          if (*setting->value.target.unsigned_integer > 0)
          {
@@ -8357,7 +8334,7 @@ static void general_write_handler(rarch_setting_t *setting)
 #endif
          break;
       case MENU_ENUM_LABEL_VIDEO_SHADER_SUBFRAMES:
-         /* If enabling BFI, auto disable other sync settings 
+         /* If enabling BFI, auto disable other sync settings
             that do not work together with subframes */
          if (*setting->value.target.unsigned_integer > 1)
          {
@@ -8665,9 +8642,15 @@ static void general_write_handler(rarch_setting_t *setting)
       case MENU_ENUM_LABEL_AUDIO_ENABLE_MENU:
 #ifdef HAVE_AUDIOMIXER
          if (settings->bools.audio_enable_menu)
+         {
+            command_event(CMD_EVENT_AUDIO_START, NULL);
             audio_driver_load_system_sounds();
+         }
          else
+         {
             audio_driver_mixer_stop_stream(AUDIO_MIXER_SYSTEM_SLOT_BGM);
+            command_event(CMD_EVENT_AUDIO_STOP, NULL);
+         }
 #endif
          break;
       case MENU_ENUM_LABEL_MENU_SOUND_BGM:
@@ -9207,7 +9190,7 @@ static void switch_oc_enable_toggle_change_handler(rarch_setting_t *setting)
     if (*setting->value.target.boolean == true) {
 	  fprintf(f, "1\n");
 	} else {
-	  fprintf(f, "0\n");	
+	  fprintf(f, "0\n");
     }
     fclose(f);
 }
@@ -9219,9 +9202,9 @@ static void switch_cec_enable_toggle_change_handler(rarch_setting_t *setting)
 	  fprintf(f, "\n");
       fclose(f);
 	} else {
-	  filestream_delete(SWITCH_CEC_TOGGLE_PATH);	
+	  filestream_delete(SWITCH_CEC_TOGGLE_PATH);
     }
-    
+
 }
 
 static void bluetooth_ertm_disable_toggle_change_handler(rarch_setting_t *setting)
@@ -9235,7 +9218,7 @@ static void bluetooth_ertm_disable_toggle_change_handler(rarch_setting_t *settin
 	  fprintf(f, "0\n");
       fclose(f);
     }
-    
+
 }
 #endif
 
@@ -18883,7 +18866,7 @@ static bool setting_append_list(
                   general_write_handler,
                   general_read_handler,
                   SD_FLAG_NONE);
-#else
+#elif !defined(IOS)
             CONFIG_BOOL(
                   list, list_info,
                   &settings->bools.menu_show_quit_retroarch,
@@ -20054,7 +20037,7 @@ static bool setting_append_list(
          (*list)[list_info->index - 1].get_string_representation =
             &setting_get_string_representation_uint_ai_service_mode;
          (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
-         menu_settings_list_current_add_range(list, list_info, 0, 5, 1, true, true);
+         menu_settings_list_current_add_range(list, list_info, 0, 2, 1, true, true);
 
          CONFIG_STRING(
                list, list_info,
@@ -20136,50 +20119,7 @@ static bool setting_append_list(
             &setting_get_string_representation_uint_ai_service_lang;
          (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
          menu_settings_list_current_add_range(list, list_info, TRANSLATION_LANG_DONT_CARE, (TRANSLATION_LANG_LAST-1), 1, true, true);
-         
-         CONFIG_UINT(
-               list, list_info,
-               &settings->uints.ai_service_poll_delay,
-               MENU_ENUM_LABEL_AI_SERVICE_POLL_DELAY,
-               MENU_ENUM_LABEL_VALUE_AI_SERVICE_POLL_DELAY,
-               DEFAULT_AI_SERVICE_POLL_DELAY,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               general_write_handler,
-               general_read_handler);
-         (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
-         menu_settings_list_current_add_range(list, list_info, 0, MAXIMUM_AI_SERVICE_POLL_DELAY, 50, true, true);
-         
-         CONFIG_UINT(
-               list, list_info,
-               &settings->uints.ai_service_text_position,
-               MENU_ENUM_LABEL_AI_SERVICE_TEXT_POSITION,
-               MENU_ENUM_LABEL_VALUE_AI_SERVICE_TEXT_POSITION,
-               DEFAULT_AI_SERVICE_TEXT_POSITION,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               general_write_handler,
-               general_read_handler);
-         (*list)[list_info->index - 1].get_string_representation =
-            &setting_get_string_representation_uint_ai_service_text_position;
-         (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
-         menu_settings_list_current_add_range(list, list_info, 0, 2, 1, true, true);
-         
-         CONFIG_UINT(
-               list, list_info,
-               &settings->uints.ai_service_text_padding,
-               MENU_ENUM_LABEL_AI_SERVICE_TEXT_PADDING,
-               MENU_ENUM_LABEL_VALUE_AI_SERVICE_TEXT_PADDING,
-               DEFAULT_AI_SERVICE_TEXT_PADDING,
-               &group_info,
-               &subgroup_info,
-               parent_group,
-               general_write_handler,
-               general_read_handler);
-         (*list)[list_info->index - 1].action_ok     = &setting_action_ok_uint;
-         menu_settings_list_current_add_range(list, list_info, 0, 20, 1, true, true);
+
 
          END_SUB_GROUP(list, list_info, parent_group);
          END_GROUP(list, list_info, parent_group);
@@ -20911,6 +20851,21 @@ static bool setting_append_list(
                MENU_ENUM_LABEL_QUICK_MENU_SHOW_ADD_TO_FAVORITES,
                MENU_ENUM_LABEL_VALUE_QUICK_MENU_SHOW_ADD_TO_FAVORITES,
                DEFAULT_QUICK_MENU_SHOW_ADD_TO_FAVORITES,
+               MENU_ENUM_LABEL_VALUE_OFF,
+               MENU_ENUM_LABEL_VALUE_ON,
+               &group_info,
+               &subgroup_info,
+               parent_group,
+               general_write_handler,
+               general_read_handler,
+               SD_FLAG_NONE);
+
+         CONFIG_BOOL(
+               list, list_info,
+               &settings->bools.quick_menu_show_add_to_playlist,
+               MENU_ENUM_LABEL_QUICK_MENU_SHOW_ADD_TO_PLAYLIST,
+               MENU_ENUM_LABEL_VALUE_QUICK_MENU_SHOW_ADD_TO_PLAYLIST,
+               DEFAULT_QUICK_MENU_SHOW_ADD_TO_PLAYLIST,
                MENU_ENUM_LABEL_VALUE_OFF,
                MENU_ENUM_LABEL_VALUE_ON,
                &group_info,
@@ -22055,6 +22010,7 @@ static bool setting_append_list(
          START_SUB_GROUP(list, list_info, "State", &group_info, &subgroup_info, parent_group);
 #ifdef HAVE_NETWORKING
 
+#ifdef HAVE_UPDATE_CORES
 #if defined(ANDROID)
          /* Play Store builds do not fetch cores
           * from the buildbot */
@@ -22079,6 +22035,7 @@ static bool setting_append_list(
             (*list)[list_info->index - 1].ui_type       = ST_UI_TYPE_STRING_LINE_EDIT;
             (*list)[list_info->index - 1].action_start  = setting_generic_action_start_default;
          }
+#endif
 
          CONFIG_STRING(
                list, list_info,
@@ -22112,6 +22069,7 @@ static bool setting_append_list(
                SD_FLAG_NONE
                );
 
+#ifdef HAVE_UPDATE_CORES
          CONFIG_BOOL(
                list, list_info,
                &settings->bools.network_buildbot_show_experimental_cores,
@@ -22166,6 +22124,7 @@ static bool setting_append_list(
                (*list)[list_info->index - 1].offset_by = 1;
                menu_settings_list_current_add_range(list, list_info, (*list)[list_info->index - 1].offset_by, 500, 1, true, true);
          }
+#endif
 #endif
          END_SUB_GROUP(list, list_info, parent_group);
          END_GROUP(list, list_info, parent_group);
@@ -22905,7 +22864,7 @@ static bool setting_append_list(
                   general_read_handler,
                   SD_FLAG_NONE);
             (*list)[list_info->index - 1].change_handler = switch_oc_enable_toggle_change_handler;
- 
+
             CONFIG_BOOL(
                   list, list_info,
                   &settings->bools.switch_cec,
@@ -22921,7 +22880,7 @@ static bool setting_append_list(
                   general_read_handler,
                   SD_FLAG_NONE);
             (*list)[list_info->index - 1].change_handler = switch_cec_enable_toggle_change_handler;
- 
+
             CONFIG_BOOL(
                   list, list_info,
                   &settings->bools.bluetooth_ertm_disable,
@@ -23042,6 +23001,7 @@ static bool setting_append_list(
 #endif
 
 #ifdef HAVE_NETWORKING
+#if !IOS
          CONFIG_ACTION(
                list, list_info,
                MENU_ENUM_LABEL_ACCOUNTS_YOUTUBE,
@@ -23065,6 +23025,7 @@ static bool setting_append_list(
                &group_info,
                &subgroup_info,
                parent_group);
+#endif
 #endif
 
          END_SUB_GROUP(list, list_info, parent_group);

@@ -939,8 +939,13 @@ extern "C" {
       return (void*)CoreWindow::GetForCurrentThread();
    }
 
+   int current_height = -1;
+
    int uwp_get_height(void)
    {
+       if (current_height != -1)
+           return current_height;
+
       /* This function must be performed within UI thread,
        * otherwise it will cause a crash in specific cases
        * https://github.com/libretro/RetroArch/issues/13491 */
@@ -953,16 +958,9 @@ extern "C" {
                {
                if (is_running_on_xbox())
                {
-#ifdef HAVE_OPENGL
-                //For whatever reason, this is not correct when initializing a Mesa GL context. Using the default method instead
-               Windows::UI::Core::CoreWindow^ coreWindow = Windows::UI::Core::CoreWindow::GetForCurrentThread();
-               DisplayInformation^ currentDisplayInformation = DisplayInformation::GetForCurrentView();
-               ret = ConvertDipsToPixels(coreWindow->Bounds.Bottom - coreWindow->Bounds.Top, currentDisplayInformation->LogicalDpi);
-#else
                const Windows::Graphics::Display::Core::HdmiDisplayInformation^ hdi = Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView();
                if (hdi)
                ret = Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView()->GetCurrentDisplayMode()->ResolutionHeightInRawPixels;
-#endif
                }
 
                if (ret == -1)
@@ -981,11 +979,17 @@ extern "C" {
          if (corewindow)
             corewindow->Dispatcher->ProcessEvents(Windows::UI::Core::CoreProcessEventsOption::ProcessAllIfPresent);
       }
+      current_height = ret;
       return ret;
    }
 
+   int current_width = -1;
+
    int uwp_get_width(void)
    {
+       if (current_width != -1)
+           return current_width;
+
       /* This function must be performed within UI thread,
        * otherwise it will cause a crash in specific cases
        * https://github.com/libretro/RetroArch/issues/13491 */
@@ -998,16 +1002,9 @@ extern "C" {
                {
                if (is_running_on_xbox())
                {
-#ifdef HAVE_OPENGL
-               //For whatever reason, this is not correct when initializing a Mesa GL context. Using the default method instead
-               Windows::UI::Core::CoreWindow^ coreWindow = Windows::UI::Core::CoreWindow::GetForCurrentThread();
-               DisplayInformation^ currentDisplayInformation = DisplayInformation::GetForCurrentView();
-               returnValue = ConvertDipsToPixels(coreWindow->Bounds.Right - coreWindow->Bounds.Left, currentDisplayInformation->LogicalDpi);
-#else
                const Windows::Graphics::Display::Core::HdmiDisplayInformation^ hdi = Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView();
                if (hdi)
                returnValue = Windows::Graphics::Display::Core::HdmiDisplayInformation::GetForCurrentView()->GetCurrentDisplayMode()->ResolutionWidthInRawPixels;
-#endif
                }
 
                if(returnValue == -1)
@@ -1026,7 +1023,7 @@ extern "C" {
          if (corewindow)
             corewindow->Dispatcher->ProcessEvents(Windows::UI::Core::CoreProcessEventsOption::ProcessAllIfPresent);
       }
-
+      current_width = returnValue;
       return returnValue;
    }
 

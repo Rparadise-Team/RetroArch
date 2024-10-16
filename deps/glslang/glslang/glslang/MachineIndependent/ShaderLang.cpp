@@ -50,12 +50,6 @@
 #include "Scan.h"
 #include "ScanContext.h"
 
-#ifdef ENABLE_HLSL
-#include "../../hlsl/hlslParseHelper.h"
-#include "../../hlsl/hlslParseables.h"
-#include "../../hlsl/hlslScanContext.h"
-#endif
-
 #include "../Include/ShHandle.h"
 #include "../../OGLCompilersDLL/InitializeDll.h"
 
@@ -71,23 +65,23 @@ namespace { // anonymous namespace for file-local functions and symbols
 
 // Total number of successful initializers of glslang: a refcount
 // Shared global; access should be protected by a global mutex/critical section.
-int NumberOfClients = 0;
+static int NumberOfClients = 0;
 
 using namespace glslang;
 
 // Create a language specific version of parseables.
-TBuiltInParseables* CreateBuiltInParseables(TInfoSink& infoSink, EShSource source)
+TBuiltInParseables* CreateBuiltInParseables(
+		TInfoSink& infoSink, EShSource source)
 {
-    switch (source) {
-    case EShSourceGlsl: return new TBuiltIns();              // GLSL builtIns
-#ifdef ENABLE_HLSL
-    case EShSourceHlsl: return new TBuiltInParseablesHlsl(); // HLSL intrinsics
-#endif
-
-    default:
-        infoSink.info.message(EPrefixInternalError, "Unable to determine source language");
-        return nullptr;
+    switch (source)
+    {
+	    case EShSourceGlsl:
+		    return new TBuiltIns(); // GLSL builtIns
+	    default:
+		    infoSink.info.message(EPrefixInternalError, "Unable to determine source language");
+		    break;
     }
+    return NULL;
 }
 
 // Create a language specific version of a parse context.
@@ -105,14 +99,9 @@ TParseContextBase* CreateParseContext(TSymbolTable& symbolTable, TIntermediate& 
         return new TParseContext(symbolTable, intermediate, parsingBuiltIns, version, profile, spvVersion,
                                  language, infoSink, forwardCompatible, messages, &entryPoint);
     }
-#ifdef ENABLE_HLSL
-    case EShSourceHlsl:
-        return new HlslParseContext(symbolTable, intermediate, parsingBuiltIns, version, profile, spvVersion,
-                                    language, infoSink, sourceEntryPointName.c_str(), forwardCompatible, messages);
-#endif
     default:
         infoSink.info.message(EPrefixInternalError, "Unable to determine source language");
-        return nullptr;
+        return NULL;
     }
 }
 
@@ -143,11 +132,8 @@ int MapVersionToIndex(int version)
     case 500: index =  0; break; // HLSL
     case 320: index = 15; break;
     case 460: index = 16; break;
-    default:  assert(0);  break;
+    default: break;
     }
-
-    assert(index < VersionCount);
-
     return index;
 }
 
@@ -161,9 +147,6 @@ int MapSpvVersionToIndex(const SpvVersion& spvVersion)
         index = 1;
     else if (spvVersion.vulkan > 0)
         index = 2;
-
-    assert(index < SpvVersionCount);
-
     return index;
 }
 
@@ -180,9 +163,6 @@ int MapProfileToIndex(EProfile profile)
     case EEsProfile:            index = 3; break;
     default:                               break;
     }
-
-    assert(index < ProfileCount);
-
     return index;
 }
 
@@ -197,9 +177,6 @@ int MapSourceToIndex(EShSource source)
     case EShSourceHlsl: index = 1; break;
     default:                       break;
     }
-
-    assert(index < SourceCount);
-
     return index;
 }
 
@@ -221,12 +198,12 @@ enum EPrecisionClass {
 TSymbolTable* CommonSymbolTable[VersionCount][SpvVersionCount][ProfileCount][SourceCount][EPcCount] = {};
 TSymbolTable* SharedSymbolTables[VersionCount][SpvVersionCount][ProfileCount][SourceCount][EShLangCount] = {};
 
-TPoolAllocator* PerProcessGPA = nullptr;
+TPoolAllocator* PerProcessGPA = NULL;
 
 //
 // Parse and add to the given symbol table the content of the given shader string.
 //
-bool InitializeSymbolTable(const TString& builtIns, int version, EProfile profile, const SpvVersion& spvVersion, EShLanguage language,
+static bool InitializeSymbolTable(const TString& builtIns, int version, EProfile profile, const SpvVersion& spvVersion, EShLanguage language,
                            EShSource source, TInfoSink& infoSink, TSymbolTable& symbolTable)
 {
     TIntermediate intermediate(language, version, profile);
@@ -271,7 +248,7 @@ bool InitializeSymbolTable(const TString& builtIns, int version, EProfile profil
     return true;
 }
 
-int CommonIndex(EProfile profile, EShLanguage language)
+static int CommonIndex(EProfile profile, EShLanguage language)
 {
     return (profile == EEsProfile && language == EShLangFragment) ? EPcFragment : EPcGeneral;
 }
@@ -279,7 +256,7 @@ int CommonIndex(EProfile profile, EShLanguage language)
 //
 // To initialize per-stage shared tables, with the common table already complete.
 //
-void InitializeStageSymbolTable(TBuiltInParseables& builtInParseables, int version, EProfile profile, const SpvVersion& spvVersion,
+static void InitializeStageSymbolTable(TBuiltInParseables& builtInParseables, int version, EProfile profile, const SpvVersion& spvVersion,
                                 EShLanguage language, EShSource source, TInfoSink& infoSink, TSymbolTable** commonTable,
                                 TSymbolTable** symbolTables)
 {
@@ -297,11 +274,11 @@ void InitializeStageSymbolTable(TBuiltInParseables& builtInParseables, int versi
 // Initialize the full set of shareable symbol tables;
 // The common (cross-stage) and those shareable per-stage.
 //
-bool InitializeSymbolTables(TInfoSink& infoSink, TSymbolTable** commonTable,  TSymbolTable** symbolTables, int version, EProfile profile, const SpvVersion& spvVersion, EShSource source)
+static bool InitializeSymbolTables(TInfoSink& infoSink, TSymbolTable** commonTable,  TSymbolTable** symbolTables, int version, EProfile profile, const SpvVersion& spvVersion, EShSource source)
 {
     std::unique_ptr<TBuiltInParseables> builtInParseables(CreateBuiltInParseables(infoSink, source));
 
-    if (builtInParseables == nullptr)
+    if (builtInParseables == NULL)
         return false;
 
     builtInParseables->initialize(version, profile, spvVersion);
@@ -345,12 +322,12 @@ bool InitializeSymbolTables(TInfoSink& infoSink, TSymbolTable** commonTable,  TS
     return true;
 }
 
-bool AddContextSpecificSymbols(const TBuiltInResource* resources, TInfoSink& infoSink, TSymbolTable& symbolTable, int version,
+static bool AddContextSpecificSymbols(const TBuiltInResource* resources, TInfoSink& infoSink, TSymbolTable& symbolTable, int version,
                                EProfile profile, const SpvVersion& spvVersion, EShLanguage language, EShSource source)
 {
     std::unique_ptr<TBuiltInParseables> builtInParseables(CreateBuiltInParseables(infoSink, source));
 
-    if (builtInParseables == nullptr)
+    if (builtInParseables == NULL)
         return false;
 
     builtInParseables->initialize(*resources, version, profile, spvVersion, language);
@@ -372,7 +349,7 @@ bool AddContextSpecificSymbols(const TBuiltInResource* resources, TInfoSink& inf
 // This only gets done the first time any thread needs a particular symbol table
 // (lazy evaluation).
 //
-void SetupBuiltinSymbolTable(int version, EProfile profile, const SpvVersion& spvVersion, EShSource source)
+static void SetupBuiltinSymbolTable(int version, EProfile profile, const SpvVersion& spvVersion, EShSource source)
 {
     TInfoSink infoSink;
 
@@ -440,7 +417,7 @@ void SetupBuiltinSymbolTable(int version, EProfile profile, const SpvVersion& sp
 }
 
 // Return true if the shader was correctly specified for version/profile/stage.
-bool DeduceVersionProfile(TInfoSink& infoSink, EShLanguage stage, bool versionNotFirst, int defaultVersion,
+static bool DeduceVersionProfile(TInfoSink& infoSink, EShLanguage stage, bool versionNotFirst, int defaultVersion,
                           EShSource source, int& version, EProfile& profile, const SpvVersion& spvVersion)
 {
     const int FirstProfileVersion = 150;
@@ -614,7 +591,7 @@ bool DeduceVersionProfile(TInfoSink& infoSink, EShLanguage stage, bool versionNo
 // TEnvironment takes precedence, for what it sets, so sort all this out.
 // Ideally, the internal code could be made to use TEnvironment, but for
 // now, translate it to the historically used parameters.
-void TranslateEnvironment(const TEnvironment* environment, EShMessages& messages, EShSource& source,
+static void TranslateEnvironment(const TEnvironment* environment, EShMessages& messages, EShSource& source,
                           EShLanguage& stage, SpvVersion& spvVersion)
 {
     // Set up environmental defaults, first ignoring 'environment'.
@@ -629,7 +606,7 @@ void TranslateEnvironment(const TEnvironment* environment, EShMessages& messages
     // Now, override, based on any content set in 'environment'.
     // 'environment' must be cleared to ESh*None settings when items
     // are not being set.
-    if (environment != nullptr) {
+    if (environment != NULL) {
         // input language
         if (environment->input.languageFamily != EShSourceNone) {
             stage = environment->input.stage;
@@ -679,7 +656,7 @@ void TranslateEnvironment(const TEnvironment* environment, EShMessages& messages
 
 // Most processes are recorded when set in the intermediate representation,
 // These are the few that are not.
-void RecordProcesses(TIntermediate& intermediate, EShMessages messages, const std::string& sourceEntryPointName)
+static void RecordProcesses(TIntermediate& intermediate, EShMessages messages, const std::string& sourceEntryPointName)
 {
     if ((messages & EShMsgRelaxedErrors) != 0)
         intermediate.addProcess("relaxed-errors");
@@ -703,7 +680,7 @@ void RecordProcesses(TIntermediate& intermediate, EShMessages messages, const st
 // Which returns false if a failure was detected and true otherwise.
 //
 template<typename ProcessingContext>
-bool ProcessDeferred(
+static bool ProcessDeferred(
     TCompiler* compiler,
     const char* const shaderStrings[],
     const int numStrings,
@@ -724,7 +701,7 @@ bool ProcessDeferred(
     bool requireNonempty,
     TShader::Includer& includer,
     const std::string sourceEntryPointName = "",
-    const TEnvironment* environment = nullptr)  // optional way of fully setting all versions, overriding the above
+    const TEnvironment* environment = NULL)  // optional way of fully setting all versions, overriding the above
 {
     // This must be undone (.pop()) by the caller, after it finishes consuming the created tree.
     GetThreadPoolAllocator().push();
@@ -749,17 +726,17 @@ bool ProcessDeferred(
     std::unique_ptr<const char*[]> names(new const char*[numTotal]);
     for (int s = 0; s < numStrings; ++s) {
         strings[s + numPre] = shaderStrings[s];
-        if (inputLengths == nullptr || inputLengths[s] < 0)
+        if (inputLengths == NULL || inputLengths[s] < 0)
             lengths[s + numPre] = strlen(shaderStrings[s]);
         else
             lengths[s + numPre] = inputLengths[s];
     }
-    if (stringNames != nullptr) {
+    if (stringNames != NULL) {
         for (int s = 0; s < numStrings; ++s)
             names[s + numPre] = stringNames[s];
     } else {
         for (int s = 0; s < numStrings; ++s)
-            names[s + numPre] = nullptr;
+            names[s + numPre] = NULL;
     }
 
     // Get all the stages, languages, clients, and other environment
@@ -768,7 +745,7 @@ bool ProcessDeferred(
     SpvVersion spvVersion;
     EShLanguage stage = compiler->getLanguage();
     TranslateEnvironment(environment, messages, source, stage, spvVersion);
-    if (environment != nullptr && environment->target.hlslFunctionality1)
+    if (environment != NULL && environment->target.hlslFunctionality1)
         intermediate.setHlslFunctionality1();
 
     // First, without using the preprocessor or parser, find the #version, so we know what
@@ -841,9 +818,8 @@ bool ProcessDeferred(
     // Add built-in symbols that are potentially context dependent;
     // they get popped again further down.
     if (! AddContextSpecificSymbols(resources, compiler->infoSink, *symbolTable, version, profile, spvVersion,
-                                    stage, source)) {
+                                    stage, source))
         return false;
-    }
 
     //
     // Now we can process the full shader under proper symbols and rules.
@@ -876,16 +852,15 @@ bool ProcessDeferred(
     _parseContext->getPreamble(preamble);
     strings[0] = preamble.c_str();
     lengths[0] = strlen(strings[0]);
-    names[0] = nullptr;
+    names[0] = NULL;
     strings[1] = customPreamble;
     lengths[1] = strlen(strings[1]);
-    names[1] = nullptr;
-    assert(2 == numPre);
+    names[1] = NULL;
     if (requireNonempty) {
         const int postIndex = numStrings + numPre;
         strings[postIndex] = "\n int;";
         lengths[postIndex] = strlen(strings[numStrings + numPre]);
-        names[postIndex] = nullptr;
+        names[postIndex] = NULL;
     }
     TInputScanner fullInput(numStrings + numPre + numPost, strings.get(), lengths.get(), names.get(), numPre, numPost);
 
@@ -1001,13 +976,12 @@ struct DoPreprocessing {
             outputBuffer += std::to_string(newLineNum);
             if (hasSource) {
                 outputBuffer += ' ';
-                if (sourceName != nullptr) {
+                if (sourceName != NULL) {
                     outputBuffer += '\"';
                     outputBuffer += sourceName;
                     outputBuffer += '\"';
-                } else {
+                } else
                     outputBuffer += std::to_string(sourceNum);
-                }
             }
             if (_parseContext.lineDirectiveShouldSetNextLine()) {
                 // newLineNum is the new line number for the line following the #line
@@ -1034,9 +1008,8 @@ struct DoPreprocessing {
             int line, const glslang::TVector<glslang::TString>& ops) {
                 lineSync.syncToLine(line);
                 outputBuffer += "#pragma ";
-                for(size_t i = 0; i < ops.size(); ++i) {
+                for(size_t i = 0; i < ops.size(); ++i)
                     outputBuffer += ops[i].c_str();
-                }
         });
 
         _parseContext.setErrorCallback([&lineSync, &outputBuffer](
@@ -1159,7 +1132,7 @@ bool PreprocessDeferred(
 // return:  the tree and other information is filled into the intermediate argument,
 //          and true is returned by the function for success.
 //
-bool CompileDeferred(
+static bool CompileDeferred(
     TCompiler* compiler,
     const char* const shaderStrings[],
     const int numStrings,
@@ -1176,7 +1149,7 @@ bool CompileDeferred(
     TIntermediate& intermediate,// returned tree, etc.
     TShader::Includer& includer,
     const std::string sourceEntryPointName = "",
-    TEnvironment* environment = nullptr)
+    TEnvironment* environment = NULL)
 {
     DoFullParse parser;
     return ProcessDeferred(compiler, shaderStrings, numStrings, inputLengths, stringNames,
@@ -1202,13 +1175,10 @@ int ShInitialize()
     ++NumberOfClients;
     glslang::ReleaseGlobalLock();
 
-    if (PerProcessGPA == nullptr)
+    if (PerProcessGPA == NULL)
         PerProcessGPA = new TPoolAllocator();
 
     glslang::TScanContext::fillInKeywordMap();
-#ifdef ENABLE_HLSL
-    glslang::HlslScanContext::fillInKeywordMap();
-#endif
 
     return 1;
 }
@@ -1256,7 +1226,7 @@ void ShDestruct(ShHandle handle)
     TShHandleBase* base = static_cast<TShHandleBase*>(handle);
 
     if (base->getAsCompiler())
-        DeleteCompiler(base->getAsCompiler());
+        delete base->getAsCompiler();
     else if (base->getAsLinker())
         DeleteLinker(base->getAsLinker());
     else if (base->getAsUniformMap())
@@ -1266,11 +1236,10 @@ void ShDestruct(ShHandle handle)
 //
 // Cleanup symbol tables
 //
-int __fastcall ShFinalize()
+int __fastcall ShFinalize(void)
 {
     glslang::GetGlobalLock();
     --NumberOfClients;
-    assert(NumberOfClients >= 0);
     bool finalize = NumberOfClients == 0;
     glslang::ReleaseGlobalLock();
     if (! finalize)
@@ -1302,15 +1271,12 @@ int __fastcall ShFinalize()
         }
     }
 
-    if (PerProcessGPA != nullptr) {
+    if (PerProcessGPA != NULL) {
         delete PerProcessGPA;
-        PerProcessGPA = nullptr;
+        PerProcessGPA = NULL;
     }
 
     glslang::TScanContext::deleteKeywordMap();
-#ifdef ENABLE_HLSL
-    glslang::HlslScanContext::deleteKeywordMap();
-#endif
 
     DetachProcess();
     return 1;
@@ -1353,15 +1319,15 @@ int ShCompile(
 
     TIntermediate intermediate(compiler->getLanguage());
     TShader::ForbidIncluder includer;
-    bool success = CompileDeferred(compiler, shaderStrings, numStrings, inputLengths, nullptr,
-                                   "", optLevel, resources, defaultVersion, ENoProfile, false,
-                                   forwardCompatible, messages, intermediate, includer);
+    bool success = CompileDeferred(compiler, shaderStrings, numStrings, inputLengths, NULL, "", optLevel, resources, defaultVersion, ENoProfile, false,
+	forwardCompatible, messages, intermediate, includer);
 
-    //
     // Call the machine dependent compiler
-    //
-    if (success && intermediate.getTreeRoot() && optLevel != EShOptNoGeneration)
-        success = compiler->compile(intermediate.getTreeRoot(), intermediate.getVersion(), intermediate.getProfile());
+    if (   success
+	&& intermediate.getTreeRoot()
+	&& optLevel != EShOptNoGeneration)
+        success = compiler->compile(intermediate.getTreeRoot(),
+	intermediate.getVersion(), intermediate.getProfile());
 
     intermediate.removeTree();
 
@@ -1388,13 +1354,13 @@ int ShLinkExt(
 
     THandleList cObjects;
 
-    for (int i = 0; i < numHandles; ++i) {
+    for (int i = 0; i < numHandles; ++i)
+    {
         if (compHandles[i] == 0)
             return 0;
         TShHandleBase* base = reinterpret_cast<TShHandleBase*>(compHandles[i]);
-        if (base->getAsLinker()) {
+        if (base->getAsLinker())
             cObjects.push_back(base->getAsLinker());
-        }
         if (base->getAsCompiler())
             cObjects.push_back(base->getAsCompiler());
 
@@ -1412,33 +1378,28 @@ int ShLinkExt(
 
     linker->infoSink.info.erase();
 
-    for (int i = 0; i < numHandles; ++i) {
-        if (cObjects[i]->getAsCompiler()) {
-            if (! cObjects[i]->getAsCompiler()->linkable()) {
+    for (int i = 0; i < numHandles; ++i)
+    {
+        if (cObjects[i]->getAsCompiler())
+	{
+            if (! cObjects[i]->getAsCompiler()->linkable())
+	    {
                 linker->infoSink.info.message(EPrefixError, "Not all shaders have valid object code.");
                 return 0;
             }
         }
     }
 
-    bool ret = linker->link(cObjects);
-
-    return ret ? 1 : 0;
+    return linker->link(cObjects) ? 1 : 0;
 }
 
 //
 // ShSetEncrpytionMethod is a place-holder for specifying
 // how source code is encrypted.
 //
-void ShSetEncryptionMethod(ShHandle handle)
-{
-    if (handle == 0)
-        return;
-}
+void ShSetEncryptionMethod(ShHandle handle) { }
 
-//
 // Return any compiler/linker/uniformmap log of messages for the application.
-//
 const char* ShGetInfoLog(const ShHandle handle)
 {
     if (handle == 0)
@@ -1573,30 +1534,19 @@ namespace glslang {
 #define QUOTE(s) #s
 #define STR(n) QUOTE(n)
 
-const char* GetEsslVersionString()
+const char* GetEsslVersionString(void)
 {
     return "OpenGL ES GLSL 3.20 glslang Khronos. " STR(GLSLANG_MINOR_VERSION) "." STR(GLSLANG_PATCH_LEVEL);
 }
 
-const char* GetGlslVersionString()
+const char* GetGlslVersionString(void)
 {
     return "4.60 glslang Khronos. " STR(GLSLANG_MINOR_VERSION) "." STR(GLSLANG_PATCH_LEVEL);
 }
 
-int GetKhronosToolId()
-{
-    return 8;
-}
-
-bool InitializeProcess()
-{
-    return ShInitialize() != 0;
-}
-
-void FinalizeProcess()
-{
-    ShFinalize();
-}
+int GetKhronosToolId(void)   { return 8; }
+bool InitializeProcess(void) { return ShInitialize() != 0; }
+void FinalizeProcess(void)   { ShFinalize(); }
 
 class TDeferredCompiler : public TCompiler {
 public:
@@ -1605,7 +1555,7 @@ public:
 };
 
 TShader::TShader(EShLanguage s)
-    : stage(s), lengths(nullptr), stringNames(nullptr), preamble("")
+    : stage(s), lengths(NULL), stringNames(NULL), preamble("")
 {
     pool = new TPoolAllocator;
     infoSink = new TInfoSink;
@@ -1632,22 +1582,23 @@ void TShader::setStrings(const char* const* s, int n)
 {
     strings = s;
     numStrings = n;
-    lengths = nullptr;
+    lengths = NULL;
 }
 
-void TShader::setStringsWithLengths(const char* const* s, const int* l, int n)
+void TShader::setStringsWithLengths(
+	const char* const* s, const int* l, int n)
 {
-    strings = s;
-    numStrings = n;
-    lengths = l;
+    strings     = s;
+    numStrings  = n;
+    lengths     = l;
 }
 
 void TShader::setStringsWithLengthsAndNames(
     const char* const* s, const int* l, const char* const* names, int n)
 {
-    strings = s;
-    numStrings = n;
-    lengths = l;
+    strings     = s;
+    numStrings  = n;
+    lengths     = l;
     stringNames = names;
 }
 
@@ -1708,8 +1659,10 @@ void TShader::setTextureSamplerTransformMode(EShTextureSamplerTransformMode mode
 //
 // Returns true for success.
 //
-bool TShader::parse(const TBuiltInResource* builtInResources, int defaultVersion, EProfile defaultProfile, bool forceDefaultVersionAndProfile,
-                    bool forwardCompatible, EShMessages messages, Includer& includer)
+bool TShader::parse(const TBuiltInResource* builtInResources,
+	int defaultVersion, EProfile defaultProfile,
+	bool forceDefaultVersionAndProfile,
+	bool forwardCompatible, EShMessages messages, Includer& includer)
 {
     if (! InitThread())
         return false;
@@ -1719,20 +1672,20 @@ bool TShader::parse(const TBuiltInResource* builtInResources, int defaultVersion
         preamble = "";
 
     return CompileDeferred(compiler, strings, numStrings, lengths, stringNames,
-                           preamble, EShOptNone, builtInResources, defaultVersion,
-                           defaultProfile, forceDefaultVersionAndProfile,
-                           forwardCompatible, messages, *intermediate, includer, sourceEntryPointName,
-                           &environment);
+	  preamble, EShOptNone, builtInResources, defaultVersion,
+          defaultProfile, forceDefaultVersionAndProfile,
+	  forwardCompatible, messages, *intermediate, includer, sourceEntryPointName,
+	  &environment);
 }
 
 // Fill in a string with the result of preprocessing ShaderStrings
 // Returns true if all extensions, pragmas and version strings were valid.
 bool TShader::preprocess(const TBuiltInResource* builtInResources,
-                         int defaultVersion, EProfile defaultProfile,
-                         bool forceDefaultVersionAndProfile,
-                         bool forwardCompatible, EShMessages message,
-                         std::string* output_string,
-                         Includer& includer)
+     int defaultVersion, EProfile defaultProfile,
+     bool forceDefaultVersionAndProfile,
+     bool forwardCompatible, EShMessages message,
+     std::string* output_string,
+     Includer& includer)
 {
     if (! InitThread())
         return false;
@@ -1741,28 +1694,31 @@ bool TShader::preprocess(const TBuiltInResource* builtInResources,
     if (! preamble)
         preamble = "";
 
-    return PreprocessDeferred(compiler, strings, numStrings, lengths, stringNames, preamble,
-                              EShOptNone, builtInResources, defaultVersion,
-                              defaultProfile, forceDefaultVersionAndProfile,
-                              forwardCompatible, message, includer, *intermediate, output_string);
+    return PreprocessDeferred(
+	compiler, strings, numStrings, lengths, stringNames, preamble,
+	EShOptNone, builtInResources, defaultVersion,
+	defaultProfile, forceDefaultVersionAndProfile,
+	forwardCompatible, message, includer,
+	*intermediate, output_string);
 }
 
-const char* TShader::getInfoLog()
+const char* TShader::getInfoLog(void)
 {
     return infoSink->info.c_str();
 }
 
-const char* TShader::getInfoDebugLog()
+const char* TShader::getInfoDebugLog(void)
 {
     return infoSink->debug.c_str();
 }
 
-TProgram::TProgram() : reflection(0), ioMapper(nullptr), linked(false)
+TProgram::TProgram() : reflection(0), ioMapper(NULL), linked(false)
 {
     pool = new TPoolAllocator;
     infoSink = new TInfoSink;
-    for (int s = 0; s < EShLangCount; ++s) {
-        intermediate[s] = 0;
+    for (int s = 0; s < EShLangCount; ++s)
+    {
+        intermediate[s]      = 0;
         newedIntermediate[s] = false;
     }
 }
@@ -1817,40 +1773,43 @@ bool TProgram::linkStage(EShLanguage stage, EShMessages messages)
         return true;
 
     int numEsShaders = 0, numNonEsShaders = 0;
-    for (auto it = stages[stage].begin(); it != stages[stage].end(); ++it) {
-        if ((*it)->intermediate->getProfile() == EEsProfile) {
+    for (auto it = stages[stage].begin(); it != stages[stage].end(); ++it)
+    {
+        if ((*it)->intermediate->getProfile() == EEsProfile)
             numEsShaders++;
-        } else {
+        else
             numNonEsShaders++;
-        }
     }
 
-    if (numEsShaders > 0 && numNonEsShaders > 0) {
+    if (numEsShaders > 0 && numNonEsShaders > 0)
+    {
         infoSink->info.message(EPrefixError, "Cannot mix ES profile with non-ES profile shaders");
         return false;
-    } else if (numEsShaders > 1) {
+    }
+
+    if (numEsShaders > 1)
+    {
         infoSink->info.message(EPrefixError, "Cannot attach multiple ES shaders of the same type to a single program");
         return false;
     }
 
-    //
     // Be efficient for the common single compilation unit per stage case,
     // reusing it's TIntermediate instead of merging into a new one.
-    //
     TIntermediate *firstIntermediate = stages[stage].front()->intermediate;
     if (stages[stage].size() == 1)
         intermediate[stage] = firstIntermediate;
-    else {
+    else
+    {
         intermediate[stage] = new TIntermediate(stage,
-                                                firstIntermediate->getVersion(),
-                                                firstIntermediate->getProfile());
+			firstIntermediate->getVersion(),
+			firstIntermediate->getProfile());
 
 
-        // The new TIntermediate must use the same origin as the original TIntermediates.
+        // The new TIntermediate must use the same
+	// origin as the original TIntermediates.
         // Otherwise linking will fail due to different coordinate systems.
-        if (firstIntermediate->getOriginUpperLeft()) {
+        if (firstIntermediate->getOriginUpperLeft())
             intermediate[stage]->setOriginUpperLeft();
-        }
         intermediate[stage]->setSpv(firstIntermediate->getSpv());
 
         newedIntermediate[stage] = true;
@@ -1873,12 +1832,12 @@ bool TProgram::linkStage(EShLanguage stage, EShMessages messages)
     return intermediate[stage]->getNumErrors() == 0;
 }
 
-const char* TProgram::getInfoLog()
+const char* TProgram::getInfoLog(void)
 {
     return infoSink->info.c_str();
 }
 
-const char* TProgram::getInfoDebugLog()
+const char* TProgram::getInfoDebugLog(void)
 {
     return infoSink->debug.c_str();
 }
@@ -1887,15 +1846,17 @@ const char* TProgram::getInfoDebugLog()
 // Reflection implementation.
 //
 
-bool TProgram::buildReflection()
+bool TProgram::buildReflection(void)
 {
     if (! linked || reflection)
         return false;
 
     reflection = new TReflection;
 
-    for (int s = 0; s < EShLangCount; ++s) {
-        if (intermediate[s]) {
+    for (int s = 0; s < EShLangCount; ++s)
+    {
+        if (intermediate[s])
+	{
             if (! reflection->addStage((EShLanguage)s, *intermediate[s]))
                 return false;
         }
@@ -1925,11 +1886,7 @@ const TType* TProgram::getUniformTType(int index) const      { return reflection
 const TType* TProgram::getUniformBlockTType(int index) const { return reflection->getUniformBlock(index).getType(); }
 unsigned TProgram::getLocalSize(int dim) const               { return reflection->getLocalSize(dim); }
 
-void TProgram::dumpReflection()                      { reflection->dump(); }
-
-//
 // I/O mapping implementation.
-//
 bool TProgram::mapIO(TIoMapResolver* resolver)
 {
     if (! linked || ioMapper)
@@ -1937,8 +1894,10 @@ bool TProgram::mapIO(TIoMapResolver* resolver)
 
     ioMapper = new TIoMapper;
 
-    for (int s = 0; s < EShLangCount; ++s) {
-        if (intermediate[s]) {
+    for (int s = 0; s < EShLangCount; ++s)
+    {
+        if (intermediate[s])
+	{
             if (! ioMapper->addStage((EShLanguage)s, *intermediate[s], *infoSink, resolver))
                 return false;
         }

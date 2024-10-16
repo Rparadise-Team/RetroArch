@@ -269,9 +269,6 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_target_lang,  MENU_ENUM_S
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_source_lang,  MENU_ENUM_SUBLABEL_AI_SERVICE_SOURCE_LANG)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_url,  MENU_ENUM_SUBLABEL_AI_SERVICE_URL)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_enable,  MENU_ENUM_SUBLABEL_AI_SERVICE_ENABLE)
-DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_poll_delay,  MENU_ENUM_SUBLABEL_AI_SERVICE_POLL_DELAY)
-DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_text_position,  MENU_ENUM_SUBLABEL_AI_SERVICE_TEXT_POSITION)
-DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_ai_service_text_padding,  MENU_ENUM_SUBLABEL_AI_SERVICE_TEXT_PADDING)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_power_management_settings_list,  MENU_ENUM_SUBLABEL_POWER_MANAGEMENT_SETTINGS)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_privacy_settings_list,         MENU_ENUM_SUBLABEL_PRIVACY_SETTINGS)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_midi_settings_list,            MENU_ENUM_SUBLABEL_MIDI_SETTINGS)
@@ -968,6 +965,7 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_delete_entry,                       
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_information,                           MENU_ENUM_SUBLABEL_INFORMATION)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_run,                                   MENU_ENUM_SUBLABEL_RUN)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_add_to_favorites,                      MENU_ENUM_SUBLABEL_ADD_TO_FAVORITES)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_add_to_playlist,                       MENU_ENUM_SUBLABEL_ADD_TO_PLAYLIST)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_set_core_association,                  MENU_ENUM_SUBLABEL_SET_CORE_ASSOCIATION)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_reset_core_association,                MENU_ENUM_SUBLABEL_RESET_CORE_ASSOCIATION)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_download_pl_entry_thumbnails,          MENU_ENUM_SUBLABEL_DOWNLOAD_PL_ENTRY_THUMBNAILS)
@@ -1115,9 +1113,10 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_restart_content,    
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_close_content,         MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_CLOSE_CONTENT)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_savestate_submenu,     MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_SAVESTATE_SUBMENU)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_save_load_state,       MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_SAVE_LOAD_STATE)
-DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_replay,       MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_REPLAY)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_replay,                MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_REPLAY)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_undo_save_load_state,  MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_UNDO_SAVE_LOAD_STATE)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_add_to_favorites,      MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_ADD_TO_FAVORITES)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_add_to_playlist,       MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_ADD_TO_PLAYLIST)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_start_recording,       MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_START_RECORDING)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_start_streaming,       MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_START_STREAMING)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_quick_menu_show_set_core_association,  MENU_ENUM_SUBLABEL_QUICK_MENU_SHOW_SET_CORE_ASSOCIATION)
@@ -2929,6 +2928,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
          case MENU_ENUM_LABEL_QUICK_MENU_SHOW_ADD_TO_FAVORITES:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_quick_menu_show_add_to_favorites);
             break;
+         case MENU_ENUM_LABEL_QUICK_MENU_SHOW_ADD_TO_PLAYLIST:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_quick_menu_show_add_to_playlist);
+            break;
          case MENU_ENUM_LABEL_QUICK_MENU_SHOW_START_RECORDING:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_quick_menu_show_start_recording);
             break;
@@ -3474,6 +3476,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
          case MENU_ENUM_LABEL_ADD_TO_FAVORITES:
          case MENU_ENUM_LABEL_ADD_TO_FAVORITES_PLAYLIST:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_add_to_favorites);
+            break;
+         case MENU_ENUM_LABEL_ADD_TO_PLAYLIST:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_add_to_playlist);
             break;
          case MENU_ENUM_LABEL_SET_CORE_ASSOCIATION:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_set_core_association);
@@ -5132,15 +5137,6 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
          case MENU_ENUM_LABEL_AI_SERVICE_ENABLE:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_ai_service_enable);
             break;
-         case MENU_ENUM_LABEL_AI_SERVICE_POLL_DELAY:
-            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_ai_service_poll_delay);
-            break;
-         case MENU_ENUM_LABEL_AI_SERVICE_TEXT_POSITION:
-            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_ai_service_text_position);
-            break;
-         case MENU_ENUM_LABEL_AI_SERVICE_TEXT_PADDING:
-            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_ai_service_text_padding);
-            break;
          case MENU_ENUM_LABEL_AI_SERVICE_SETTINGS:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_ai_service_settings_list);
             break;
@@ -5441,7 +5437,7 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
          case MENU_ENUM_LABEL_MENU_RGUI_BORDER_FILLER_ENABLE:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_menu_rgui_border_filler_enable);
             break;
-		 case MENU_ENUM_LABEL_MENU_RGUI_FULLSCREEN_STRETCH:
+	case MENU_ENUM_LABEL_MENU_RGUI_FULLSCREEN_STRETCH:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_menu_rgui_fullscreen_stretch);
             break;
          case MENU_ENUM_LABEL_MENU_RGUI_BORDER_FILLER_THICKNESS_ENABLE:

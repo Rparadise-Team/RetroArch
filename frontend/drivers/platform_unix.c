@@ -1302,7 +1302,7 @@ static void frontend_unix_set_screen_brightness(int value)
 
    /* Device tree should have 'label = "backlight";' if control is desirable */
    filestream_read_file("/sys/class/backlight/backlight/max_brightness",
-                        &buffer, NULL);
+                        (void **)&buffer, NULL);
    if (buffer)
    {
       sscanf(buffer, "%u", &max_brightness);
@@ -2092,6 +2092,10 @@ static void frontend_unix_init(void *data)
          "getVolumePath", "(Ljava/lang/String;)Ljava/lang/String;");
    GET_METHOD_ID(env, android_app->inputGrabMouse, class,
          "inputGrabMouse", "(Z)V");
+   GET_METHOD_ID(env, android_app->isScreenReaderEnabled, class,
+         "isScreenReaderEnabled", "()Z");
+   GET_METHOD_ID(env, android_app->accessibilitySpeak, class,
+         "accessibilitySpeak", "(Ljava/lang/String;)V");
 
    GET_OBJECT_CLASS(env, class, obj);
    GET_METHOD_ID(env, android_app->getStringExtra, class,
@@ -2886,10 +2890,10 @@ static const char* accessibility_unix_language_code(const char* language)
 }
 
 static bool accessibility_speak_unix(int speed,
-      const char* speak_text, int priority, const char* voice)
+      const char* speak_text, int priority)
 {
    int pid;
-   const char* language   = accessibility_unix_language_code(voice);
+   const char* language   = accessibility_unix_language_code(get_user_language_iso639_1(true));
    char* voice_out        = (char*)malloc(3 + strlen(language));
    char* speed_out        = (char*)malloc(3 + 3);
    const char* speeds[10] = {"80", "100", "125", "150", "170", "210", "260", "310", "380", "450"};
@@ -2961,6 +2965,33 @@ end:
 }
 #endif
 
+#ifdef ANDROID
+static bool is_narrator_running_android(void)
+{
+   JNIEnv *env = jni_thread_getenv();
+   jboolean                  jbool   = JNI_FALSE;
+
+   if (env != NULL)
+      CALL_BOOLEAN_METHOD(env, jbool,
+            g_android->activity->clazz, g_android->isScreenReaderEnabled);
+
+   return jbool == JNI_TRUE;
+}
+
+static bool accessibility_speak_android(int speed,
+      const char* speak_text, int priority)
+{
+   JNIEnv *env = jni_thread_getenv();
+
+   if (env != NULL)
+      CALL_VOID_METHOD_PARAM(env, g_android->activity->clazz,
+            g_android->accessibilitySpeak,
+            (*env)->NewStringUTF(env, speak_text));
+
+   return true;
+}
+#endif
+
 frontend_ctx_driver_t frontend_ctx_unix = {
    frontend_unix_get_env,       /* get_env */
    frontend_unix_init,          /* init */
@@ -3018,8 +3049,8 @@ frontend_ctx_driver_t frontend_ctx_unix = {
    is_narrator_running_unix,     /* is_narrator_running */
    accessibility_speak_unix,     /* accessibility_speak */
 #else
-   NULL,                         /* is_narrator_running */
-   NULL,                         /* accessibility_speak */
+   is_narrator_running_android,                         /* is_narrator_running */
+   accessibility_speak_android,                         /* accessibility_speak */
 #endif
 #ifdef FERAL_GAMEMODE
    frontend_unix_set_gamemode,

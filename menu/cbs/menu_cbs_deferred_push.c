@@ -429,8 +429,22 @@ static int general_push(menu_displaylist_info_t *info,
    {
       /* Need to use the scratch buffer here */
       char tmp_str[PATH_MAX_LENGTH];
-      fill_pathname_join_special(tmp_str, menu->scratch2_buf,
+#if IOS
+      if (path_is_absolute(menu->scratch_buf))
+         strlcpy(tmp_str, menu->scratch_buf, sizeof(tmp_str));
+      else
+      {
+         char tmp_path[PATH_MAX_LENGTH];
+         fill_pathname_expand_special(tmp_path, menu->scratch2_buf, sizeof(tmp_path));
+         const char *menu_path = tmp_path;
+         fill_pathname_join_special(tmp_str, menu_path,
+               menu->scratch_buf, sizeof(tmp_str));
+      }
+#else
+      const char *menu_path = menu->scratch2_buf;
+      fill_pathname_join_special(tmp_str, menu_path,
             menu->scratch_buf, sizeof(tmp_str));
+#endif
 
       if (!string_is_empty(info->path))
          free(info->path);
@@ -672,6 +686,7 @@ GENERIC_DEFERRED_PUSH_GENERAL(deferred_push_dropdown_box_list_input_select_physi
 #ifdef HAVE_NETWORKING
 GENERIC_DEFERRED_PUSH_GENERAL(deferred_push_dropdown_box_list_netplay_mitm_server, PUSH_DEFAULT, DISPLAYLIST_DROPDOWN_LIST_NETPLAY_MITM_SERVER)
 #endif
+GENERIC_DEFERRED_PUSH(deferred_push_add_to_playlist_list,          DISPLAYLIST_ADD_TO_PLAYLIST_LIST)
 
 static int menu_cbs_init_bind_deferred_push_compare_label(
       menu_file_list_cbs_t *cbs,
@@ -933,6 +948,7 @@ static int menu_cbs_init_bind_deferred_push_compare_label(
 #ifdef HAVE_NETWORKING
       {MENU_ENUM_LABEL_DEFERRED_LAKKA_LIST, deferred_push_lakka_list},
 #endif
+       {MENU_ENUM_LABEL_DEFERRED_ADD_TO_PLAYLIST_LIST, deferred_push_add_to_playlist_list},
    };
 
    if (!string_is_equal(label, "null"))
@@ -1393,6 +1409,9 @@ static int menu_cbs_init_bind_deferred_push_compare_label(
 #endif
          case MENU_ENUM_LABEL_SIDELOAD_CORE_LIST:
             BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_file_browser_select_sideload_core);
+            break;
+         case MENU_ENUM_LABEL_DEFERRED_ADD_TO_PLAYLIST_LIST:
+            BIND_ACTION_DEFERRED_PUSH(cbs, deferred_push_add_to_playlist_list);
             break;
          default:
             return -1;

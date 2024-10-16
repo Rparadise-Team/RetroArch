@@ -348,9 +348,6 @@ typedef struct settings
       unsigned ai_service_mode;
       unsigned ai_service_target_lang;
       unsigned ai_service_source_lang;
-      unsigned ai_service_poll_delay;
-      unsigned ai_service_text_position;
-      unsigned ai_service_text_padding;
 
       unsigned core_updater_auto_backup_history_size;
       unsigned video_black_frame_insertion;
@@ -785,7 +782,7 @@ typedef struct settings
       bool menu_materialui_auto_rotate_nav_bar;
       bool menu_materialui_dual_thumbnail_list_view_enable;
       bool menu_materialui_thumbnail_background_enable;
-	  bool menu_rgui_fullscreen_stretch;
+      bool menu_rgui_fullscreen_stretch;
       bool menu_rgui_background_filler_thickness_enable;
       bool menu_rgui_border_filler_thickness_enable;
       bool menu_rgui_border_filler_enable;
@@ -851,6 +848,7 @@ typedef struct settings
       bool quick_menu_show_replay;
       bool quick_menu_show_undo_save_load_state;
       bool quick_menu_show_add_to_favorites;
+      bool quick_menu_show_add_to_playlist;
       bool quick_menu_show_start_recording;
       bool quick_menu_show_start_streaming;
       bool quick_menu_show_set_core_association;

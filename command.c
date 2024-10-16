@@ -230,7 +230,7 @@ static void command_network_poll(command_t *handle)
 command_t* command_network_new(uint16_t port)
 {
    struct addrinfo     *res  = NULL;
-   command_t            *cmd = (command_t*)calloc(1, sizeof(command_t));
+   command_t            *cmd = (command_t*)calloc(1, sizeof(*cmd));
    command_network_t *netcmd = (command_network_t*)calloc(
                                    1, sizeof(command_network_t));
    int fd                    = socket_init(
@@ -1173,9 +1173,17 @@ bool command_event_save_config(
 #endif
    if (path_exists && config_save_file(config_path))
    {
+#if IOS
+      char tmp[PATH_MAX_LENGTH] = {0};
+      fill_pathname_abbreviate_special(tmp, config_path, sizeof(tmp));
+      snprintf(s, len, "%s \"%s\".",
+            msg_hash_to_str(MSG_SAVED_NEW_CONFIG_TO),
+            tmp);
+#else
       snprintf(s, len, "%s \"%s\".",
             msg_hash_to_str(MSG_SAVED_NEW_CONFIG_TO),
             config_path);
+#endif
       RARCH_LOG("[Config]: %s\n", s);
       return true;
    }
@@ -1770,12 +1778,14 @@ bool command_event_save_core_config(
       for (i = 0; i < 16; i++)
       {
          size_t _len = strlcpy(tmp, config_path, sizeof(tmp));
+
          if (i)
             _len += snprintf(tmp + _len, sizeof(tmp) - _len, "-%u", i);
          strlcpy(tmp + _len, ".cfg", sizeof(tmp) - _len);
 
          if (!path_is_valid(tmp))
          {
+            strlcpy(config_path, tmp, sizeof(config_path));
             new_path_available = true;
             break;
          }
@@ -1961,7 +1971,7 @@ bool command_event_main_state(unsigned cmd)
          case CMD_EVENT_SAVE_STATE_TO_RAM:
             {
                /* TODO: Saving state during recording should associate the state with the replay. */
-               video_driver_state_t *video_st                 = 
+               video_driver_state_t *video_st                 =
                   video_state_get_ptr();
                bool savestate_auto_index                      =
                      settings->bools.savestate_auto_index;
@@ -2088,15 +2098,15 @@ void command_event_reinit(const int flags)
    bool adaptive_vsync            = settings->bools.video_adaptive_vsync;
    unsigned swap_interval_config  = settings->uints.video_swap_interval;
 #endif
-   enum input_game_focus_cmd_type 
+   enum input_game_focus_cmd_type
       game_focus_cmd              = GAME_FOCUS_CMD_REAPPLY;
-   const input_device_driver_t 
+   const input_device_driver_t
       *joypad                     = input_st->primary_joypad;
 #ifdef HAVE_MFI
-   const input_device_driver_t 
+   const input_device_driver_t
       *sec_joypad                 = input_st->secondary_joypad;
 #else
-   const input_device_driver_t 
+   const input_device_driver_t
       *sec_joypad                 = NULL;
 #endif
 

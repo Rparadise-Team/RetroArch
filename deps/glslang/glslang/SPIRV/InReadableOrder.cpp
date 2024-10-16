@@ -50,7 +50,6 @@
 
 #include "spvIR.h"
 
-#include <cassert>
 #include <unordered_set>
 
 using spv::Block;
@@ -68,13 +67,12 @@ public:
     // the branches have been completed.
     void visit(Block* block)
     {
-        assert(block);
         if (visited_.count(block) || delayed_.count(block))
             return;
         callback_(block);
         visited_.insert(block);
-        Block* mergeBlock = nullptr;
-        Block* continueBlock = nullptr;
+        Block* mergeBlock = NULL;
+        Block* continueBlock = NULL;
         auto mergeInst = block->getMergeInstruction();
         if (mergeInst) {
             Id mergeId = mergeInst->getIdOperand(0);
