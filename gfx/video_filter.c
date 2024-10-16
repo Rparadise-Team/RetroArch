@@ -160,14 +160,14 @@ static bool create_softfilter_graph(rarch_softfilter_t *filt,
       return false;
    }
 
-   userdata.conf      = filt->conf;
+   userdata.conf = filt->conf;
    /* Index-specific configs take priority over ident-specific. */
    userdata.prefix[0] = key;
    userdata.prefix[1] = filt->impl->short_ident;
 
    /* Simple assumptions. */
-   filt->pix_fmt      = in_pixel_format;
-   input_fmts         = filt->impl->query_input_formats();
+   filt->pix_fmt = in_pixel_format;
+   input_fmts = filt->impl->query_input_formats();
 
    switch (in_pixel_format)
    {
@@ -244,15 +244,15 @@ static bool create_softfilter_graph(rarch_softfilter_t *filt,
       for (i = 0; i < threads; i++)
       {
          filt->thread_data[i].userdata = filt->impl_data;
-         filt->thread_data[i].done     = true;
+         filt->thread_data[i].done = true;
 
-         filt->thread_data[i].lock     = slock_new();
+         filt->thread_data[i].lock = slock_new();
          if (!filt->thread_data[i].lock)
             return false;
-         filt->thread_data[i].cond     = scond_new();
+         filt->thread_data[i].cond = scond_new();
          if (!filt->thread_data[i].cond)
             return false;
-         filt->thread_data[i].thread   = sthread_create(
+         filt->thread_data[i].thread = sthread_create(
                filter_thread_loop, &filt->thread_data[i]);
          if (!filt->thread_data[i].thread)
             return false;
@@ -360,9 +360,8 @@ static bool append_softfilter_plugs(rarch_softfilter_t *filt,
    {
       softfilter_get_implementation_t cb;
       const struct softfilter_implementation *impl = NULL;
-      struct rarch_soft_plug *new_plugs            = NULL;
-      dylib_t lib                                  = 
-         dylib_load(list->elems[i].data);
+      struct rarch_soft_plug *new_plugs = NULL;
+      dylib_t lib = dylib_load(list->elems[i].data);
 
       if (!lib)
          continue;
@@ -400,8 +399,8 @@ static bool append_softfilter_plugs(rarch_softfilter_t *filt,
       RARCH_LOG("[SoftFilter]: Found plug: %s (%s).\n",
             impl->ident, impl->short_ident);
 
-      filt->plugs                       = new_plugs;
-      filt->plugs[filt->num_plugs].lib  = lib;
+      filt->plugs = new_plugs;
+      filt->plugs[filt->num_plugs].lib = lib;
       filt->plugs[filt->num_plugs].impl = impl;
       filt->num_plugs++;
    }
@@ -429,8 +428,8 @@ rarch_softfilter_t *rarch_softfilter_new(const char *filter_config,
    char basedir[PATH_MAX_LENGTH];
    char ext_name[16];
 #endif
-   struct string_list *plugs     = NULL;
-   rarch_softfilter_t *filt      = (rarch_softfilter_t*)
+   struct string_list *plugs = NULL;
+   rarch_softfilter_t *filt = (rarch_softfilter_t*)
       calloc(1, sizeof(*filt));
    if (!filt)
       return NULL;
