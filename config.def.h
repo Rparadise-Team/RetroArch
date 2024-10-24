@@ -298,8 +298,13 @@
 /* Fullscreen resolution. A value of 0 uses the desktop
  * resolution. */
 #if defined(DINGUX)
+#if defined(MIYOOMINI)
+#define DEFAULT_FULLSCREEN_X 640
+#define DEFAULT_FULLSCREEN_Y 480
+#else
 #define DEFAULT_FULLSCREEN_X 320
 #define DEFAULT_FULLSCREEN_Y 240
+#endif
 #elif defined(__WINRT__) || defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP
 #define DEFAULT_FULLSCREEN_X 1920
 #define DEFAULT_FULLSCREEN_Y 1080
@@ -833,6 +838,7 @@
 #define DEFAULT_RGUI_PARTICLE_EFFECT_SPEED 1.0f
 #define DEFAULT_RGUI_PARTICLE_EFFECT_SCREENSAVER true
 #define DEFAULT_RGUI_EXTENDED_ASCII false
+#define DEFAULT_RGUI_FULLSCREEN_STRETCH true
 #define DEFAULT_RGUI_SWITCH_ICONS true
 #endif
 

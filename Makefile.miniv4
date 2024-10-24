@@ -25,13 +25,13 @@ STRIP_BIN	= 1
 #########################
 
 ifeq ($(PACKAGE_NAME),)
-PACKAGE_NAME = retroarch.mini
+PACKAGE_NAME = retroarch.miniv4
 endif
 
 DEBUG ?= 0
 
 MIYOOMINI = 1
-MMIYOOV4 = 0
+MMIYOOV4 = 1
 DINGUX = 1
 HAVE_SCREENSHOTS = 1
 HAVE_REWIND = 1
@@ -116,7 +116,7 @@ OBJ := miyoo.o
 LINK := $(CXX)
 DEF_FLAGS := -marm -mtune=cortex-a7 -march=armv7ve+simd -mfpu=neon-vfpv4 -mfloat-abi=hard -ffast-math -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
-DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOOMINI -DDINGUX -MMD
+DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOOMINI -DMMIYOOV4 -DDINGUX -MMD
 DEF_FLAGS += -Wall -Wno-unused-function -Wno-unused-variable $(LTO)
 DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
 LIBS := -ldl -lz -lrt -pthread -lmi_sys -lmi_ao -lmi_gfx -lcam_os_wrapper -lmsettings -lmi_common

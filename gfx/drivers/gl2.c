@@ -4277,9 +4277,20 @@ static void *gl2_init(const video_info_t *video,
                &mode_width, &mode_height);
 
 #if defined(DINGUX)
+#if defined(MMIYOOV4)
+   mode_width  = 752;
+   mode_height = 560;
+#else
+#if defined(MIYOOMINI)
+   mode_width  = 640;
+   mode_height = 480;
+#else
    mode_width  = 320;
    mode_height = 240;
 #endif
+#endif
+#endif
+
    full_x      = mode_width;
    full_y      = mode_height;
    interval    = 0;
@@ -4445,9 +4456,20 @@ static void *gl2_init(const video_info_t *video,
             &mode_width, &mode_height);
 
 #if defined(DINGUX)
-   mode_width     = 320;
-   mode_height    = 240;
+#if defined(MMIYOOV4)
+   mode_width  = 752;
+   mode_height = 560;
+#else
+#if defined(MIYOOMINI)
+   mode_width  = 640;
+   mode_height = 480;
+#else
+   mode_width  = 320;
+   mode_height = 240;
 #endif
+#endif
+#endif
+
    temp_width     = mode_width;
    temp_height    = mode_height;
 
