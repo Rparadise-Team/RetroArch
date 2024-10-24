@@ -10501,6 +10501,7 @@ unsigned menu_displaylist_build_list(
                {MENU_ENUM_LABEL_MENU_RGUI_PARTICLE_EFFECT,                    PARSE_ONLY_UINT,   true},
                {MENU_ENUM_LABEL_MENU_RGUI_PARTICLE_EFFECT_SPEED,              PARSE_ONLY_FLOAT,  false},
                {MENU_ENUM_LABEL_MENU_RGUI_PARTICLE_EFFECT_SCREENSAVER,        PARSE_ONLY_BOOL,   false},
+               {MENU_ENUM_LABEL_MENU_RGUI_FULLSCREEN_STRETCH,                 PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_MENU_XMB_SHOW_TITLE_HEADER,                   PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_MENU_XMB_TITLE_MARGIN,                        PARSE_ONLY_INT,    true},
                {MENU_ENUM_LABEL_MENU_XMB_TITLE_MARGIN_HORIZONTAL_OFFSET,      PARSE_ONLY_INT,    true},

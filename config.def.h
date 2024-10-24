@@ -286,8 +286,13 @@
 /* Fullscreen resolution. A value of 0 uses the desktop
  * resolution. */
 #if defined(DINGUX)
+#if defined(MIYOOMINI)
+#define DEFAULT_FULLSCREEN_X 640
+#define DEFAULT_FULLSCREEN_Y 480
+#else
 #define DEFAULT_FULLSCREEN_X 320
 #define DEFAULT_FULLSCREEN_Y 240
+#endif
 #elif defined(__WINRT__) || defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP
 #define DEFAULT_FULLSCREEN_X 1920
 #define DEFAULT_FULLSCREEN_Y 1080
@@ -802,6 +807,7 @@
 #define DEFAULT_RGUI_PARTICLE_EFFECT_SPEED 1.0f
 #define DEFAULT_RGUI_PARTICLE_EFFECT_SCREENSAVER true
 #define DEFAULT_RGUI_EXTENDED_ASCII false
+#define DEFAULT_RGUI_FULLSCREEN_STRETCH true
 #define DEFAULT_RGUI_SWITCH_ICONS true
 #endif
 
@@ -1674,9 +1680,9 @@
 #elif defined(__i386__) || defined(__i486__) || defined(__i686__)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/linux/x86/latest/"
 #elif defined(__arm__) && __ARM_ARCH == 7 && defined(__ARM_PCS_VFP)
-#define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/linux/armhf/latest/"
+#define DEFAULT_BUILDBOT_SERVER_URL "https://raw.githubusercontent.com/Rparadise-Team/Koriki/cores/armhf/"
 #else
-#define DEFAULT_BUILDBOT_SERVER_URL ""
+#define DEFAULT_BUILDBOT_SERVER_URL "https://raw.githubusercontent.com/Rparadise-Team/Koriki/cores/armhf/"
 #endif
 #elif defined(WIIU)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/nintendo/wiiu/latest/"
