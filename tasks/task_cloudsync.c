@@ -18,6 +18,7 @@
 #include <lists/dir_list.h>
 #include <lists/file_list.h>
 #include <lrc_hash.h>
+#include <rthreads/rthreads.h>
 #include <streams/file_stream.h>
 #include <string/stdstring.h>
 #include <time/rtime.h>
@@ -302,23 +303,46 @@ static void task_cloud_sync_manifest_append_dir(file_list_t *manifest,
 static struct string_list *task_cloud_sync_directory_map(void)
 {
    static struct string_list *list = NULL;
+   settings_t *settings = config_get_ptr();
+
    if (!list)
    {
       union string_list_elem_attr attr = {0};
       char  dir[PATH_MAX_LENGTH];
       list = string_list_new();
 
-      string_list_append(list, "config", attr);
-      fill_pathname_application_special(dir,
-            sizeof(dir), APPLICATION_SPECIAL_DIRECTORY_CONFIG);
-      list->elems[list->size - 1].userdata = strdup(dir);
+      if (settings->bools.cloud_sync_sync_configs)
+      {
+         string_list_append(list, "config", attr);
+         fill_pathname_application_special(dir,
+               sizeof(dir), APPLICATION_SPECIAL_DIRECTORY_CONFIG);
+         list->elems[list->size - 1].userdata = strdup(dir);
+      }
 
-      string_list_append(list, "saves", attr);
-      list->elems[list->size - 1].userdata = strdup(dir_get_ptr(RARCH_DIR_SAVEFILE));
+      if (settings->bools.cloud_sync_sync_saves)
+      {
+         string_list_append(list, "saves", attr);
+         list->elems[list->size - 1].userdata = strdup(dir_get_ptr(RARCH_DIR_SAVEFILE));
 
-      string_list_append(list, "states", attr);
-      list->elems[list->size - 1].userdata = strdup(dir_get_ptr(RARCH_DIR_SAVESTATE));
+         string_list_append(list, "states", attr);
+         list->elems[list->size - 1].userdata = strdup(dir_get_ptr(RARCH_DIR_SAVESTATE));
+      }
+
+      if (settings->bools.cloud_sync_sync_thumbs)
+      {
+         string_list_append(list, "thumbnails", attr);
+         strlcpy(dir, settings->paths.directory_thumbnails, sizeof(dir));
+         list->elems[list->size - 1].userdata = strdup(dir);
+      }
+
+      if (settings->bools.cloud_sync_sync_system)
+      {
+         string_list_append(list, "system", attr);
+         strlcpy(dir, settings->paths.directory_system, sizeof(dir));
+         list->elems[list->size - 1].userdata = strdup(dir);
+      }
    }
+
    return list;
 }
 
