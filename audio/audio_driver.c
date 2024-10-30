@@ -1630,7 +1630,7 @@ bool audio_driver_callback(void)
        || (settings->bools.menu_pause_libretro
        && (menu_state_get_ptr()->flags & MENU_ST_FLAG_ALIVE)
        &&  netplay_driver_ctl(RARCH_NETPLAY_CTL_ALLOW_PAUSE, NULL)
-	   && !netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE, NULL));
+       && !netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE, NULL));
 #else
    bool core_paused            = runloop_paused
       || (settings->bools.menu_pause_libretro

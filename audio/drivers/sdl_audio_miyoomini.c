@@ -239,8 +239,8 @@ static bool sdl_audio_stop(void *data)
 	  slock_lock(sdl->lock);
 	   
 	  #ifdef HAVE_THREADS
-      scond_broadcast(sdl->cond);
-      #endif
+	  scond_broadcast(sdl->cond);
+	  #endif
 	  slock_unlock(sdl->lock);
 	  
 	  SDL_PauseAudio(1);
