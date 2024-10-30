@@ -166,15 +166,29 @@ static ssize_t miao_write(void *data, const void *buf, size_t size)
 static bool miao_stop(void *data)
 {
    miao_audio_t *miaoaudio = (miao_audio_t*)data;
+   if (miaoaudio->is_paused) {
+      return true;
+   }
+	
+   RARCH_LOG("[MIAO audio]: Pausing.\n");
+	
    if (!miaoaudio->is_paused) {
       miaoaudio->is_paused = true;
    }
+   
    return true;
 }
 
 static bool miao_start(void *data, bool is_shutdown)
 {
    miao_audio_t *miaoaudio = (miao_audio_t*)data;
+   if (!miaoaudio) return false;
+	
+	/* Prevents restarting audio when the menu
+    * is toggled off on shutdown */
+   if (is_shutdown)
+      return true;
+	
    if (miaoaudio->is_paused) {
       /* Send pre-fill null data */
       miaoaudio->AoSendFrame.apVirAddr[0] = miaoaudio->nullbuf;
@@ -189,6 +203,9 @@ static bool miao_start(void *data, bool is_shutdown)
 static bool miao_alive(void *data)
 {
    miao_audio_t *miaoaudio = (miao_audio_t*)data;
+
+   if (!miaoaudio)
+      return false;
    return !miaoaudio->is_paused;
 }
 

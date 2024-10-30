@@ -6851,8 +6851,8 @@ int runloop_iterate(void)
    retro_time_t current_time                    = cpu_features_get_time_usec();
 #ifdef HAVE_MENU
 #ifdef HAVE_NETWORKING
-   bool menu_pause_libretro                     = settings->bools.menu_pause_libretro &&
-         netplay_driver_ctl(RARCH_NETPLAY_CTL_ALLOW_PAUSE, NULL);
+   bool menu_pause_libretro                     = settings->bools.menu_pause_libretro
+	   && netplay_driver_ctl(RARCH_NETPLAY_CTL_ALLOW_PAUSE, NULL);
 #else
    bool menu_pause_libretro                     = settings->bools.menu_pause_libretro;
 #endif
@@ -8067,8 +8067,7 @@ void runloop_path_set_redirect(settings_t *settings,
 #ifdef HAVE_NETWORKING
    /* Special save directory for netplay clients. */
    if (      netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_ENABLED, NULL)
-         && !netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_SERVER, NULL)
-         && !netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE, NULL))
+         && !netplay_driver_ctl(RARCH_NETPLAY_CTL_IS_SERVER, NULL))
    {
       fill_pathname_join(new_savefile_dir, new_savefile_dir, ".netplay",
          sizeof(new_savefile_dir));

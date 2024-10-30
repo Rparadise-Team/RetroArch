@@ -161,8 +161,16 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
 static bool oss_stop(void *data)
 {
    oss_audio_t *ossaudio  = (oss_audio_t*)data;
-
-   ossaudio->is_paused = true;
+   if (ossaudio->is_paused) {
+      return true;
+   }
+	
+   RARCH_LOG("[OSS audio]: Pausing.\n");
+	
+   if (!ossaudio->is_paused) {
+      ossaudio->is_paused = true;
+   }
+   
    return true;
 }
 
@@ -170,6 +178,11 @@ static bool oss_start(void *data, bool is_shutdown)
 {
    oss_audio_t *ossaudio  = (oss_audio_t*)data;
    if (!ossaudio) return false;
+	
+	/* Prevents restarting audio when the menu
+    * is toggled off on shutdown */
+   if (is_shutdown)
+      return true;
 
    ossaudio->is_paused = false;
    return true;
@@ -178,6 +191,9 @@ static bool oss_start(void *data, bool is_shutdown)
 static bool oss_alive(void *data)
 {
    oss_audio_t *ossaudio  = (oss_audio_t*)data;
+
+   if (!ossaudio)
+      return false;
    return !ossaudio->is_paused;
 }
 
