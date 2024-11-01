@@ -3,23 +3,22 @@
 #########################
 
 # Default toolchain directory
-TOOLCHAIN_DIR=/opt/miyoomini-toolchain
+TOOLCHAIN_DIR = /opt/miyoomini-toolchain
 
 # All toolchain-related variables may be
 # overridden via the command line
 
-CC		= $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
-CXX		= $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
-STRIP		= $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
+CC = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
+CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
+STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
 
-SDL_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
-FREETYPE_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
+FREETYPE_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
 
-INC_DIR		?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
-LIB_DIR		?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/lib
+INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
+LIB_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/lib
 
-LTO		= -flto
-STRIP_BIN	= 1
+LTO = -flto
 
 #########################
 #########################
@@ -134,7 +133,7 @@ LINK := $(CXX)
 DEF_FLAGS := -marm -mtune=cortex-a7 -march=armv7ve+simd -mfpu=neon-vfpv4 -mfloat-abi=hard -ffast-math -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOOMINI -DMMIYOOV4 -DDINGUX -MMD
-DEF_FLAGS += -Wall -Wno-unused-function -Wno-unused-variable $(LTO)
+DEF_FLAGS += -Wall -Wno-unused-function -Wno-unused-variable -flto
 DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
 LIBS := -ldl -lz -lrt -pthread -lmi_sys -lmi_ao -lmi_gfx -lcam_os_wrapper -lmsettings -lmi_common
 CFLAGS :=
@@ -161,7 +160,7 @@ ifeq ($(DEBUG), 1)
    DEF_FLAGS += -O0 -g -DDEBUG -D_DEBUG
 else
    OBJDIR := $(OBJDIR_BASE)/release
-   DEF_FLAGS += -Ofast -DNDEBUG
+   DEF_FLAGS += -O2 -DNDEBUG
 endif
 
 include Makefile.common
