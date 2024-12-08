@@ -596,8 +596,6 @@ input_device_driver_t sdl_joypad = {
    NULL, /* set_rumble */
 #endif
    NULL, /* set_rumble_gain */
-   NULL, /* set_sensor_state */
-   NULL, /* get_sensor_input */
    sdl_joypad_name,
 #ifdef HAVE_SDL2
    "sdl2",
