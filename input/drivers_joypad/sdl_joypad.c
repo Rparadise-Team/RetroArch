@@ -17,6 +17,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <compat/strl.h>
 
@@ -26,6 +27,9 @@
 
 #include "../../tasks/tasks_internal.h"
 #include "../../verbosity.h"
+
+#include <unistd.h>
+#include <fcntl.h>
 
 typedef struct _sdl_joypad
 {
@@ -61,6 +65,29 @@ static const char *sdl_joypad_name(unsigned pad)
 #else
    return SDL_JoystickName(pad);
 #endif
+}
+
+void miyooflip_rumble(uint16_t strength)
+{
+    static char lastvalue = '0';
+    const char str_export[2] = "20";
+    const char str_direction[3] = "out";
+    char value = (strength > 0) ? '1' : '0';
+    int fd;
+
+    if (lastvalue != value)
+    {
+        fd = open("/sys/class/gpio/export", O_WRONLY);
+        if (fd > 0) { write(fd, str_export, 2); close(fd); }
+
+        fd = open("/sys/class/gpio/gpio20/direction", O_WRONLY);
+        if (fd > 0) { write(fd, str_direction, 3); close(fd); }
+
+        fd = open("/sys/class/gpio/gpio20/value", O_WRONLY);
+        if (fd > 0) { write(fd, &value, 1); close(fd); }
+
+        lastvalue = value;
+    }
 }
 
 static uint8_t sdl_pad_get_button(sdl_joypad_t *pad, unsigned button)
@@ -494,11 +521,14 @@ static bool sdl_joypad_set_rumble(unsigned pad, enum retro_rumble_effect effect,
    {
       case RETRO_RUMBLE_STRONG:
          efx.leftright.large_magnitude = strength;
+         miyooflip_rumble(strength);
          break;
       case RETRO_RUMBLE_WEAK:
          efx.leftright.small_magnitude = strength;
+         miyooflip_rumble(strength);
          break;
       default:
+         miyooflip_rumble(0);
          return false;
    }
 
@@ -563,9 +593,11 @@ input_device_driver_t sdl_joypad = {
 #ifdef HAVE_SDL2
    sdl_joypad_set_rumble,
 #else
-   NULL,
+   NULL, /* set_rumble */
 #endif
-   NULL,
+   NULL, /* set_rumble_gain */
+   NULL, /* set_sensor_state */
+   NULL, /* get_sensor_input */
    sdl_joypad_name,
 #ifdef HAVE_SDL2
    "sdl2",
