@@ -70,7 +70,12 @@ static const char *sdl_joypad_name(unsigned pad)
 void miyooflip_rumble(uint16_t strength)
 {
     static char lastvalue = '0';
+	
+    #if defined(MIYOOFLIP)
     const char str_export[2] = "20";
+    #elif defined(TRIMUI)
+    const char str_export[2] = "227";
+    #endif
     const char str_direction[3] = "out";
     char value = (strength > 0) ? '1' : '0';
     int fd;
@@ -79,13 +84,22 @@ void miyooflip_rumble(uint16_t strength)
     {
         fd = open("/sys/class/gpio/export", O_WRONLY);
         if (fd > 0) { write(fd, str_export, 2); close(fd); }
-
+       
+        #if defined(MIYOOFLIP)
         fd = open("/sys/class/gpio/gpio20/direction", O_WRONLY);
         if (fd > 0) { write(fd, str_direction, 3); close(fd); }
 
         fd = open("/sys/class/gpio/gpio20/value", O_WRONLY);
         if (fd > 0) { write(fd, &value, 1); close(fd); }
+       
+        #elif defined(TRIMUI)
+        fd = open("/sys/class/gpio/gpio227/direction", O_WRONLY);
+        if (fd > 0) { write(fd, str_direction, 3); close(fd); }
 
+        fd = open("/sys/class/gpio/gpio227/value", O_WRONLY);
+        if (fd > 0) { write(fd, &value, 1); close(fd); }
+        #endif
+		
         lastvalue = value;
     }
 }
@@ -521,14 +535,20 @@ static bool sdl_joypad_set_rumble(unsigned pad, enum retro_rumble_effect effect,
    {
       case RETRO_RUMBLE_STRONG:
          efx.leftright.large_magnitude = strength;
-         miyooflip_rumble(strength);
+         #if defined(MIYOOFLIP) || defined(TRIMUI)
+         miyooflip_rumble(strength > 0 ? 1 : 0);
+         #endif
          break;
       case RETRO_RUMBLE_WEAK:
          efx.leftright.small_magnitude = strength;
-         miyooflip_rumble(strength);
+         #if defined(MIYOOFLIP) || defined(TRIMUI)
+         miyooflip_rumble(strength > 0 ? 1 : 0);
+         #endif
          break;
       default:
+         #if defined(MIYOOFLIP) || defined(TRIMUI)
          miyooflip_rumble(0);
+         #endif
          return false;
    }
 
