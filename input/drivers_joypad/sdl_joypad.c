@@ -74,7 +74,7 @@ void miyooflip_rumble(uint16_t strength)
     #if defined(MIYOOFLIP)
     const char str_export[2] = "20";
     #elif defined(TRIMUI)
-    const char str_export[2] = "227";
+    const char str_export[3] = "227";
     #endif
     const char str_direction[3] = "out";
     char value = (strength > 0) ? '1' : '0';
@@ -82,17 +82,19 @@ void miyooflip_rumble(uint16_t strength)
 
     if (lastvalue != value)
     {
+        #if defined(MIYOOFLIP)
         fd = open("/sys/class/gpio/export", O_WRONLY);
         if (fd > 0) { write(fd, str_export, 2); close(fd); }
-       
-        #if defined(MIYOOFLIP)
+		
         fd = open("/sys/class/gpio/gpio20/direction", O_WRONLY);
         if (fd > 0) { write(fd, str_direction, 3); close(fd); }
 
         fd = open("/sys/class/gpio/gpio20/value", O_WRONLY);
         if (fd > 0) { write(fd, &value, 1); close(fd); }
-       
         #elif defined(TRIMUI)
+        fd = open("/sys/class/gpio/export", O_WRONLY);
+        if (fd > 0) { write(fd, str_export, 3); close(fd); }
+		
         fd = open("/sys/class/gpio/gpio227/direction", O_WRONLY);
         if (fd > 0) { write(fd, str_direction, 3); close(fd); }
 
