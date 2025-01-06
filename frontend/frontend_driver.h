@@ -88,7 +88,7 @@ typedef struct frontend_ctx_driver
    bool (*set_fork)(enum frontend_fork fork_mode);
    void (*shutdown)(bool);
    void (*get_name)(char *, size_t);
-   void (*get_os)(char *, size_t, int *major, int *minor);
+   size_t (*get_os)(char *, size_t, int *major, int *minor);
    int  (*get_rating)(void);
    void (*content_loaded)(void);
    enum frontend_architecture (*get_architecture)(void);
@@ -177,7 +177,7 @@ void frontend_driver_exitspawn(char *s, size_t len, char *args);
 
 bool frontend_driver_has_fork(void);
 
-bool frontend_driver_get_core_extension(char *s, size_t len);
+size_t frontend_driver_get_core_extension(char *s, size_t len);
 
 bool frontend_driver_get_salamander_basename(char *s, size_t len);
 

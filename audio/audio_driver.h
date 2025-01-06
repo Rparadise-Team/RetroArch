@@ -420,6 +420,7 @@ extern audio_driver_t audio_jack;
 extern audio_driver_t audio_sdl;
 extern audio_driver_t audio_xa;
 extern audio_driver_t audio_pulse;
+extern audio_driver_t audio_pipewire;
 extern audio_driver_t audio_dsound;
 extern audio_driver_t audio_wasapi;
 extern audio_driver_t audio_coreaudio;
@@ -442,6 +443,8 @@ extern audio_driver_t audio_switch_libnx_audren_thread;
 extern audio_driver_t audio_rwebaudio;
 
 audio_driver_state_t *audio_state_get_ptr(void);
+
+const char *audio_driver_get_ident(void);
 
 extern audio_driver_t *audio_drivers[];
 

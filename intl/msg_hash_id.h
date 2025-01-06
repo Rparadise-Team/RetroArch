@@ -127,7 +127,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MENU_DISABLE_KIOSK_MODE,
-   "Tampilkan semua pengaturan terkait konfigurasi."
+   "Menampilkan semua pengaturan terkait konfigurasi."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_ONLINE_UPDATER,
@@ -363,7 +363,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_UPDATE_OVERLAYS,
-   "Perbarui Overlay"
+   "Perbarui Hamparan"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_UPDATE_GLSL_SHADERS,
@@ -496,10 +496,6 @@ MSG_HASH(
    "- Catatan: 'Berkas Sistem ada di Direktori Konten' sedang aktif."
    )
 MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_CORE_INFO_FIRMWARE_PATH,
-   "- Mencari di: '%s'"
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MISSING_REQUIRED,
    "Tidak ditemukan, yang diperlukan:"
    )
@@ -624,7 +620,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_OVERLAY_SUPPORT,
-   "Dukungan layar"
+   "Hamparan layar"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_COMMAND_IFACE_SUPPORT,
@@ -812,7 +808,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_FREETYPE_SUPPORT,
-   "Dukungan Tipe Bebas"
+   "Dukungan FreeType"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_STB_TRUETYPE_SUPPORT,
@@ -992,16 +988,32 @@ MSG_HASH(
    "Muat Konfigurasi"
    )
 MSG_HASH(
+   MENU_ENUM_SUBLABEL_CONFIGURATIONS,
+   "Memuat konfigurasi dan mengganti setelan saat ini."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SAVE_CURRENT_CONFIG,
    "Simpan Konfigurasi Saat Ini"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_SAVE_CURRENT_CONFIG,
+   "Menimpa berkas konfigurasi saat ini."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SAVE_NEW_CONFIG,
    "Simpan Konfigurasi Baru"
    )
 MSG_HASH(
+   MENU_ENUM_SUBLABEL_SAVE_NEW_CONFIG,
+   "Menyimpan konfigurasi saat ini ke berkas terpisah."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_RESET_TO_DEFAULT_CONFIG,
    "Setel ulang ke Default"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_RESET_TO_DEFAULT_CONFIG,
+   "Mengatur ulang konfigurasi ke nilai bawaan."
    )
 
 /* Main Menu > Help */
@@ -1061,6 +1073,10 @@ MSG_HASH(
    "Suara"
    )
 MSG_HASH(
+   MENU_ENUM_SUBLABEL_AUDIO_SETTINGS,
+   "Mengatur masukan/keluaran audio."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_SETTINGS,
    "Masukan"
    )
@@ -1097,6 +1113,34 @@ MSG_HASH(
    "Ubah pengaturan penyimpanan."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SETTINGS,
+   "Sinkron Awan"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_SETTINGS,
+   "Mengatur sinkronisasi awan."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_ENABLE,
+   "Aktifkan Sinkron Awan"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_CONFIGS,
+   "Sinkron: Berkas Konfigurasi"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_SYSTEM,
+   "Sinkron: Berkas Sistem"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_USERNAME,
+   "Nama Pengguna"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_PASSWORD,
+   "Kata Sandi"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_LOGGING_SETTINGS,
    "Pencatatan Log"
    )
@@ -1109,8 +1153,48 @@ MSG_HASH(
    "Peramban Berkas"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_CONFIG,
+   "Berkas konfigurasi."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_HELP_FILE_BROWSER_COMPRESSED_ARCHIVE,
    "Berkas arsip terpampat."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_RECORD_CONFIG,
+   "Merekam berkas konfigurasi."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_CURSOR,
+   "Berkas kursor pangkalan data."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_CONFIG,
+   "Berkas konfigurasi."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_SHADER_PRESET,
+   "Berkas praatur shader."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_SHADER,
+   "Berkas shader."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_REMAP,
+   "Berkas pemeta ulang kendali."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_CHEAT,
+   "Berkas cheat."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_OVERLAY,
+   "Berkas hamparan."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_HELP_FILE_BROWSER_RDB,
+   "Berkas pangkalan data."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_HELP_FILE_BROWSER_IMAGE,
@@ -1138,7 +1222,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_ONSCREEN_DISPLAY_SETTINGS,
-   "Ubah pengaturan hamparan tampilan, hamparan papan ketik, dan notifikasi layar."
+   "Mengatur hamparan tampilan, hamparan papan ketik, dan notifikasi layar."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_USER_INTERFACE_SETTINGS,
@@ -1279,7 +1363,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_HELP_VIDEO_DRIVER_DRM,
-   "Kandar video DRM biasa. Ini kandar video aras rendah dengan libdrm untuk penskalaan peranti keras dengan hamparan GPU."
+   "Kandar video DRM biasa. Ini kandar video tingkat rendah dengan libdrm untuk penskalaan fisik berhamparan GPU."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_HELP_VIDEO_DRIVER_VG,
@@ -1344,7 +1428,7 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CRT_SWITCHRES_SETTINGS,
-   "Keluaran asli, sinyal beresolusi rendah untuk layar CRT."
+   "Berkeluaran lokal, sinyal beresolusi rendah untuk layar CRT."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_OUTPUT_SETTINGS,
@@ -1400,7 +1484,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_THREADED,
-   "Meningkatkan kinerja dengan meningkatkan latensi dan lebih banyak gagap video. Gunakan hanya jika kecepatan penuh tidak dapat diperoleh."
+   "Meningkatkan kinerja tapi akan banyak latensi dan video patah-patah. Gunakan hanya jika tidak dapat berkecepatan penuh."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_BLACK_FRAME_INSERTION,
@@ -1480,7 +1564,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_SMOOTH,
-   "Pemfilteran Bilinear"
+   "Penyaringan Bilinear"
    )
 #if defined(DINGUX)
 MSG_HASH(
@@ -1489,15 +1573,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_DINGUX_IPU_FILTER_TYPE,
-   "Menentukan metode interpolasi gambar saat menskala konten melalui IPU internal. 'Bicubic' atau 'Bilinear' dianjurkan jika penyaring video bertenaga CPU digunakan. Opsi ini tidak berdampak ke kinerja."
-   )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_IPU_FILTER_BICUBIC,
-   "Bikubic"
-   )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_IPU_FILTER_NEAREST,
-   "Tetangga Terdekat"
+   "Menentukan metode interpolasi gambar saat menskala konten melalui IPU internal. 'Bicubic' atau 'Bilinear' dianjurkan jika saring video bertenaga CPU digunakan. Opsi ini tidak berdampak ke kinerja."
    )
 #if defined(RS90) || defined(MIYOO)
 MSG_HASH(
@@ -1506,11 +1582,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_DINGUX_RS90_SOFTFILTER_TYPE,
-   "Menentukan metode interpolasi gambar saat 'Skala Bilang Bulat' dinonaktifkan. 'Nearest Neighbor' berpengaruh kecil pada kinerja."
-   )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_RS90_SOFTFILTER_POINT,
-   "Penskalaan Terdekat"
+   "Menentukan metode interpolasi gambar saat 'Skala Bilang Bulat' nonaktif. 'Nearest Neighbor' berdampak kecil pada kinerja."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_RS90_SOFTFILTER_BRESENHAM_HORZ,
@@ -1520,23 +1592,27 @@ MSG_HASH(
 #endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_SHADER_DELAY,
-   "Penundaan Shader Otomatis"
+   "Tundaan Shader Otomatis"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_SHADER_DELAY,
-   "Tentukan nilai tunda pemuatan shader otomatis (satuan milidetik). Dapat mengatasi masalah glitch pada grafis ketika memakai aplikasi penangkap layar."
+   "Menunda muat-langsung 'shader' (dalam milidetik). Dapat mengatasi 'glitch' grafis saat menggunakan aplikasi 'screen grab'."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_VIDEO_FILTER,
+   "Saring Video"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_FILTER,
-   "Menerapkan penyaring video berdaya CPU. Akan menguras tinggi kinerja perangkat. Beberapa penyaring mungkin hanya cocok pada 'core' yang memakai warna 16/32 bit."
+   "Menerapkan saring video berdaya CPU. Akan menguras tinggi kinerja perangkat. Beberapa saring mungkin hanya cocok pada 'core' dengan warna 16/32 bit."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_FILTER_REMOVE,
-   "Hapus Filter Video"
+   "Hapus Saring Video"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_FILTER_REMOVE,
-   "Matikan semua video filter berbasis pemrosesan CPU."
+   "Melepas saring video bertenaga CPU yang aktif."
    )
 
 /* Settings > Video > CRT SwitchRes */
@@ -1551,7 +1627,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CRT_SWITCH_RESOLUTION_SUPER,
-   "Ganti ke resolusi asli atau ke resolusi super ultra lebar."
+   "Mengganti ke resolusi lokal atau super ultra lebar."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CRT_SWITCH_X_AXIS_CENTERING,
@@ -1682,7 +1758,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_FORCE_SRGB_DISABLE,
-   "Nonaktifkan dukungan sRGB FBO secara paksa. Beberapa driver Intel OpenGL di Windows memiliki masalah video dengan FBO sRGB. Mengaktifkan ini dapat mengatasinya."
+   "Menonaktifkan paksa dukungan FBO sRGB. Beberapa kandar OpenGL Intel di Windows bermasalah video dengan FBO sRGB. Aktifkan ini untuk mengatasinya."
    )
 
 /* Settings > Video > Fullscreen Mode */
@@ -1693,7 +1769,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_FULLSCREEN,
-   "Mulai di layar penuh. Dapat diubah saat wakutu jalan. Dapat ditimpa alihan baris perintah."
+   "Mulai di layar penuh. Dapat diubah saat waktu jalan. Dapat ditimpa alihan baris perintah."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_WINDOWED_FULLSCREEN,
@@ -1806,18 +1882,6 @@ MSG_HASH(
    "Skala Bilangan Bulat"
    )
 MSG_HASH(
-   MENU_ENUM_SUBLABEL_VIDEO_SCALE_INTEGER,
-   "Menskala video dalam bilangan bulat saja. Ukuran dasar bergantung pada geometri yang dilaporkan sistem dan rasio aspek. Jika 'Paksa Rasio Aspek' tidak disetel, X/Y akan diskalakan bilangan bulat secara mandiri."
-   )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_VIDEO_SCALE_INTEGER_OVERSCALE,
-   "Skala Pembulatan Ke Atas"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_VIDEO_SCALE_INTEGER_OVERSCALE,
-   "Atur paksa skala pembulatan ke atas, bukan ke bawah."
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_ASPECT_RATIO_INDEX,
    "Rasio Aspek"
    )
@@ -1836,17 +1900,11 @@ MSG_HASH(
    "Rasio Aspek Kustom (Posisi X)"
    )
 MSG_HASH(
-   MENU_ENUM_SUBLABEL_VIDEO_VIEWPORT_CUSTOM_X,
-   "Offset area pandang khusus yang digunakan untuk menentukan posisi sumbu X dari area pandang.\n Ini diabaikan jika 'Skala Bilangan Bulat' diaktifkan."
-   )
-MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_VIEWPORT_CUSTOM_Y,
    "Rasio Aspek Kustom (Posisi Y)"
    )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_VIDEO_VIEWPORT_CUSTOM_Y,
-   "Offset area pandang khusus yang digunakan untuk menentukan posisi sumbu Y dari area pandang.\n Ini diabaikan jika 'Skala Bilangan Bulat' diaktifkan."
-   )
+#if defined(RARCH_MOBILE)
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_VIEWPORT_CUSTOM_WIDTH,
    "Rasio Aspek Kustom (Lebar)"
@@ -1884,11 +1942,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_HDR_MAX_NITS,
-   "Maksimal Pancaran Cahaya Layar"
+   "Tingkat Serian Layar"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_HDR_MAX_NITS,
-   "Atur maksimal pancaran cahaya layar (dalam satuan cd/m2) yang dapat dihasilkan dari monitor/TV. Kunjungi situs RTings sebagai acuan."
+   "Mengatur tingkat serian layar (dalam cd/m2) dari monitor/TV. Kunjungi situs RTings untuk rujukan."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_HDR_PAPER_WHITE_NITS,
@@ -1927,19 +1985,19 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_ADAPTIVE_VSYNC,
-   "VSync diaktifkan hingga performa turun di bawah kecepatan refresh target. Dapat meminimalkan kegagapan saat performa turun di bawah waktu nyata, dan lebih hemat energi."
+   "VSync akan aktif sampai kinerja kurang dari laju segar yang dituju. Dapat mengurangi patah-patah saat kinerja kurang dari waktu nyata, dan lebih hemat tenaga."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_FRAME_DELAY,
-   "Tundaan Bingkai (ms)"
+   "Tundaan Bingkai"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_FRAME_DELAY_AUTO,
-   "Frame Delay Otomatis"
+   "Tundaan Bingkai Otomatis"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_FRAME_DELAY_AUTO,
-   "Turunkan sementara 'Frame Delay' untuk mencegah frame tersendat. Dimulai dari setengah frame jika 'Frame Delay' adalah 0."
+   "Menyesuaikan 'Tunda Bingkai' secara dinamis."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_FRAME_DELAY_AUTOMATIC,
@@ -1955,11 +2013,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_HARD_SYNC_FRAMES,
-   "Bingkai Sinkronisasi Hard GPU"
+   "Bingkai Sinkron GPU Keras"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_HARD_SYNC_FRAMES,
-   "Setel berapa banyak bingkai yang dapat dijalankan CPU di depan GPU saat menggunakan 'Sinkronisasi Hard GPU'."
+   "Atur berapa laju bingkai yang dijalankan CPU lebih dari GPU saat 'Sinkron GPU Keras' aktif."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VRR_RUNLOOP_ENABLE,
@@ -2080,11 +2138,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_WASAPI_SH_BUFFER_LENGTH,
-   "Panjang Penyangga Bersama WASAPI"
+   "Panjang Dapar Bersama WASAPI"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_AUDIO_WASAPI_SH_BUFFER_LENGTH,
-   "Panjang penyangga data menengah (berjumlah bingkai) saat menggunakan pengandar WASAPI di 'mode bersama'."
+   "Panjang dapar data menengah (sejumlah bingkai) saat menggunakan WASAPI di 'mode bersama'."
    )
 
 /* Settings > Audio > Output */
@@ -2109,10 +2167,6 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_LATENCY,
    "Latensi Audio (ms)"
    )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_AUDIO_LATENCY,
-   "Latensi audio yang diinginkan dalam milidetik. Mungkin tidak dihormati jika driver audio tidak dapat memberikan latensi yang diberikan."
-   )
 
 #ifdef HAVE_MICROPHONE
 /* Settings > Audio > Input */
@@ -2122,11 +2176,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MICROPHONE_RESAMPLER_QUALITY,
-   "Kualitas Sampel Ulang"
+   "Mutu Percontoh Ulang"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MICROPHONE_RESAMPLER_QUALITY,
-   "Turunkan nilai ini untuk mendukung kinerja/latensi yang lebih rendah daripada kualitas audio, tingkatkan kualitas audio yang lebih baik dengan mengorbankan kinerja/latensi yang lebih rendah."
+   "Turunkan nilai ini untuk mengutamakan kinerja/latensi rendah daripada mutu audio, tingkatkan untuk mutu audio lebih baik tapi kinerja/latensi akan susah."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MICROPHONE_WASAPI_EXCLUSIVE_MODE,
@@ -2138,11 +2192,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MICROPHONE_WASAPI_SH_BUFFER_LENGTH,
-   "Panjang Penyangga Bersama WASAPI"
+   "Panjang Dapar Bersama WASAPI"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MICROPHONE_WASAPI_SH_BUFFER_LENGTH,
-   "Panjang penyangga data menengah (berjumlah bingkai) saat menggunakan pengandar WASAPI di 'mode bersama'."
+   "Panjang dapar data menengah (sejumlah bingkai) saat menggunakan WASAPI di 'mode bersama'."
    )
 #endif
 
@@ -2150,11 +2204,11 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_RESAMPLER_QUALITY,
-   "Kualitas Sampel Ulang"
+   "Mutu Percontoh Ulang"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_AUDIO_RESAMPLER_QUALITY,
-   "Turunkan nilai ini untuk mendukung kinerja/latensi yang lebih rendah daripada kualitas audio, tingkatkan kualitas audio yang lebih baik dengan mengorbankan kinerja/latensi yang lebih rendah."
+   "Turunkan nilai ini untuk mengutamakan kinerja/latensi rendah daripada mutu audio, tingkatkan untuk mutu audio lebih baik tapi kinerja/latensi akan susah."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_AUDIO_OUTPUT_RATE,
@@ -2385,39 +2439,39 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_TURBO_PERIOD,
-   "Lamanya Bertubi"
+   "Lama Turbo"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_TURBO_PERIOD,
-   "Lamanya (jumlah bingkai) saat tombol berkemampuan bertubi ditekan."
+   "Lamanya (sejumlah bingkai) saat tombol berturbo ditekan."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_DUTY_CYCLE,
-   "Daur Kerja Bertubi"
+   "Daur Kerja Turbo"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_DUTY_CYCLE,
-   "Jumlah bingkai dari Lamanya Bertubi yang tombolnya ditekan. Jika bilangan ini sama atau lebih besar dari yang di Lamanya Bertubi, tombol akan ditekan terus."
+   "Jumlah bingkai dari Lama Turbo yang tombolnya ditekan. Jika bilangan ini sama atau lebih besar dari yang di Lama Turbo, tombol akan ditekan terus."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_TURBO_MODE,
-   "Mode Bertubi"
+   "Mode Turbo"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_TURBO_MODE,
-   "Pilih tindakan utama tombol mode bertubi."
+   "Pilih tindakan utama tombol mode turbo."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_TURBO_DEFAULT_BUTTON,
-   "Tombol Bawaan Bertubi"
+   "Tombol Bawaan Turbo"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_TURBO_DEFAULT_BUTTON,
-   "Tombol aktif bawaan untuk 'Satu Tombol' Mode Bertubi."
+   "Tombol aktif bawaan untuk Mode Turbo 'Satu Tombol'."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_TURBO_FIRE_SETTINGS,
-   "Tekan Bertubi"
+   "Tekan Turbo"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_HAPTIC_FEEDBACK_SETTINGS,
@@ -2495,7 +2549,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_ALL_USERS_CONTROL_MENU,
-   "Semua pengguna jadi boleh mengendalikan menu. Jika dimatikan, hanya Pengguna 1 yang mengendalikan menu."
+   "Mengizinkan semua pengguna mengatur menu. Jika dinonaktifkan, hanya Pengguna 1 yang mengatur menu."
    )
 
 /* Settings > Input > Hotkeys */
@@ -2506,7 +2560,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_HOTKEY_BLOCK_DELAY,
-   "Tombol Kombinasi Mengaktifkan 'Delay' (Frame)"
+   "Tundaan Hotkey Aktif (Bingkai)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_HOTKEY_DEVICE_MERGE,
@@ -2514,7 +2568,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_HOTKEY_DEVICE_MERGE,
-   "Menutup semua hotkey dari jenis papan ketik dan stik kendali lain jika ada yang diatur 'Hotkey Nyala'."
+   "Menutup semua hotkey dari jenis papan ketik dan stik kendali lain jika ada yang diatur 'Hotkey Aktif'."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_INPUT_MENU_ENUM_TOGGLE_GAMEPAD_COMBO,
@@ -2628,11 +2682,27 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_META_SEND_DEBUG_INFO,
-   "Kirim Info Debug"
+   "Kirim Info Awakutu"
    )
 
 /* Settings > Input > Port # Controls */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_INPUT_DEVICE_RESERVED_DEVICE_NAME,
+   "Perangkat Tempahan untuk Pemain Ini"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_DEVICE_RESERVATION_NONE,
+   "Tanpa Tempahan"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_DEVICE_RESERVATION_PREFERRED,
+   "Pilihan"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_DEVICE_RESERVATION_RESERVED,
+   "Tempahan"
+   )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_SAVE_AUTOCONFIG,
    "Simpan Profil Stik Kendali"
@@ -2641,13 +2711,11 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_JOYPAD_START,
    "Tombol Mulai"
    )
-MSG_HASH(
-   MENU_ENUM_LABEL_VALUE_INPUT_TURBO_ENABLE,
-   "Bertubi"
-   )
 
 /* Settings > Latency */
 
+#if !(defined(HAVE_DYNAMIC) || defined(HAVE_DYLIB))
+#endif
 
 /* Settings > Core */
 
@@ -2698,6 +2766,10 @@ MSG_HASH(
 
 /* Settings > Logging */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_LOG_VERBOSITY_DEBUG,
+   "0 (Awakutu)"
+   )
 
 /* Settings > File Browser */
 
@@ -2729,11 +2801,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_REWIND_BUFFER_SIZE,
-   "Ukuran Penyangga Gerak Mundur (MB)"
+   "Ukuran Dapar Gerak Mundur (MB)"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_REWIND_BUFFER_SIZE,
-   "Banyaknya memori (bentuk MB) untuk meluangkan penyangga gerak mundur. Meningkatkan jumlahnya akan menambah riwayat gerak mundur."
+   "Banyaknya memori (ukuran MB) untuk meluangkan dapar gerak mundur. Menambah jumlah ini akan menambah riwayat gerak mundur."
    )
 
 /* Settings > Frame Throttle > Frame Time Counter */
@@ -2776,11 +2848,11 @@ MSG_HASH(
 #endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_OVERLAY_SHOW_INPUTS_PHYSICAL,
-   "Fisik (Stik Kendali)"
+   "Fisik (Kontroler)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_OVERLAY_LIGHTGUN_SETTINGS,
-   "Hmparan Lightgun"
+   "Hamparan Lightgun"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_OVERLAY_MOUSE_SETTINGS,
@@ -2845,6 +2917,14 @@ MSG_HASH(
 
 /* Settings > On-Screen Display > On-Screen Notifications */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NOTIFICATION_SHOW_SCREENSHOT_FLASH_NORMAL,
+   "NYALA (Biasa)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NOTIFICATION_SHOW_SCREENSHOT_FLASH_FAST,
+   "NYALA (Cepat)"
+   )
 
 /* Settings > User Interface */
 
@@ -2879,6 +2959,22 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MENU_ADD_CONTENT_ENTRY_DISPLAY_PLAYLISTS_TAB,
    "Menu Daftar Main"
    )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_SHOW_CONTENTLESS_CORES_ALL,
+   "Semua"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_SHOW_CONTENTLESS_CORES_SINGLE_PURPOSE,
+   "Sekali Pakai"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_SHOW_CONTENTLESS_CORES_CUSTOM,
+   "Kustom"
+   )
+MSG_HASH( /* FIXME Not RGUI specific */
+   MENU_ENUM_LABEL_VALUE_RGUI_SHOW_START_SCREEN,
+   "Munculkan Layar Mulai"
+   )
 
 /* Settings > User Interface > Menu Item Visibility > Quick Menu */
 
@@ -2910,12 +3006,20 @@ MSG_HASH(
 /* Settings > User Interface > Views > Settings */
 
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_SETTINGS_SHOW_ACHIEVEMENTS,
+   "Tampilkan 'Capaian'"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_SETTINGS_SHOW_ACHIEVEMENTS,
+   "Menampilkan pengaturan 'Capaian'."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_SHOW_NETWORK,
    "Tampilkan 'Jejaring'"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_SETTINGS_SHOW_NETWORK,
-   "Tampilkan pengaturan 'Jejaring'."
+   "Menampilkan pengaturan 'Jejaring'."
    )
 
 
@@ -2946,7 +3050,7 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CHEEVOS_ENABLE,
-   "Pencapaian"
+   "Capaian"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CHEEVOS_HARDCORE_MODE_ENABLE,
@@ -2954,7 +3058,19 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CHEEVOS_RICHPRESENCE_ENABLE,
-   "Secara berkala mengirim info permainan berkonteks ke situs web RetroAchievements. Tidak berpengaruh jika 'Mode Garis Keras' dinyalakan."
+   "Secara berkala mengirim konteks info permainan ke situs web RetroAchievements. Tidak berpengaruh jika 'Mode Garis Keras' diaktifkan."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CHEEVOS_TEST_UNOFFICIAL,
+   "Uji Capaian Belum Resmi"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CHEEVOS_TEST_UNOFFICIAL,
+   "Menggunakan capaian dan/atau fitur belum resmi untuk menguji coba."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CHEEVOS_UNLOCK_SOUND_ENABLE,
+   "Memutar suara saat capaian terbuka."
    )
 
 /* Settings > Achievements > Appearance */
@@ -2963,12 +3079,16 @@ MSG_HASH(
 /* Settings > Achievements > Visibility */
 
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CHEEVOS_VISIBILITY_SUMMARY_HASCHEEVOS,
+   "Permainan dengan Capaian"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CHEEVOS_VISIBILITY_PROGRESS_TRACKER,
    "Indikator Kemajuan"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CHEEVOS_VISIBILITY_PROGRESS_TRACKER,
-   "Menampilkan indikator kemajuan di layar ketika melakukan pencapaian tertentu."
+   "Menampilkan indikator kemajuan di layar ketika melakukan capaian tertentu."
    )
 
 /* Settings > Network */
@@ -3057,7 +3177,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_PLAYLIST_SHOW_HISTORY_ICONS,
-   "Menampilan ikon spesifik di masing-masing entri daftar main riwayat dan kesukaan. Berdampak beragam ke kinerja."
+   "Menampilan ikon spesifik di tiap-tiap entri daftar main riwayat dan kesukaan. Berdampak beragam ke kinerja."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_TIME_UNIT_SECONDS_SINGLE,
@@ -3127,7 +3247,7 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_PLAYLIST_PORTABLE_PATHS,
    "Daftar Main Portabel"
    )
-   
+
 /* Settings > Playlists > Playlist Management */
 
 MSG_HASH(
@@ -3150,18 +3270,34 @@ MSG_HASH(
 /* Settings > User */
 
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_NICKNAME,
+   "Nama Pengguna"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_USER_LANGUAGE,
    "Bahasa"
    )
 
 /* Settings > User > Privacy */
 
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_DISCORD_ALLOW,
+   "Mengizinkan Discord menampilkan data tentang apa yang dimainkan.\nHanya tersedia dengan klien desktop lokal."
+   )
 
 /* Settings > User > Accounts */
 
 
 /* Settings > User > Accounts > RetroAchievements */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_ACCOUNTS_CHEEVOS_USERNAME,
+   "Nama Pengguna"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_ACCOUNTS_CHEEVOS_PASSWORD,
+   "Kata Sandi"
+   )
 
 /* Settings > User > Accounts > YouTube */
 
@@ -3193,6 +3329,22 @@ MSG_HASH( /* FIXME Not RGUI specific */
 MSG_HASH( /* FIXME Not RGUI specific */
    MENU_ENUM_SUBLABEL_RGUI_CONFIG_DIRECTORY,
    "Berkas konfigurasi bawaan disimpan di direktori ini."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_OVERLAY_DIRECTORY,
+   "Hamparan"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_OVERLAY_DIRECTORY,
+   "Hamparan ditampung di direktori ini."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_OSK_OVERLAY_DIRECTORY,
+   "Hamparan Papan Ketik"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_OSK_OVERLAY_DIRECTORY,
+   "Hamparan papan ketik ditampung di direktori ini."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_JOYPAD_AUTOCONFIG_DIR,
@@ -3317,7 +3469,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_EXPLORE_BY_ACHIEVEMENTS,
-   "Dari Pencapaian"
+   "Dari Capaian"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_EXPLORE_BY_CATEGORY,
@@ -3493,7 +3645,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_ACHIEVEMENT_LIST,
-   "Pencapaian"
+   "Capaian"
    )
 
 /* Quick Menu > Options */
@@ -3563,7 +3715,7 @@ MSG_HASH(
 
 MSG_HASH(
    MENU_ENUM_SUBLABEL_SHADER_APPLY_CHANGES,
-   "Perubahan pada setelan pencorak akan diterapkan. Gunakan ini jika ingin mengubah jumlah laluan pencorak, penyaringan, skala FBO, dll."
+   "Ubahan pada konfigurasi 'shader' akan diterapkan. Gunakan ini jika ingin mengubah jumlah laluan 'shader', penyaringan, skala FBO, dll."
    )
 
 /* Quick Menu > Shaders > Save */
@@ -3582,6 +3734,22 @@ MSG_HASH(
 
 /* Quick Menu > Achievements */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NO_ACHIEVEMENTS_TO_DISPLAY,
+   "Tidak Tampilkan Capaian"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_ACHIEVEMENT_PAUSE_CANCEL,
+   "Batalkan Jeda di Mode Garis Keras Capaian"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_ACHIEVEMENT_RESUME_CANCEL,
+   "Batalkan Lanjut di Mode Garis Keras Capaian"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_ACHIEVEMENT_PAUSE,
+   "Jedakan Mode Garis Keras Capaian"
+   )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETWORK_ERROR,
    "Galat Jejaring"
@@ -3931,7 +4099,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_HELP_SEND_DEBUG_INFO,
-   "Kirim Info Debug"
+   "Kirim Info Awakutu"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_LAN_SCAN_SETTINGS,
@@ -3940,6 +4108,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CHEEVOS_DESCRIPTION,
    "Deskripsi"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_ACHIEVEMENT_LIST_HARDCORE,
+   "Capaian (Garis Keras)"
    )
 
 /* Unused (Needs Confirmation) */
@@ -3991,8 +4163,28 @@ MSG_HASH(
 /* Notifications */
 
 MSG_HASH(
+   MSG_FAILED_TO_SAVE_DEBUG_INFO,
+   "Gagal menyimpan info awakutu."
+   )
+MSG_HASH(
+   MSG_FAILED_TO_SEND_DEBUG_INFO,
+   "Gagal mengirim info awakutu ke server."
+   )
+MSG_HASH(
+   MSG_SENDING_DEBUG_INFO,
+   "Mengirim info awakutu..."
+   )
+MSG_HASH(
+   MSG_SENT_DEBUG_INFO,
+   "Info awakutu berhasil dikirim. Nomor ID Anda %u."
+   )
+MSG_HASH(
+   MSG_NATIVE,
+   "Lokal"
+   )
+MSG_HASH(
    MSG_FILE_ALREADY_EXISTS_SAVING_TO_BACKUP_BUFFER,
-   "Berkasnya sudah ada. Menyimpan ke penyangga cadangan"
+   "Berkas sudah ada. Menyimpan ke dapar cadangan"
    )
 MSG_HASH(
    MSG_SETTING_DISK_IN_TRAY,
@@ -4000,7 +4192,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_NETPLAY_OUT_OF_DATE,
-   "Kawan (peer) Netplay bermain di versi lama RetroArch. Tak bisa bersambung."
+   "Kawan (peer) Netplay bermain di versi lama RetroArch. Tidak dapat sambung."
    )
 MSG_HASH(
    MSG_NETPLAY_ENDIAN_DEPENDENT,
@@ -4048,10 +4240,6 @@ MSG_HASH(
    "Profil stik kendali berhasil disimpan."
    )
 MSG_HASH(
-   MSG_CHEEVOS_HARDCORE_MODE_ENABLE,
-   "Mode Capaian Garis Keras Diaktifkan: save state & gerak mundur dinonaktifkan."
-   )
-MSG_HASH(
    MSG_DECOMPRESSION_ALREADY_IN_PROGRESS,
    "Lepas pampat sudah berlangsung."
    )
@@ -4062,6 +4250,14 @@ MSG_HASH(
 MSG_HASH(
    MSG_FAILED_TO_EXTRACT_CONTENT_FROM_COMPRESSED_FILE,
    "Gagal mengekstrak konten berkas terpampat"
+   )
+MSG_HASH(
+   MSG_FAILED_TO_LOAD_OVERLAY,
+   "Gagal memuat hamparan."
+   )
+MSG_HASH(
+   MSG_OSK_OVERLAY_NOT_SET,
+   "Hamparan papan ketik belum diatur."
    )
 MSG_HASH(
    MSG_FILE_NOT_FOUND,
@@ -4101,15 +4297,27 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_REWIND_REACHED_END,
-   "Sudah di ujung penyangga gerak mundur."
+   "Sudah di ujung dapar gerak mundur."
    )
 MSG_HASH(
    MSG_SLOW_MOTION_REWIND,
    "Gerak mundur lambat."
    )
 MSG_HASH(
+   MSG_ACHIEVEMENT_UNLOCKED,
+   "Capaian Terbuka"
+   )
+MSG_HASH(
+   MSG_RARE_ACHIEVEMENT_UNLOCKED,
+   "Capaian Langka Terbuka"
+   )
+MSG_HASH(
    MSG_SCANNING_WIRELESS_NETWORKS,
    "Memindai jejaring nirkabel..."
+   )
+MSG_HASH(
+   MSG_CHEEVOS_HARDCORE_MODE_ENABLE,
+   "Mode Capaian Garis Keras Diaktifkan: save state & gerak mundur dinonaktifkan."
    )
 MSG_HASH(
    MSG_DUMPING_DISC,
@@ -4156,6 +4364,14 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_WIFI_DISCONNECT,
    "Putuskan"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_VIDEO_OVERSCAN_CORRECTION_TOP,
+   "Betulkan Lebihan Pindai (Atas)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_VIDEO_OVERSCAN_CORRECTION_BOTTOM,
+   "Perbaikan Lebihan Pindai (Bawah)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_INPUT_META_RESTART_KEY,
@@ -4212,3 +4428,7 @@ MSG_HASH(
 #endif
 #ifdef HAVE_QT
 #endif
+MSG_HASH(
+   MSG_SDL2_MIC_NEEDS_SDL2_AUDIO,
+   "Mikrofon sdl2 perlu pengandar audio sdl2"
+   )

@@ -407,6 +407,8 @@ input_device_driver_t sdl_dingux_joypad = {
    sdl_miyoomini_joypad_poll,
    sdl_miyoomini_joypad_set_rumble,
    sdl_miyoomini_joypad_set_rumble_gain,
+   NULL, /* set_sensor_state */
+   NULL, /* get_sensor_input */
    sdl_miyoomini_joypad_name,
    "sdl_dingux",
 };

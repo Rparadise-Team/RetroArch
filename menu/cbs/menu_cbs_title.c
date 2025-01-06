@@ -13,7 +13,6 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <lists/string_list.h>
 #include <string/stdstring.h>
 #include <file/file_path.h>
 
@@ -141,12 +140,29 @@ static int action_get_title_remap_port(
       const char *path, const char *label,
       unsigned menu_type, char *s, size_t len)
 {
-   char lbl[128];
-   snprintf(lbl, sizeof(lbl),
+   char *pos = NULL;
+   snprintf(s, len,
          msg_hash_to_str(MENU_ENUM_LABEL_VALUE_INPUT_USER_BINDS),
          atoi(path) + 1);
-   SANITIZE_TO_STRING(s, lbl, len);
+   while ((pos = strchr(s, '_')))
+      *pos = ' ';
    return 1;
+}
+
+static int action_get_title_icon_thumbnails(
+      const char *path, const char *label, unsigned menu_type,
+      char *s, size_t len)
+{
+   enum msg_hash_enums label_value = MENU_ENUM_LABEL_VALUE_ICON_THUMBNAILS;
+   const char *title               = msg_hash_to_str(label_value);
+
+   if (s && !string_is_empty(title))
+   {
+      SANITIZE_TO_STRING(s, title, len);
+      return 1;
+   }
+
+   return 0;
 }
 
 static int action_get_title_thumbnails(
@@ -155,6 +171,7 @@ static int action_get_title_thumbnails(
 {
    const char *title               = NULL;
    enum msg_hash_enums label_value = MENU_ENUM_LABEL_VALUE_THUMBNAILS;
+#ifdef HAVE_MENU
    const char *menu_ident          = menu_driver_ident();
    /* Get label value */
 #ifdef HAVE_RGUI
@@ -165,15 +182,13 @@ static int action_get_title_thumbnails(
    if (string_is_equal(menu_ident, "glui"))
       label_value = MENU_ENUM_LABEL_VALUE_THUMBNAILS_MATERIALUI;
 #endif
-
+#endif
    title = msg_hash_to_str(label_value);
-
    if (s && !string_is_empty(title))
    {
       SANITIZE_TO_STRING(s, title, len);
       return 1;
    }
-
    return 0;
 }
 
@@ -255,35 +270,25 @@ static int action_get_title_dropdown_item(
 				   STRLEN_CONST("core_option_")))
 	   {
 		   /* This is a core options item */
-		   struct string_list tmp_str_list = {0};
 		   core_option_manager_t *coreopts = NULL;
-
-		   string_list_initialize(&tmp_str_list);
-		   string_split_noalloc(&tmp_str_list, path, "_");
-
-		   if (tmp_str_list.size > 0)
+         const char *opt = strrchr(path, '_');
+		   if (opt)
 		   {
 			   retroarch_ctl(RARCH_CTL_CORE_OPTIONS_LIST_GET, &coreopts);
 
 			   if (coreopts)
 			   {
-				   unsigned option_index = string_to_unsigned(
-						   tmp_str_list.elems[(unsigned)tmp_str_list.size - 1].data);
+				   unsigned option_index = string_to_unsigned(opt+1);
 				   const char *title     = core_option_manager_get_desc(
 						   coreopts, option_index, true);
 
 				   if (s && !string_is_empty(title))
 				   {
 					   strlcpy(s, title, len);
-                  /* Clean up before returning */
-                  string_list_deinitialize(&tmp_str_list);
                   return 1;
 				   }
 			   }
 		   }
-
-		   /* Clean up */
-		   string_list_deinitialize(&tmp_str_list);
 	   }
 	   else
 	   {
@@ -334,6 +339,16 @@ static int action_get_title_dropdown_item(
 								   (enum_idx <= MENU_ENUM_LABEL_INPUT_DEVICE_INDEX_LAST))
 							   enum_idx = MENU_ENUM_LABEL_VALUE_INPUT_DEVICE_INDEX;
 
+						   /* Device Reservation Type */
+						   if ((enum_idx >= MENU_ENUM_LABEL_INPUT_DEVICE_RESERVATION_TYPE) &&
+								   (enum_idx <= MENU_ENUM_LABEL_INPUT_DEVICE_RESERVATION_TYPE_LAST))
+							   enum_idx = MENU_ENUM_LABEL_VALUE_INPUT_DEVICE_RESERVATION_TYPE;
+
+						   /* Reserved Device Name */
+						   if ((enum_idx >= MENU_ENUM_LABEL_INPUT_DEVICE_RESERVED_DEVICE_NAME) &&
+								   (enum_idx <= MENU_ENUM_LABEL_INPUT_DEVICE_RESERVED_DEVICE_NAME_LAST))
+							   enum_idx = MENU_ENUM_LABEL_VALUE_INPUT_DEVICE_RESERVED_DEVICE_NAME;
+
 						   /* Mouse Index */
 						   if ((enum_idx >= MENU_ENUM_LABEL_INPUT_MOUSE_INDEX) &&
 								   (enum_idx <= MENU_ENUM_LABEL_INPUT_MOUSE_INDEX_LAST))
@@ -346,7 +361,6 @@ static int action_get_title_dropdown_item(
 
 						   {
 							   const char *title = msg_hash_to_str(enum_idx);
-
 							   if (s && !string_is_empty(title))
 							   {
 								   SANITIZE_TO_STRING(s, title, len);
@@ -374,42 +388,34 @@ static int action_get_title_mixer_stream_actions(const char *path, const char *l
 
 static int action_get_title_deferred_playlist_list(const char *path, const char *label, unsigned menu_type, char *s, size_t len)
 {
-   const char *playlist_file = NULL;
-
-   if (string_is_empty(path))
-      return 0;
-
-   playlist_file = path_basename_nocompression(path);
-
-   if (string_is_empty(playlist_file))
-      return 0;
-
-   if (string_is_equal_noncase(path_get_extension(playlist_file),
-            "lpl"))
+   if (!string_is_empty(path))
    {
-      /* Handle content history */
-      if (string_is_equal(playlist_file, FILE_PATH_CONTENT_HISTORY))
-         strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_HISTORY_TAB), len);
-      /* Handle favourites */
-      else if (string_is_equal(playlist_file, FILE_PATH_CONTENT_FAVORITES))
-         strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_FAVORITES_TAB), len);
-      /* Handle collection playlists */
-      else
-      {
-         char playlist_name[PATH_MAX_LENGTH];
-         strlcpy(playlist_name, playlist_file, sizeof(playlist_name));
-         path_remove_extension(playlist_name);
+      const char *playlist_file = path_basename_nocompression(path);
 
-         strlcpy(s, playlist_name, len);
+      if (!string_is_empty(playlist_file))
+      {
+         if (string_is_equal_noncase(path_get_extension(playlist_file),
+                  "lpl"))
+         {
+            /* Handle content history */
+            if (string_is_equal(playlist_file, FILE_PATH_CONTENT_HISTORY))
+               strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_HISTORY_TAB), len);
+            /* Handle favourites */
+            else if (string_is_equal(playlist_file, FILE_PATH_CONTENT_FAVORITES))
+               strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_FAVORITES_TAB), len);
+            /* Handle collection playlists */
+            else
+               fill_pathname(s, playlist_file, "", len);
+         }
+         /* This should never happen, but if it does just set
+          * the label to the file name (it's better than nothing...) */
+         else
+            strlcpy(s, playlist_file, len);
+
+         /* Add current search terms */
+         menu_entries_search_append_terms_string(s, len);
       }
    }
-   /* This should never happen, but if it does just set
-    * the label to the file name (it's better than nothing...) */
-   else
-      strlcpy(s, playlist_file, len);
-
-   /* Add current search terms */
-   menu_entries_search_append_terms_string(s, len);
 
    return 0;
 }
@@ -517,7 +523,7 @@ static int action_get_title_dropdown_input_description_common(
 {
    size_t _len;
    const char *input_label_ptr = input_name;
-   char input_label[256];
+   char input_label[NAME_MAX_LENGTH];
 
    if (!string_is_empty(input_label_ptr))
    {
@@ -532,16 +538,14 @@ static int action_get_title_dropdown_input_description_common(
       string_trim_whitespace_left(input_label);
    }
 
-   /* Sanity check */
-   if (string_is_empty(input_label))
-      strlcpy(input_label, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NOT_AVAILABLE),
-            sizeof(input_label));
-
    /* Build title string */
    _len  = strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_PORT), len);
    _len += snprintf(s + _len, len - _len, " %u - ", port + 1);
-   strlcpy(s + _len, input_label, len - _len);
-
+   if (!string_is_empty(input_label))
+      strlcpy(s + _len, input_label, len - _len);
+   else
+      strlcpy(s + _len, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NOT_AVAILABLE),
+              len - _len);
    return 1;
 }
 
@@ -808,28 +812,21 @@ static int action_get_title_generic(char *s, size_t len,
 {
    if (!string_is_empty(path))
    {
-      struct string_list list_path = {0};
-      string_list_initialize(&list_path);
-      if (string_split_noalloc(&list_path, path, "|"))
-      {
-         size_t _len;
-         char elem0_path[255];
-         if (list_path.size > 0)
-            strlcpy(elem0_path, list_path.elems[0].data,
-                  sizeof(elem0_path));
-         string_list_deinitialize(&list_path);
+      char *tok, *save;
+      char *path_cpy = strdup(path);
 
-         _len      = strlcpy(s, text, len);
-         if (!string_is_empty(elem0_path))
-         {
-            path_remove_extension(elem0_path);
-            s[  _len] = ':';
-            s[++_len] = ' ';
-            s[++_len] = '\0';
-            strlcpy(s + _len, path_basename(elem0_path), len - _len);
-         }
+      if ((tok = strtok_r(path_cpy, "|", &save)))
+      {
+         size_t _len = strlcpy(s, text, len);
+         s[  _len]   = ':';
+         s[++_len]   = ' ';
+         s[++_len]   = '\0';
+         fill_pathname(s + _len, path_basename(tok), "",
+               len - _len);
+         free(path_cpy);
          return 0;
       }
+      free(path_cpy);
    }
 
    strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NOT_AVAILABLE), len);
@@ -932,30 +929,22 @@ static int action_get_title_group_settings(const char *path, const char *label,
    }
 
    {
-      size_t _len;
-      char elem0[255];
-      char elem1[255];
-      struct string_list list_label = {0};
-      string_list_initialize(&list_label);
-      string_split_noalloc(&list_label, label, "|");
+      char *tok, *save = NULL;
+      char *label_cpy  = strdup(label);
 
-      if (list_label.size > 0)
+      if ((tok = strtok_r(label_cpy, "|", &save)))
       {
-         strlcpy(elem0, list_label.elems[0].data, sizeof(elem0));
-         if (list_label.size > 1)
-            strlcpy(elem1, list_label.elems[1].data, sizeof(elem1));
+         size_t _len = strlcpy(s, tok, len);
+         if ((tok = strtok_r(NULL, "|", &save)))
+         {
+            s[  _len] = ' ';
+            s[++_len] = '-';
+            s[++_len] = ' ';
+            s[++_len] = '\0';
+            strlcpy(s + _len, tok, len - _len);
+         }
       }
-      string_list_deinitialize(&list_label);
-
-      _len = strlcpy(s, elem0, len);
-      if (!string_is_empty(elem1))
-      {
-         s[  _len] = ' ';
-         s[++_len] = '-';
-         s[++_len] = ' ';
-         s[++_len] = '\0';
-         strlcpy(s + _len, elem1, len - _len);
-      }
+      free(label_cpy);
    }
 
    return 0;
@@ -1826,12 +1815,14 @@ int menu_cbs_init_bind_title(menu_file_list_cbs_t *cbs,
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_PLAYLIST_SORT_MODE,                       action_get_title_dropdown_playlist_sort_mode_item},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_PLAYLIST_RIGHT_THUMBNAIL_MODE,            action_get_title_thumbnails},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_PLAYLIST_LEFT_THUMBNAIL_MODE,             action_get_title_left_thumbnails},
+      {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_PLAYLIST_ICON_THUMBNAIL_MODE,             action_get_title_icon_thumbnails},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_MANUAL_CONTENT_SCAN_SYSTEM_NAME,          action_get_title_dropdown_manual_content_scan_system_name_item},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_MANUAL_CONTENT_SCAN_CORE_NAME,            action_get_title_dropdown_manual_content_scan_core_name_item},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_DISK_INDEX,                               action_get_title_dropdown_disk_index},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_INPUT_DEVICE_TYPE,                        action_get_title_dropdown_item},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_INPUT_DESCRIPTION,                        action_get_title_dropdown_input_description},
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_INPUT_DESCRIPTION_KBD,                    action_get_title_dropdown_input_description_kbd},
+      {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_INPUT_SELECT_RESERVED_DEVICE,             action_get_title_dropdown_item},
 #ifdef ANDROID
       {MENU_ENUM_LABEL_DEFERRED_DROPDOWN_BOX_LIST_INPUT_SELECT_PHYSICAL_KEYBOARD,           action_get_title_dropdown_item},
 #endif

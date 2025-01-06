@@ -54,7 +54,7 @@
 #include "SDL.h"
 #endif
 
-#if defined(__linux__) || defined(HAVE_WAYLAND)
+#if defined(__linux__) || defined(HAVE_WAYLAND) || defined(__FreeBSD__) && !defined(__PS4__)
 #if defined(__linux__)
 #include <linux/input.h>
 #include <linux/kd.h>
@@ -1203,7 +1203,7 @@ const struct rarch_key_map rarch_key_map_x11[] = {
    { XFVK_PLAY, RETROK_MEDIA_PLAY_PAUSE },
    { XFVK_CDPR, RETROK_MEDIA_PREV },
    { XFVK_CDST, RETROK_MEDIA_STOP },
-   { XVFK_HOMP, RETROK_BROWSER_HOME },
+   { XFVK_HOMP, RETROK_BROWSER_HOME },
    { XFVK_REFR, RETROK_BROWSER_REFRESH },
    { XFVK_BSTP, RETROK_BROWSER_STOP },
    { XFVK_BSEA, RETROK_BROWSER_SEARCH },
@@ -1213,7 +1213,7 @@ const struct rarch_key_map rarch_key_map_x11[] = {
 };
 #endif
 
-#if defined(__linux__) || defined(HAVE_WAYLAND)
+#if defined(__linux__) || defined(HAVE_WAYLAND) || defined(__FreeBSD__) && !defined(__PS4__)
 /* Note: Only one input can be mapped to each
  * RETROK_* key. If several physical inputs
  * correspond to the same key, these inputs

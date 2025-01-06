@@ -25,28 +25,6 @@
             ]
         },
         {
-            "name": "miyoomini-toolchain",
-            "includePath": [
-                "/usr/include",
-                "/usr/local/include",
-                "${workspaceRoot}",
-                "${workspaceFolder}/libretro-common/include",
-                "${workspaceRoot}/libretro-common/include",
-                "/opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/include"
-            ],
-            "defines": [],
-            "intelliSenseMode": "clang-x64",
-            "browse": {
-                "path": [
-                    "/usr/include",
-                    "/usr/local/include",
-                    "${workspaceRoot}"
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            }
-        },
-        {
             "name": "Linux",
             "includePath": [
                 "/usr/include",

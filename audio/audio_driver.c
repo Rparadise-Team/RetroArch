@@ -23,6 +23,7 @@
 
 #include <string/stdstring.h>
 #include <encodings/utf.h>
+#include <retro_miscellaneous.h>
 #include <clamping.h>
 #include <memalign.h>
 #include <audio/conversion/float_to_s16.h>
@@ -130,6 +131,9 @@ audio_driver_t *audio_drivers[] = {
 #endif
 #ifdef HAVE_PULSE
    &audio_pulse,
+#endif
+#ifdef HAVE_PIPEWIRE
+   &audio_pipewire,
 #endif
 #if defined(__PSL1GHT__) || defined(__PS3__)
    &audio_ps3,
@@ -497,10 +501,12 @@ static void audio_driver_flush(
    if (is_slowmotion)
       src_data.ratio       *= slowmotion_ratio;
 
-   if (is_fastforward && config_get_ptr()->bools.audio_fastforward_speedup) {
+   if (is_fastforward && config_get_ptr()->bools.audio_fastforward_speedup)
+   {
       const retro_time_t flush_time = cpu_features_get_time_usec();
 
-      if (audio_st->last_flush_time > 0) {
+      if (audio_st->last_flush_time > 0)
+      {
          /* What we should see if the speed was 1.0x, converted to microsecs */
          const double expected_flush_delta =
             (src_data.input_frames / audio_st->input * 1000000);
@@ -513,16 +519,17 @@ static void audio_driver_flush(
             compression and decompression every single frame, which would make
             sounds irrecognizable.
 
-            https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average */
+            https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+          */
          const retro_time_t n = AUDIO_FF_EXP_AVG_SAMPLES;
          audio_st->avg_flush_delta = audio_st->avg_flush_delta * (n - 1) / n +
-                                    (flush_time - audio_st->last_flush_time) / n;
+            (flush_time - audio_st->last_flush_time) / n;
 
          /* How much does the avg_flush_delta deviate from the delta at 1.0x speed? */
          src_data.ratio *=
             MAX(AUDIO_MIN_RATIO,
-               MIN(AUDIO_MAX_RATIO,
-                  audio_st->avg_flush_delta / expected_flush_delta));
+                  MIN(AUDIO_MAX_RATIO,
+                     audio_st->avg_flush_delta / expected_flush_delta));
       }
 
       audio_st->last_flush_time = flush_time;
@@ -610,7 +617,7 @@ bool audio_driver_init_internal(
 #ifdef HAVE_REWIND
    int16_t *rewind_buf            = NULL;
 #endif
-   /* Accomodate rewind since at some point we might have two full buffers. */
+   /* Accommodate rewind since at some point we might have two full buffers. */
    size_t outsamples_max          = AUDIO_CHUNK_SIZE_NONBLOCKING * 2 * AUDIO_MAX_RATIO * slowmotion_ratio;
    int16_t *out_conv_buf          = (int16_t*)memalign_alloc(64, outsamples_max * sizeof(int16_t));
    size_t audio_buf_length        = AUDIO_CHUNK_SIZE_NONBLOCKING * 2 * sizeof(float);
@@ -813,6 +820,8 @@ void audio_driver_sample(int16_t left, int16_t right)
    uint32_t runloop_flags;
    audio_driver_state_t *audio_st  = &audio_driver_st;
    recording_state_t *recording_st = NULL;
+   if (!audio_st || !audio_st->output_samples_conv_buf)
+      return;
    if (audio_st->flags & AUDIO_FLAG_SUSPENDED)
       return;
    audio_st->output_samples_conv_buf[audio_st->data_ptr++] = left;
@@ -950,7 +959,7 @@ bool audio_driver_dsp_filter_init(const char *device)
    struct string_list *plugs            = NULL;
 #if defined(HAVE_DYLIB) && !defined(HAVE_FILTERS_BUILTIN)
    char ext_name[16];
-   char basedir[256];
+   char basedir[NAME_MAX_LENGTH];
    fill_pathname_basedir(basedir, device, sizeof(basedir));
    if (!frontend_driver_get_core_extension(ext_name, sizeof(ext_name)))
       return false;
@@ -1009,44 +1018,29 @@ bool audio_driver_get_devices_list(void **data)
 #ifdef HAVE_AUDIOMIXER
 bool audio_driver_mixer_extension_supported(const char *ext)
 {
-   unsigned i;
-   struct string_list str_list;
-   union string_list_elem_attr attr;
-   bool ret                      = false;
-
-   attr.i = 0;
-   if (!string_list_initialize(&str_list))
-      return false;
-
 #ifdef HAVE_STB_VORBIS
-   string_list_append(&str_list, "ogg", attr);
+   if (string_is_equal_noncase("ogg", ext))
+      return true;
 #endif
 #ifdef HAVE_IBXM
-   string_list_append(&str_list, "mod", attr);
-   string_list_append(&str_list, "s3m", attr);
-   string_list_append(&str_list, "xm", attr);
+   if (string_is_equal_noncase("mod", ext))
+      return true;
+   if (string_is_equal_noncase("s3m", ext))
+      return true;
+   if (string_is_equal_noncase("xm", ext))
+      return true;
 #endif
 #ifdef HAVE_DR_FLAC
-   string_list_append(&str_list, "flac", attr);
+   if (string_is_equal_noncase("flac", ext))
+      return true;
 #endif
 #ifdef HAVE_DR_MP3
-   string_list_append(&str_list, "mp3", attr);
+   if (string_is_equal_noncase("mp3", ext))
+      return true;
 #endif
-   string_list_append(&str_list, "wav", attr);
-
-   for (i = 0; i < str_list.size; i++)
-   {
-      const char *str_ext = str_list.elems[i].data;
-      if (string_is_equal_noncase(str_ext, ext))
-      {
-         ret = true;
-         break;
-      }
-   }
-
-   string_list_deinitialize(&str_list);
-
-   return ret;
+   if (string_is_equal_noncase("wav", ext))
+      return true;
+   return false;
 }
 
 static int audio_mixer_find_index(
@@ -1344,7 +1338,7 @@ static void audio_driver_load_menu_bgm_callback(retro_task_t *task,
 
 void audio_driver_load_system_sounds(void)
 {
-   char basename_noext[256];
+   char basename_noext[NAME_MAX_LENGTH];
    char sounds_path[PATH_MAX_LENGTH];
    char sounds_fallback_path[PATH_MAX_LENGTH];
    settings_t *settings                  = config_get_ptr();
@@ -1416,8 +1410,8 @@ void audio_driver_load_system_sounds(void)
       if (audio_driver_mixer_extension_supported(ext))
       {
          basename_noext[0] = '\0';
-         fill_pathname_base(basename_noext, path, sizeof(basename_noext));
-         path_remove_extension(basename_noext);
+         fill_pathname(basename_noext, path_basename(path), "",
+               sizeof(basename_noext));
 
          if (string_is_equal_noncase(basename_noext, "ok"))
             path_ok = path;
@@ -1629,8 +1623,7 @@ bool audio_driver_callback(void)
    bool core_paused            = runloop_paused
        || (settings->bools.menu_pause_libretro
        && (menu_state_get_ptr()->flags & MENU_ST_FLAG_ALIVE)
-       &&  netplay_driver_ctl(RARCH_NETPLAY_CTL_ALLOW_PAUSE, NULL)
-       && !netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE, NULL));
+       &&  netplay_driver_ctl(RARCH_NETPLAY_CTL_ALLOW_PAUSE, NULL));
 #else
    bool core_paused            = runloop_paused
       || (settings->bools.menu_pause_libretro
@@ -1687,6 +1680,14 @@ error:
          msg_hash_to_str(MSG_FAILED_TO_START_AUDIO_DRIVER));
    audio_driver_st.flags &= ~AUDIO_FLAG_ACTIVE;
    return false;
+}
+
+const char *audio_driver_get_ident(void)
+{
+   audio_driver_state_t *audio_st  = &audio_driver_st;
+   if (!audio_st->current_audio)
+      return NULL;
+   return audio_st->current_audio->ident;
 }
 
 bool audio_driver_stop(void)
