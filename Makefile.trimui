@@ -111,7 +111,7 @@ LINK := $(CXX)
 DEF_FLAGS := -march=armv8-a -mtune=cortex-a53 -fPIE -mcpu=cortex-a53+crc+fp+simd -ffast-math -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -MMD
-DEF_FLAGS += -Wall -Wno-unused-variable -flto
+DEF_FLAGS += -Wall -Wno-unused-variable -fno-lto
 DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
 LIBS := -ldl -lz -lrt -lcrypto -lssl -ludev -pthread -lasound -lEGL -lGLESv2 -lIMGegl -lglslcompiler -lsrv_um -lusc -ltmenu -ltinyalsa -lfreetype -lSDL2 -lSDL2_ttf -lSDL2_mixer -lSDL2_image -lmad
 CFLAGS :=
@@ -138,7 +138,7 @@ ifeq ($(DEBUG), 1)
    DEF_FLAGS += -O0 -g -DDEBUG -D_DEBUG
 else
    OBJDIR := $(OBJDIR_BASE)/release
-   DEF_FLAGS += -O2 -DNDEBUG
+   DEF_FLAGS += -O3 -DNDEBUG
 endif
 
 include Makefile.common
