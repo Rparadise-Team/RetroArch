@@ -101,21 +101,34 @@ HAVE_NEAREST_RESAMPLER = 1
 HAVE_ODROIDGO2 = 0
 HAVE_OSS = 1
 HAVE_KMS = 0
-HAVE_VULKAN = 0
+HAVE_MICROPHONE = 1
+HAVE_VULKAN = 1
+HAVE_SLANG = 1
+HAVE_VULKAN_DISPLAY = 1
+HAVE_SPIRV_CROSS = 1
+HAVE_BUILTINGLSLANG = 0
+HAVE_GLSLANG = 0
+HAVE_GLSLANG_GENERICCODEGEN = 0
+HAVE_GLSLANG_HLSL = 0
+HAVE_GLSLANG_MACHINEINDEPENDENT = 0
+HAVE_GLSLANG_OGLCOMPILER = 0
+HAVE_GLSLANG_OSDEPENDENT = 0
+HAVE_GLSLANG_SPIRV = 0
+HAVE_GLSLANG_SPIRV_TOOLS = 0
+HAVE_GLSLANG_SPIRV_TOOLS_OPT = 0
 
 OS = Linux
 TARGET = retroarch.brick
-
 OBJ :=
 LINK := $(CXX)
 DEF_FLAGS := -march=armv8-a -mtune=cortex-a53 -fPIE -mcpu=cortex-a53+crc+fp+simd -ffast-math -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -MMD
 DEF_FLAGS += -Wall -Wno-unused-variable -fno-lto
-DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
-LIBS := -ldl -lz -lrt -lcrypto -lssl -ludev -pthread -lasound -lEGL -lGLESv2 -lIMGegl -lglslcompiler -lsrv_um -lusc -ltmenu -ltinyalsa -lfreetype -lSDL2 -lSDL2_ttf -lSDL2_mixer -lSDL2_image -lmad
-CFLAGS :=
-CXXFLAGS := -fno-exceptions -fno-rtti -std=c++11 -D__STDC_CONSTANT_MACROS
+DEF_FLAGS += -D_GNU_SOURCE
+LIBS := -lz -lrt -lcrypto -lssl -ludev -lasound -lvulkan -lEGL -lGLESv2 -lIMGegl -lglslcompiler -lsrv_um -lusc -ltmenu -ltinyalsa -lfreetype -lSDL2 -lSDL2_ttf -lSDL2_mixer -lSDL2_image -lmad -pthread -ldl
+CFLAGS := -std=gnu99
+CXXFLAGS := -fpermissive -fexceptions -fno-rtti -std=c++11 -D__STDC_CONSTANT_MACROS
 ASFLAGS :=
 LDFLAGS := -Wl,--gc-sections
 INCLUDE_DIRS = -I$(INC_DIR)
