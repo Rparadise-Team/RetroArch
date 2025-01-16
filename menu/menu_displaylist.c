@@ -500,9 +500,9 @@ static int filebrowser_parse(
       if (str_list->size <= 0)
       {
          char dir[DIR_MAX_LENGTH];
-         fill_pathname_application_dir(dir, sizeof(dir));
+         size_t _len = fill_pathname_application_dir(dir, sizeof(dir));
          if (string_ends_with(full_path, "/") && !string_ends_with(dir, "/"))
-            strlcat(dir, "/", sizeof(dir));
+            strlcpy(dir + _len, "/", sizeof(dir) - _len);
          if (string_is_equal(dir, full_path))
             allow_parent_directory = false;
          else
@@ -2409,6 +2409,9 @@ static unsigned menu_displaylist_parse_system_info(file_list_t *list)
 #ifdef HAVE_NETWORKING
          {SUPPORTS_NETPLAY     ,    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_NETPLAY_SUPPORT},
 #endif
+#ifdef HAVE_SSL
+         {SUPPORTS_SSL     ,    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_SSL_SUPPORT},
+#endif
 #ifdef HAVE_V4L2
          {SUPPORTS_V4L2        ,    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_V4L2_SUPPORT},
 #endif
@@ -2783,14 +2786,13 @@ static int menu_displaylist_parse_database_entry(menu_handle_t *menu,
 
             if (entry->crc32)
             {
-               char *elem0           = NULL;
                char *save            = NULL;
                char *entry_crc32_cpy = strdup(entry->crc32);
                const char *con       = strtok_r(entry_crc32_cpy, "|", &save);
 
                if (con)
                {
-                  elem0              = strdup(con);
+                  char *elem0        = strdup(con);
                   if ((con = strtok_r(NULL, "|", &save)))
                   {
                      switch (extension_to_file_hash_type(con))
@@ -5137,13 +5139,21 @@ static unsigned menu_displaylist_parse_content_information(
    if (     !string_is_empty(content_label)
          && !string_is_empty(db_name))
    {
+      char *last;
       char db_path[PATH_MAX_LENGTH];
       fill_pathname_join_special(db_path,
             settings->paths.path_content_database,
             db_name,
             sizeof(db_path));
-      path_remove_extension(db_path);
-      strlcat(db_path, ".rdb", sizeof(db_path));
+      last = (char*)strrchr(path_basename(db_path), '.');
+      if (*last)
+      {
+         last[0] = '.';
+         last[1] = 'r';
+         last[2] = 'd';
+         last[3] = 'b';
+         last[4] = '\0';
+      }
 
       if (path_is_valid(db_path))
          if (menu_entries_append(info_list,

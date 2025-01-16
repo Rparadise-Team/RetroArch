@@ -1141,8 +1141,7 @@ static bool validate_game_specific_options(char *s, size_t len)
    return true;
 }
 
-static bool validate_folder_options(
-      char *s, size_t len, bool mkdir)
+static bool validate_folder_options(char *s, size_t len, bool mkdir)
 {
    const char *game_path       = path_get(RARCH_PATH_BASENAME);
 
@@ -1879,9 +1878,11 @@ bool runloop_environment_cb(unsigned cmd, void *data)
       case RETRO_ENVIRONMENT_SET_ROTATION:
       {
          unsigned rotation       = *(const unsigned*)data;
+         unsigned rotation_v[4]  = {0, 90, 180, 270};
          bool video_allow_rotate = settings->bools.video_allow_rotate;
 
-         RARCH_DBG("[Environ]: SET_ROTATION: %u\n", rotation);
+         RARCH_DBG("[Environ]: SET_ROTATION: \"%u\" (%u deg).\n", rotation, rotation_v[rotation % 4]);
+
          if (sys_info)
             sys_info->core_requested_rotation = rotation;
 
@@ -4849,28 +4850,44 @@ void runloop_path_fill_names(void)
       return;
 
    if (string_is_empty(runloop_st->name.ups))
-      fill_pathname(runloop_st->name.ups,
+    {
+      size_t _len = strlcpy(runloop_st->name.ups,
             runloop_st->runtime_content_path_basename,
-            ".ups",
             sizeof(runloop_st->name.ups));
+      strlcpy(runloop_st->name.ups       + _len,
+            ".ups",
+            sizeof(runloop_st->name.ups) - _len);
+   }
 
    if (string_is_empty(runloop_st->name.bps))
-      fill_pathname(runloop_st->name.bps,
+   {
+      size_t _len = strlcpy(runloop_st->name.bps,
             runloop_st->runtime_content_path_basename,
-            ".bps",
             sizeof(runloop_st->name.bps));
+      strlcpy(runloop_st->name.bps       + _len,
+            ".bps",
+            sizeof(runloop_st->name.bps) - _len);
+   }
 
    if (string_is_empty(runloop_st->name.ips))
-      fill_pathname(runloop_st->name.ips,
+   {
+      size_t _len = strlcpy(runloop_st->name.ips,
             runloop_st->runtime_content_path_basename,
-            ".ips",
             sizeof(runloop_st->name.ips));
+      strlcpy(runloop_st->name.ips       + _len,
+            ".ips",
+            sizeof(runloop_st->name.ips) - _len);
+   }
 
    if (string_is_empty(runloop_st->name.xdelta))
-      fill_pathname(runloop_st->name.xdelta,
+   {
+      size_t _len = strlcpy(runloop_st->name.xdelta,
             runloop_st->runtime_content_path_basename,
-            ".xdelta",
             sizeof(runloop_st->name.xdelta));
+      strlcpy(runloop_st->name.xdelta       + _len,
+            ".xdelta",
+            sizeof(runloop_st->name.xdelta) - _len);
+   }
 }
 
 
@@ -7327,19 +7344,19 @@ void runloop_task_msg_queue_push(
 }
 
 
-bool runloop_get_current_savestate_path(char *path, size_t len)
+bool runloop_get_current_savestate_path(char *s, size_t len)
 {
    settings_t *settings        = config_get_ptr();
    int state_slot              = settings ? settings->ints.state_slot : 0;
-   return runloop_get_savestate_path(path, len, state_slot);
+   return runloop_get_savestate_path(s, len, state_slot);
 }
 
-bool runloop_get_savestate_path(char *path, size_t len, int state_slot)
+bool runloop_get_savestate_path(char *s, size_t len, int state_slot)
 {
    runloop_state_t *runloop_st = &runloop_state;
    const char *name_savestate  = NULL;
 
-   if (!path)
+   if (!s)
       return false;
 
    name_savestate              = runloop_st->name.savestate;
@@ -7347,61 +7364,61 @@ bool runloop_get_savestate_path(char *path, size_t len, int state_slot)
       return false;
 
    if (state_slot < 0)
-      fill_pathname_join_delim(path, name_savestate, "auto", '.', len);
+      fill_pathname_join_delim(s, name_savestate, "auto", '.', len);
    else
    {
-      size_t _len = strlcpy(path, name_savestate, len);
+      size_t _len = strlcpy(s, name_savestate, len);
       if (state_slot > 0)
-         snprintf(path + _len, len - _len, "%d", state_slot);
+         snprintf(s + _len, len - _len, "%d", state_slot);
    }
 
    return true;
 }
 
 
-bool runloop_get_current_replay_path(char *path, size_t len)
+bool runloop_get_current_replay_path(char *s, size_t len)
 {
    settings_t *settings = config_get_ptr();
    int slot = settings ? settings->ints.replay_slot : 0;
-   return runloop_get_replay_path(path, len, slot);
+   return runloop_get_replay_path(s, len, slot);
 }
 
-bool runloop_get_replay_path(char *path, size_t len, unsigned slot)
+bool runloop_get_replay_path(char *s, size_t len, unsigned slot)
 {
    size_t _len;
    runloop_state_t *runloop_st = &runloop_state;
    const char *name_replay  = NULL;
 
-   if (!path)
+   if (!s)
       return false;
 
    name_replay = runloop_st->name.replay;
    if (string_is_empty(name_replay))
       return false;
 
-   _len = strlcpy(path, name_replay, len);
+   _len = strlcpy(s, name_replay, len);
    if (slot >= 0)
-      snprintf(path + _len, len - _len, "%d",  slot);
+      snprintf(s + _len, len - _len, "%d",  slot);
 
    return true;
 }
 
 
-bool runloop_get_entry_state_path(char *path, size_t len, unsigned slot)
+bool runloop_get_entry_state_path(char *s, size_t len, unsigned slot)
 {
    size_t _len;
    runloop_state_t *runloop_st = &runloop_state;
    const char *name_savestate  = NULL;
 
-   if (!path || !slot)
+   if (!s || !slot)
       return false;
 
    name_savestate              = runloop_st->name.savestate;
    if (string_is_empty(name_savestate))
       return false;
 
-   _len = strlcpy(path, name_savestate, len);
-   snprintf(path + _len, len - _len, "%d.entry", slot);
+   _len = strlcpy(s, name_savestate, len);
+   snprintf(s + _len, len - _len, "%d.entry", slot);
 
    return true;
 }
@@ -7874,8 +7891,8 @@ void runloop_path_set_names(void)
 }
 
 void runloop_path_set_redirect(settings_t *settings,
-                               const char *old_savefile_dir,
-                               const char *old_savestate_dir)
+      const char *old_savefile_dir,
+      const char *old_savestate_dir)
 {
    char content_dir_name[DIR_MAX_LENGTH];
    char new_savefile_dir[DIR_MAX_LENGTH];
@@ -7911,10 +7928,10 @@ void runloop_path_set_redirect(settings_t *settings,
    if (     string_is_empty(intermediate_savefile_dir)
          || savefiles_in_content_dir)
    {
-      strlcpy(intermediate_savefile_dir,
-              runloop_st->runtime_content_path_basename,
-              sizeof(intermediate_savefile_dir));
-      path_basedir(intermediate_savefile_dir);
+      fill_pathname_basedir(
+            intermediate_savefile_dir,
+            runloop_st->runtime_content_path_basename,
+            sizeof(intermediate_savefile_dir));
 
       if (string_is_empty(intermediate_savefile_dir))
          RARCH_LOG("Cannot resolve save file path.\n");
@@ -7924,10 +7941,9 @@ void runloop_path_set_redirect(settings_t *settings,
    if (   string_is_empty(intermediate_savestate_dir)
        || savestates_in_content_dir)
    {
-      strlcpy(intermediate_savestate_dir,
-              runloop_st->runtime_content_path_basename,
-              sizeof(intermediate_savestate_dir));
-      path_basedir(intermediate_savestate_dir);
+      fill_pathname_basedir(intermediate_savestate_dir,
+            runloop_st->runtime_content_path_basename,
+            sizeof(intermediate_savestate_dir));
 
       if (string_is_empty(intermediate_savestate_dir))
          RARCH_LOG("Cannot resolve save state file path.\n");

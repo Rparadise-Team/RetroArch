@@ -556,6 +556,9 @@ static bool content_file_list_set_info(
       {
          char archive_path[PATH_MAX_LENGTH];
          size_t _len      = 0;
+
+         file_info->file_in_archive = true;
+
          /* Extract path of parent archive */
          if ((_len = (size_t)(1 + archive_delim - path))
                  >= PATH_MAX_LENGTH)
@@ -581,10 +584,7 @@ static bool content_file_list_set_info(
           * searching related content. For archived content,
           * this is the basename of the archive file without
           * extension */
-         fill_pathname(name, path_basename(archive_path), "",
-               sizeof(name));
-
-         file_info->file_in_archive = true;
+         fill_pathname_base(name, archive_path, sizeof(name));
       }
       else
       {
@@ -595,9 +595,9 @@ static bool content_file_list_set_info(
          /* For uncompressed content, 'canonical' name/id
           * is the basename of the content file, without
           * extension */
-         fill_pathname(name, path_basename(path), "",
-               sizeof(name));
+         fill_pathname_base(name, path, sizeof(name));
       }
+      path_remove_extension(name);
 
       if (!string_is_empty(dir))
       {
@@ -789,7 +789,7 @@ static bool content_file_extract_from_archive(
                NULL : content_ctx->directory_cache,
          tmp_path, sizeof(tmp_path)))
    {
-      char msg[128];
+      char msg[PATH_MAX_LENGTH];
       snprintf(msg, sizeof(msg), "%s: \"%s\".\n",
             msg_hash_to_str(MSG_FAILED_TO_EXTRACT_CONTENT_FROM_COMPRESSED_FILE),
             *content_path);
@@ -993,7 +993,7 @@ static bool content_file_load(
                   content_compressed, i, first_content_type,
                   &content_data, &content_size))
             {
-               char msg[128];
+               char msg[PATH_MAX_LENGTH];
                snprintf(msg, sizeof(msg), "%s \"%s\"\n",
                      msg_hash_to_str(MSG_COULD_NOT_READ_CONTENT_FILE),
                      content_path);
@@ -1073,7 +1073,7 @@ static bool content_file_load(
                    * (This disclaimer is out dated but I don't want to remove it)*/
                   if (!CopyFileFromAppW(wcontent_path, wnew_path, false))
                   {
-                     char msg[128];
+                     char msg[PATH_MAX_LENGTH];
                      /* TODO/FIXME - localize */
                      snprintf(msg, sizeof(msg), "%s \"%s\". (during copy read or write)\n",
                         msg_hash_to_str(MSG_COULD_NOT_READ_CONTENT_FILE),

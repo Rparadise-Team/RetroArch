@@ -8670,9 +8670,6 @@ static void general_write_handler(rarch_setting_t *setting)
             configuration_set_bool(settings,
                settings->bools.video_frame_delay_auto,
                0);
-            configuration_set_bool(settings,
-               settings->bools.vrr_runloop_enable,
-               0);
             configuration_set_uint(settings,
                settings->uints.video_black_frame_insertion,
                0);
@@ -8698,9 +8695,6 @@ static void general_write_handler(rarch_setting_t *setting)
          configuration_set_bool(settings,
             settings->uints.video_black_frame_insertion,
             0);
-         configuration_set_uint(settings,
-            settings->uints.video_shader_subframes,
-            1);
 #ifdef HAVE_CHEEVOS
          rcheevos_validate_config_settings();
 #endif
@@ -14338,7 +14332,6 @@ static bool setting_append_list(
                   SD_FLAG_NONE
                   );
 
-#if !defined(RARCH_MOBILE) || defined(IOS)
             {
 #if defined(HAVE_STEAM) && defined(HAVE_MIST)
                bool on_deck = false;
@@ -14385,7 +14378,7 @@ static bool setting_append_list(
                   menu_settings_list_current_add_range(list, list_info, 1, 15, 1, true, true);
                }
             }
-#endif
+
             END_SUB_GROUP(list, list_info, parent_group);
             START_SUB_GROUP(
                   list,

@@ -907,6 +907,10 @@ MSG_HASH(
    "Video4Linux2-tuki"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_SSL_SUPPORT,
+   "SSL-tuki"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SYSTEM_INFO_LIBUSB_SUPPORT,
    "libusb-tuki"
    )
@@ -4182,10 +4186,6 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SAVESTATE_AUTO_SAVE,
    "Tilan automaattinen tallennus"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_SAVESTATE_AUTO_SAVE,
-   "Luo tilatallennus automaattisesti kun suljet sisällön. RetroArch lataa automaattisesti tämän tilatallennuksen, jos \"Lataa tilatallennus automaattisesti\" on käytössä."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SAVESTATE_AUTO_LOAD,
@@ -12172,10 +12172,6 @@ MSG_HASH(
    "Havaitse automaattisesti"
    )
 MSG_HASH(
-   MSG_AUTOLOADING_SAVESTATE_FROM,
-   "Tilan lataaminen kohteesta"
-   )
-MSG_HASH(
    MSG_CAPABILITIES,
    "Ominaisuudet"
    )
@@ -13230,6 +13226,10 @@ MSG_HASH(
 MSG_HASH(
    MSG_VIRTUAL_DISK_TRAY_CLOSE,
    "Virtuaalisen levyaseman sulkeminen epäonnistui."
+   )
+MSG_HASH(
+   MSG_AUTOLOADING_SAVESTATE_FROM,
+   "Tilan lataaminen kohteesta"
    )
 MSG_HASH(
    MSG_AUTOLOADING_SAVESTATE_FAILED,
