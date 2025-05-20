@@ -142,23 +142,23 @@ static bool oga_create_display(oga_video_t* vid)
    vid->connector_id = connector->connector_id;
 
    /* Find preferred mode */
-   for (i = 0; i < connector->count_modes; i++)
-   {
-      drmModeModeInfo *current_mode = &connector->modes[i];
-      if (current_mode->type & DRM_MODE_TYPE_PREFERRED)
-      {
-         mode = current_mode;
-         break;
-      }
-
-      mode = NULL;
-   }
-
-   if (!mode)
-   {
+   mode = NULL;
+   for (i = 0; i < connector->count_modes; i++) {
+    drmModeModeInfo *current_mode = &connector->modes[i];
+    if (current_mode->type & DRM_MODE_TYPE_PREFERRED) {
+        mode = current_mode;
+        break;
+        }
+    }
+    
+    if (!mode && connector->count_modes > 0) {
+    mode = &connector->modes[0];
+    printf("DRM_MODE_TYPE_PREFERRED not found, set the fist find: %s\n", mode->name);
+    }
+    if (!mode) {
       RARCH_ERR("DRM_MODE_TYPE_PREFERRED not found.\n");
-      goto err_03;
-   }
+    goto err_03;
+    }
 
    vid->mode   = *mode;
 
