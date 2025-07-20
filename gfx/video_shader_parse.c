@@ -109,21 +109,12 @@ static path_change_data_t *file_change_data = NULL;
 static void fill_pathname_expanded_and_absolute(char *s, size_t len,
       const char *in_refpath, const char *in_path)
 {
-   char expanded_path[PATH_MAX_LENGTH];
-
-   expanded_path[0] = '\0';
-
    /* Expand paths which start with :\ to an absolute path */
-   fill_pathname_expand_special(expanded_path,
-         in_path, sizeof(expanded_path));
-
+   fill_pathname_expand_special(s, in_path, len);
    /* Resolve the reference path relative to the config */
-   if (path_is_absolute(expanded_path))
-      strlcpy(s, expanded_path, len);
-   else
+   if (!path_is_absolute(s))
       fill_pathname_resolve_relative(s, in_refpath,
             in_path, len);
-
    pathname_conform_slashes_to_os(s);
 }
 
@@ -271,7 +262,7 @@ static void video_shader_replace_wildcards(char *s, size_t len, char *in_preset_
                }
                break;
             case RARCH_WILDCARD_CORE:
-               strlcpy(replace_text, runloop_state_get_ptr()->system.info.library_name, sizeof(replace_text));
+               _len = strlcpy(replace_text, runloop_state_get_ptr()->system.info.library_name, sizeof(replace_text));
                break;
             case RARCH_WILDCARD_GAME:
                {
@@ -285,7 +276,7 @@ static void video_shader_replace_wildcards(char *s, size_t len, char *in_preset_
                }
                break;
             case RARCH_WILDCARD_VIDEO_DRIVER:
-               strlcpy(replace_text, config_get_ptr()->arrays.video_driver, sizeof(replace_text));
+               _len = strlcpy(replace_text, config_get_ptr()->arrays.video_driver, sizeof(replace_text));
                break;
             case RARCH_WILDCARD_CORE_REQUESTED_ROTATION:
                _len  = strlcpy(replace_text, "CORE-REQ-ROT-", sizeof(replace_text));
@@ -421,7 +412,7 @@ static void video_shader_replace_wildcards(char *s, size_t len, char *in_preset_
             char *replace_output = string_replace_substring(replaced_path,
                sizeof(replaced_path),
                wildcard_tokens[i].token_name,
-               STRLEN_CONST(wildcard_tokens[i].token_name),
+               strlen(wildcard_tokens[i].token_name),
                replace_text,
                _len);
             strlcpy(replaced_path, replace_output, sizeof(replaced_path));
@@ -471,14 +462,11 @@ static void video_shader_gather_reference_path_list(
       while (ref_tmp)
       {
          char* reference_preset_path = (char*)malloc(PATH_MAX_LENGTH);
-
          /* Get the absolute path and replace wildcards in the path */
          fill_pathname_expanded_and_absolute(reference_preset_path, PATH_MAX_LENGTH, conf->path, ref_tmp->path);
          /* TODO/FIXME - dehardcode PATH_MAX_LENGTH */
          video_shader_replace_wildcards(reference_preset_path, PATH_MAX_LENGTH, conf->path);
-
          video_shader_gather_reference_path_list(in_path_linked_list, reference_preset_path, reference_depth + 1);
-
          free(reference_preset_path);
          ref_tmp = ref_tmp->next;
       }
@@ -825,9 +813,11 @@ static bool video_shader_parse_textures(config_file_t *conf,
          config_get_path(conf, id, texture_path, sizeof(texture_path));
 
          /* Get the absolute path and replace wildcards in the path */
-         fill_pathname_expanded_and_absolute(shader->lut[shader->luts].path, PATH_MAX_LENGTH, conf->path, texture_path);
+         fill_pathname_expanded_and_absolute(shader->lut[shader->luts].path,
+               PATH_MAX_LENGTH, conf->path, texture_path);
          /* TODO/FIXME - dehardcode PATH_MAX_LENGTH */
-         video_shader_replace_wildcards(shader->lut[shader->luts].path, PATH_MAX_LENGTH, conf->path);
+         video_shader_replace_wildcards(shader->lut[shader->luts].path,
+               PATH_MAX_LENGTH, conf->path);
 
          strlcpy(shader->lut[shader->luts].id, id,
                sizeof(shader->lut[shader->luts].id));
@@ -1297,9 +1287,11 @@ static config_file_t *video_shader_get_root_preset_config(const char *path)
       }
 
       /* Get the absolute path and replace wildcards in the path */
-      fill_pathname_expanded_and_absolute(nested_reference_path, PATH_MAX_LENGTH, conf->path, conf->references->path);
+      fill_pathname_expanded_and_absolute(nested_reference_path,
+            PATH_MAX_LENGTH, conf->path, conf->references->path);
       /* TODO/FIXME - dehardcode PATH_MAX_LENGTH */
-      video_shader_replace_wildcards(nested_reference_path, PATH_MAX_LENGTH, conf->path);
+      video_shader_replace_wildcards(nested_reference_path,
+            PATH_MAX_LENGTH, conf->path);
 
       /* Create a new config from the referenced path */
       config_file_free(conf);
@@ -1384,12 +1376,15 @@ static bool video_shader_check_reference_chain_for_save(
          }
 
          /* Get the absolute path and replace wildcards in the path */
-         fill_pathname_expanded_and_absolute(nested_ref_path, PATH_MAX_LENGTH, conf->path, conf->references->path);
+         fill_pathname_expanded_and_absolute(nested_ref_path,
+               PATH_MAX_LENGTH, conf->path, conf->references->path);
          /* TODO/FIXME - dehardcode PATH_MAX_LENGTH */
-         video_shader_replace_wildcards(nested_ref_path, PATH_MAX_LENGTH, conf->path);
+         video_shader_replace_wildcards(nested_ref_path,
+               PATH_MAX_LENGTH, conf->path);
 
-         /* If one of the reference paths is the same as the file we want to save then this reference chain would be
-          * self-referential / cyclical and we can't save this as a simple preset*/
+         /* If one of the reference paths is the same as the file we want to save,
+          * then this reference chain would be self-referential / cyclical and
+          * we can't save this as a simple preset */
          if (string_is_equal(nested_ref_path, path_to_save_conformed))
          {
             RARCH_WARN("[Shaders]: Saving preset:\n"
@@ -1895,7 +1890,7 @@ end:
  **/
 static bool video_shader_load_root_config_into_shader(
       config_file_t *conf,
-      settings_t *settings,
+      bool video_shader_watch_files,
       struct video_shader *shader)
 {
    size_t i;
@@ -1926,7 +1921,7 @@ static bool video_shader_load_root_config_into_shader(
    strlcpy(shader->loaded_preset_path, conf->path,
          sizeof(shader->loaded_preset_path));
 
-   if (settings->bools.video_shader_watch_files)
+   if (video_shader_watch_files)
    {
       union string_list_elem_attr attr;
       int flags                        =
@@ -2063,23 +2058,22 @@ static bool video_shader_override_values(config_file_t *override_conf,
          if (config_get_entry(override_conf, shader->lut[i].id))
          {
             char *tex_path = (char*)malloc(PATH_MAX_LENGTH);
-
             /* Texture path from the config */
-            config_get_path(override_conf, shader->lut[i].id, tex_path, PATH_MAX_LENGTH);
-
+            config_get_path(override_conf, shader->lut[i].id, tex_path,
+                  PATH_MAX_LENGTH);
             /* Get the absolute path and replace wildcards in the path */
-            fill_pathname_expanded_and_absolute(override_tex_path, PATH_MAX_LENGTH, override_conf->path, tex_path);
+            fill_pathname_expanded_and_absolute(override_tex_path,
+                  PATH_MAX_LENGTH, override_conf->path, tex_path);
             /* TODO/FIXME - dehardcode PATH_MAX_LENGTH */
-            video_shader_replace_wildcards(override_tex_path, PATH_MAX_LENGTH, override_conf->path);
-
-            strlcpy(shader->lut[i].path, override_tex_path, sizeof(shader->lut[i].path));
-
+            video_shader_replace_wildcards(override_tex_path,
+                  PATH_MAX_LENGTH, override_conf->path);
+            strlcpy(shader->lut[i].path, override_tex_path,
+                  sizeof(shader->lut[i].path));
 #ifdef DEBUG
             RARCH_DBG("[Shaders]: Texture: \"%s\" = %s.\n",
                         shader->lut[i].id,
                         shader->lut[i].path);
 #endif
-
             free(tex_path);
             return_val = true;
          }
@@ -2261,7 +2255,8 @@ bool video_shader_load_preset_into_shader(const char *path,
    if (string_is_equal(root_conf->path, path))
    {
       /* Load the config from the shader chain from the first reference into the shader */
-      video_shader_load_root_config_into_shader(root_conf, config_get_ptr(), shader);
+      video_shader_load_root_config_into_shader(root_conf,
+            config_get_ptr()->bools.video_shader_watch_files, shader);
       goto end;
    }
 
@@ -2283,7 +2278,6 @@ bool video_shader_load_preset_into_shader(const char *path,
    {
       config_file_t *tmp_conf = NULL;
       char *path_to_ref       = (char*)malloc(PATH_MAX_LENGTH);
-
       /* Get the absolute path and replace wildcards in the path */
       fill_pathname_expanded_and_absolute(path_to_ref, PATH_MAX_LENGTH,
             conf->path, path_list_tmp->path);
@@ -2295,8 +2289,7 @@ bool video_shader_load_preset_into_shader(const char *path,
          /* Check if the config is a valid shader chain config
             If the config has a shaders entry then it is considered
             a shader chain config, vs a config which may only have
-            parameter values and texture overrides
-          */
+            parameter values and texture overrides */
          if (config_get_entry(tmp_conf, "shaders"))
          {
             RARCH_WARN("\n[Shaders]: Additional #reference entries pointing at shader chain presets are not supported: \"%s\".\n", path_to_ref);
@@ -2316,7 +2309,8 @@ bool video_shader_load_preset_into_shader(const char *path,
    }
 
    /* Load the config from the shader chain from the first reference into the shader */
-   video_shader_load_root_config_into_shader(root_conf, config_get_ptr(), shader);
+   video_shader_load_root_config_into_shader(root_conf,
+         config_get_ptr()->bools.video_shader_watch_files, shader);
 
    /* Set Path for originally loaded preset because it is different than the root preset path */
    strlcpy(shader->loaded_preset_path, path, sizeof(shader->loaded_preset_path));
@@ -2329,10 +2323,8 @@ bool video_shader_load_preset_into_shader(const char *path,
    override_paths_list = path_linked_list_new();
    video_shader_gather_reference_path_list(override_paths_list, conf->path, 0);
 
-   /*
-    * Step through the references and apply overrides for each one
-    * Start on the second item since the first is empty
-   */
+   /* Step through the references and apply overrides for each one
+    * Start on the second item since the first is empty */
    path_list_tmp = (struct path_linked_list*)override_paths_list;
    while (path_list_tmp)
    {
@@ -2541,14 +2533,13 @@ static bool video_shader_dir_init_shader_internal(
 
 static void video_shader_dir_init_shader(
       void *menu_driver_data_,
-      settings_t *settings,
+      const char *directory_video_shader,
+      const char *directory_menu_config,
+      bool show_hidden_files,
+      bool shader_remember_last_dir,
+      bool video_shader_remember_last_dir,
       struct rarch_dir_shader_list *dir_list)
 {
-   bool show_hidden_files                         = settings->bools.show_hidden_files;
-   bool shader_remember_last_dir                  = settings->bools.video_shader_remember_last_dir;
-   const char *directory_video_shader             = settings->paths.directory_video_shader;
-   const char *directory_menu_config              = settings->paths.directory_menu_config;
-   bool video_shader_remember_last_dir            = settings->bools.video_shader_remember_last_dir;
    const char *last_shader_preset_dir             = NULL;
    const char *last_shader_preset_file_name       = NULL;
    video_driver_state_t *video_st                 = video_state_get_ptr();
@@ -2653,7 +2644,18 @@ void video_shader_dir_check_shader(
        && (last_shader_preset_type != RARCH_SHADER_NONE)
        && !string_is_equal(dir_list->directory, last_shader_preset_dir)))
    {
-      video_shader_dir_init_shader(menu_ptr, settings, dir_list);
+      const char *directory_video_shader          = settings->paths.directory_video_shader;
+      const char *directory_menu_config           = settings->paths.directory_menu_config;
+      bool show_hidden_files                      = settings->bools.show_hidden_files;
+      bool shader_remember_last_dir               = settings->bools.video_shader_remember_last_dir;
+      bool video_shader_remember_last_dir         = settings->bools.video_shader_remember_last_dir;
+      video_shader_dir_init_shader(menu_ptr,
+            directory_video_shader,
+            directory_menu_config,
+            show_hidden_files,
+            shader_remember_last_dir,
+            video_shader_remember_last_dir,
+            dir_list);
       dir_list_initialised = true;
    }
 
@@ -2837,12 +2839,13 @@ static bool video_shader_load_shader_preset_internal(
  *
  * Returns: false if there was an error or no action was performed.
  */
-static bool video_shader_load_auto_shader_preset(settings_t *settings, const char *core_name,
+static bool video_shader_load_auto_shader_preset(
+      const char *video_shader_directory,
+      const char *menu_config_directory,
+      const char *core_name,
       char *s, size_t len)
 {
    size_t i;
-   const char *video_shader_directory = settings->paths.directory_video_shader;
-   const char *menu_config_directory  = settings->paths.directory_menu_config;
    const char *rarch_path_basename    = path_get(RARCH_PATH_BASENAME);
    bool has_content                   = !string_is_empty(rarch_path_basename);
 
@@ -2927,7 +2930,6 @@ success:
 }
 
 bool video_shader_combine_preset_and_apply(
-      settings_t *settings,
       enum rarch_shader_type type,
       struct video_shader *menu_shader,
       const char *preset_path,
@@ -3121,7 +3123,8 @@ const char *video_shader_get_current_shader_preset(void)
          if (auto_shaders_enable) /* sets runtime_shader_preset_path */
          {
             if (video_shader_load_auto_shader_preset(
-                     settings,
+                     settings->paths.directory_video_shader,
+                     settings->paths.directory_menu_config,
                      runloop_st->system.info.library_name,
                      runloop_st->runtime_shader_preset_path,
                      sizeof(runloop_st->runtime_shader_preset_path)))

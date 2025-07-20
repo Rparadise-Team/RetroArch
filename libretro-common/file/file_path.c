@@ -255,7 +255,8 @@ const char *path_get_extension(const char *path)
 char *path_get_extension_mutable(const char *path)
 {
    char *ext = NULL;
-   if (!string_is_empty(path) && ((ext = (char*)strrchr(path_basename(path), '.'))))
+   if (    !string_is_empty(path)
+       && ((ext = (char*)strrchr(path_basename(path), '.'))))
       return ext;
    return NULL;
 }
@@ -276,8 +277,7 @@ char *path_get_extension_mutable(const char *path)
  **/
 char *path_remove_extension(char *s)
 {
-   char *last = !string_is_empty(s)
-      ? (char*)strrchr(path_basename(s), '.') : NULL;
+   char *last = path_get_extension_mutable(s);
    if (!last)
       return NULL;
    if (*last)
@@ -1055,6 +1055,8 @@ size_t fill_pathname_join_delim(char *s, const char *dir,
       _len     = strlen(dir);
    else
       _len     = strlcpy(s, dir, len);
+   if (len - _len < 2)
+      return _len;
    s[_len++]   = delim;
    s[_len  ]   = '\0';
    if (path)
@@ -1170,7 +1172,7 @@ size_t fill_pathname_abbreviate_special(char *s,
  *
  * @returns new string that has been sanitized
  **/
-const char *sanitize_path_part(const char *path_part, size_t size)
+const char *sanitize_path_part(const char *path_part, size_t len)
 {
    int i;
    int j = 0;
@@ -1180,7 +1182,7 @@ const char *sanitize_path_part(const char *path_part, size_t size)
    if (string_is_empty(path_part))
       return NULL;
 
-   tmp = (char *)malloc((size + 1) * sizeof(char));
+   tmp = (char *)malloc((len + 1) * sizeof(char));
 
    for (i = 0; path_part[i] != '\0'; i++)
    {

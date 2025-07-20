@@ -38,6 +38,7 @@ typedef struct
 {
    char url[PATH_MAX_LENGTH];
    char *last_slash;
+   char post_slash;
    webdav_mkdir_cb_t cb;
    webdav_cb_state_t *cb_st;
 } webdav_mkdir_state_t;
@@ -501,11 +502,11 @@ static void webdav_stat_cb(retro_task_t *task, void *task_data, void *user_data,
 
 static bool webdav_sync_begin(cloud_sync_complete_handler_t cb, void *user_data)
 {
+   char *auth_header;
+   size_t _len                  = 0;
    settings_t        *settings  = config_get_ptr();
    const char        *url       = settings->arrays.webdav_url;
    webdav_state_t    *webdav_st = webdav_state_get_ptr();
-   size_t             len       = 0;
-   char              *auth_header;
 
    if (string_is_empty(url))
       return false;
@@ -517,18 +518,18 @@ static bool webdav_sync_begin(cloud_sync_complete_handler_t cb, void *user_data)
    /* TODO: LOCK? */
 
    if (!strstr(url, "://"))
-       len += strlcpy(webdav_st->url, "http://", STRLEN_CONST("http://"));
-   strlcpy(webdav_st->url + len, url, sizeof(webdav_st->url) - len);
+       _len += strlcpy(webdav_st->url, "http://", STRLEN_CONST("http://"));
+   strlcpy(webdav_st->url + _len, url, sizeof(webdav_st->url) - _len);
    fill_pathname_slash(webdav_st->url, sizeof(webdav_st->url));
 
    /* url/username/password may have changed, redo auth check */
    webdav_st->basic = true;
-   auth_header = webdav_get_auth_header(NULL, NULL);
+   auth_header      = webdav_get_auth_header(NULL, NULL);
 
    if (auth_header)
    {
       webdav_cb_state_t *webdav_cb_st = (webdav_cb_state_t*)calloc(1, sizeof(webdav_cb_state_t));
-      webdav_cb_st->cb = cb;
+      webdav_cb_st->cb        = cb;
       webdav_cb_st->user_data = user_data;
       task_push_webdav_stat(webdav_st->url, true, auth_header, webdav_stat_cb, webdav_cb_st);
       free(auth_header);
@@ -614,6 +615,7 @@ static bool webdav_read(const char *path, const char *file, cloud_sync_complete_
    char               url[PATH_MAX_LENGTH];
    char               url_encoded[PATH_MAX_LENGTH];
    char              *auth_header;
+   void              *t;
 
    fill_pathname_join_special(url, webdav_st->url, path, sizeof(url));
    net_http_urlencode_full(url_encoded, url, sizeof(url_encoded));
@@ -625,9 +627,9 @@ static bool webdav_read(const char *path, const char *file, cloud_sync_complete_
 
    RARCH_DBG("[webdav] GET %s\n", url_encoded);
    auth_header = webdav_get_auth_header("GET", url_encoded);
-   task_push_http_transfer_with_headers(url_encoded, true, NULL, auth_header, webdav_read_cb, webdav_cb_st);
+   t = task_push_http_transfer_with_headers(url_encoded, true, NULL, auth_header, webdav_read_cb, webdav_cb_st);
    free(auth_header);
-   return true;
+   return (t != NULL);
 }
 
 static void webdav_mkdir_cb(retro_task_t *task, void *task_data, void *user_data, const char *err)
@@ -660,11 +662,12 @@ static void webdav_mkdir_cb(retro_task_t *task, void *task_data, void *user_data
       return;
    }
 
-   *webdav_mkdir_st->last_slash++ = '/';
-   webdav_mkdir_st->last_slash = strchr(webdav_mkdir_st->last_slash, '/');
+   webdav_mkdir_st->last_slash[1] = webdav_mkdir_st->post_slash;
+   webdav_mkdir_st->last_slash = strchr(webdav_mkdir_st->last_slash + 1, '/');
    if (webdav_mkdir_st->last_slash)
    {
-      *webdav_mkdir_st->last_slash = '\0';
+      webdav_mkdir_st->post_slash = webdav_mkdir_st->last_slash[1];
+      webdav_mkdir_st->last_slash[1] = '\0';
       RARCH_DBG("[webdav] MKCOL %s\n", webdav_mkdir_st->url);
       auth_header = webdav_get_auth_header("MKCOL", webdav_mkdir_st->url);
       task_push_webdav_mkdir(webdav_mkdir_st->url, true, auth_header, webdav_mkdir_cb, webdav_mkdir_st);
@@ -688,6 +691,7 @@ static void webdav_ensure_dir(const char *dir, webdav_mkdir_cb_t cb, webdav_cb_s
    fill_pathname_join_special(url, webdav_st->url, dir, sizeof(url));
    net_http_urlencode_full(webdav_mkdir_st->url, url, sizeof(webdav_mkdir_st->url));
    webdav_mkdir_st->last_slash = strchr(webdav_mkdir_st->url + strlen(webdav_st->url) - 1, '/');
+   webdav_mkdir_st->post_slash = webdav_mkdir_st->last_slash[1];
    webdav_mkdir_st->cb = cb;
    webdav_mkdir_st->cb_st = webdav_cb_st;
 

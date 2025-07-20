@@ -181,9 +181,9 @@ bool content_undo_load_state(void)
     * the backing up of it and
     * its flushing could all be in their
     * own functions... */
-   if (     config_get_ptr()->bools.block_sram_overwrite
-         && savefile_list
-         && savefile_list->size)
+   if (     savefile_list
+         && savefile_list->size
+         && config_get_ptr()->bools.block_sram_overwrite)
    {
       RARCH_LOG("[SRAM]: %s.\n",
             msg_hash_to_str(MSG_BLOCKING_SRAM_OVERWRITE));
@@ -354,10 +354,10 @@ static size_t content_get_rastate_size(rastate_size_info_t* size, bool rewind)
 #endif
 #ifdef HAVE_BSV_MOVIE
    /* 8-byte block header + content */
-   if(!rewind)
+   if (!rewind)
    {
       size->replay_size = replay_get_serialize_size();
-      if(size->replay_size > 0)
+      if (size->replay_size > 0)
          size->total_size += 8 + CONTENT_ALIGN_SIZE(size->replay_size);
    }
    else
@@ -558,7 +558,7 @@ static void task_save_handler(retro_task_t *task)
       {
          size_t _len = strlcpy(msg,
                msg_hash_to_str(MSG_FAILED_TO_SAVE_STATE_TO),
-               sizeof(msg));
+               sizeof(msg) - 2);
          msg[  _len] = ' ';
          msg[++_len] = '\0';
          strlcpy(msg + _len, state->path, sizeof(msg) - _len);
@@ -911,10 +911,11 @@ static bool content_load_rastate1(unsigned char* input, size_t len)
       input += CONTENT_ALIGN_SIZE(block_size);
    }
 
-   if (!seen_core) {
+   if (!seen_core)
+   {
       RARCH_LOG("[State] no core\n");
       return false;
-    }
+   }
 
 #ifdef HAVE_CHEEVOS
    if (!seen_cheevos)
@@ -989,12 +990,10 @@ static void content_load_state_cb(retro_task_t *task,
    unsigned i;
    bool ret;
    load_task_data_t *load_data = (load_task_data_t*)task_data;
-   ssize_t size                = load_data->size;
+   ssize_t _len                = load_data->size;
    unsigned num_blocks         = 0;
    void *buf                   = load_data->data;
    struct sram_block *blocks   = NULL;
-   settings_t *settings        = config_get_ptr();
-   bool block_sram_overwrite   = settings->bools.block_sram_overwrite;
    struct string_list *savefile_list = (struct string_list*)savefile_ptr_get();
 
 #ifdef HAVE_CHEEVOS
@@ -1005,10 +1004,10 @@ static void content_load_state_cb(retro_task_t *task,
    RARCH_LOG("[State]: %s \"%s\", %u %s.\n",
          msg_hash_to_str(MSG_LOADING_STATE),
          load_data->path,
-         (unsigned)size,
+         (unsigned)_len,
          msg_hash_to_str(MSG_BYTES));
 
-   if (size < 0 || !buf)
+   if (_len < 0 || !buf)
       goto error;
 
    /* This means we're backing up the file in memory,
@@ -1023,11 +1022,11 @@ static void content_load_state_cb(retro_task_t *task,
          undo_save_buf.data = NULL;
       }
 
-      if (!(undo_save_buf.data = malloc(size)))
+      if (!(undo_save_buf.data = malloc(_len)))
          goto error;
 
-      memcpy(undo_save_buf.data, buf, size);
-      undo_save_buf.size = size;
+      memcpy(undo_save_buf.data, buf, _len);
+      undo_save_buf.size = _len;
       strlcpy(undo_save_buf.path, load_data->path, sizeof(undo_save_buf.path));
 
       free(buf);
@@ -1035,7 +1034,10 @@ static void content_load_state_cb(retro_task_t *task,
       return;
    }
 
-   if (block_sram_overwrite && savefile_list && savefile_list->size)
+   if (     savefile_list
+         && savefile_list->size
+         && config_get_ptr()->bools.block_sram_overwrite
+      )
    {
       RARCH_LOG("[SRAM]: %s.\n",
             msg_hash_to_str(MSG_BLOCKING_SRAM_OVERWRITE));
@@ -1083,7 +1085,7 @@ static void content_load_state_cb(retro_task_t *task,
    /* Backup the current state so we can undo this load */
    content_save_state("RAM", false);
 
-   ret = content_deserialize_state(buf, size);
+   ret = content_deserialize_state(buf, _len);
 
    /* Flush back. */
    for (i = 0; i < num_blocks; i++)
@@ -1135,11 +1137,8 @@ static void save_state_cb(retro_task_t *task,
    save_task_state_t *state   = (save_task_state_t*)task_data;
 #ifdef HAVE_SCREENSHOTS
    char               *path   = strdup(state->path);
-   settings_t     *settings   = config_get_ptr();
-   const char *dir_screenshot = settings->paths.directory_screenshot;
-
    if (state->flags & SAVE_TASK_FLAG_THUMBNAIL_ENABLE)
-      take_screenshot(dir_screenshot,
+      take_screenshot(config_get_ptr()->paths.directory_screenshot,
             path, true,
             state->flags & SAVE_TASK_FLAG_HAS_VALID_FB, false, true);
    free(path);

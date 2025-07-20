@@ -243,9 +243,9 @@ unsigned disk_control_get_image_index(
  **/
 void disk_control_get_image_label(
       disk_control_interface_t *disk_control,
-      unsigned index, char *label, size_t len)
+      unsigned index, char *s, size_t len)
 {
-   if (!label || len < 1)
+   if (!s || len < 1)
       return;
 
    if (!disk_control)
@@ -254,13 +254,13 @@ void disk_control_get_image_label(
    if (!disk_control->cb.get_image_label)
       goto error;
 
-   if (!disk_control->cb.get_image_label(index, label, len))
+   if (!disk_control->cb.get_image_label(index, s, len))
       goto error;
 
    return;
 
 error:
-   label[0] = '\0';
+   s[0] = '\0';
 }
 
 /***********/
@@ -623,7 +623,7 @@ bool disk_control_append_image(
       goto error;
 
    /* Display log */
-   _len        = strlcpy(msg, msg_hash_to_str(MSG_APPENDED_DISK), sizeof(msg));
+   _len        = strlcpy(msg, msg_hash_to_str(MSG_APPENDED_DISK), sizeof(msg) - 3);
    msg[  _len] = ':';
    msg[++_len] = ' ';
    msg[++_len] = '\0';
@@ -653,7 +653,7 @@ error:
       disk_control_set_eject_state(disk_control, false, false);
 
    _len        = strlcpy(msg,
-         msg_hash_to_str(MSG_FAILED_TO_APPEND_DISK), sizeof(msg));
+         msg_hash_to_str(MSG_FAILED_TO_APPEND_DISK), sizeof(msg) - 3);
    msg[  _len] = ':';
    msg[++_len] = ' ';
    msg[++_len] = '\0';

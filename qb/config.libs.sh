@@ -270,6 +270,7 @@ check_pkgconf ROAR libroar 1.0.12
 check_val '' JACK -ljack '' jack 0.120.1 '' false
 check_val '' PULSE -lpulse '' libpulse '' '' false
 check_val '' PIPEWIRE -lpipewire-0.3 '' libpipewire-0.3 '' '' false
+check_val '' PIPEWIRE_STABLE -lpipewire-0.3 '' libpipewire-0.3 1.0.0 '' false
 check_val '' SDL -lSDL SDL sdl 1.2.10 '' false
 check_val '' SDL2 -lSDL2 SDL2 sdl2 2.0.0 '' false
 
@@ -312,6 +313,7 @@ if [ "$HAVE_QT" != 'no' ]; then
       then
          HAVE_QT6='yes'
          add_define MAKEFILE HAVE_QT6 1
+         add_define CONFIG HAVE_QT6 1
       fi
    fi
    if [ "$HAVE_QT6" != 'yes' ]; then
@@ -543,6 +545,7 @@ if [ "$HAVE_X11" != 'no' ]; then
    check_val '' XEXT -lXext '' xext '' '' false
    check_val '' XF86VM -lXxf86vm '' xxf86vm '' '' false
    check_val '' XSCRNSAVER -lXss '' xscrnsaver '' '' false
+   check_val '' XI2 -lXi '' xi '' '' false
 else
    die : 'Notice: X11 not present. Skipping X11 code paths.'
 fi
