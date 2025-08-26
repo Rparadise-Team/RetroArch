@@ -63,6 +63,7 @@ HAVE_GFX_WIDGETS = 1
 HAVE_MMAP = 1
 HAVE_NETPLAYDISCOVERY = 1
 HAVE_NETWORKING = 1
+HAVE_NETWORK_CMD = 1
 HAVE_ONLINE_UPDATER=1
 HAVE_OPENDINGUX_FBDEV = 0
 HAVE_OPENGL = 0
@@ -128,6 +129,11 @@ HAVE_NO_X11 = 1
 HAVE_X11 = 0
 HAVE_NVDA = 1
 
+HAVE_NOUNUSED = 1
+NOUNUSED_CFLAGS = -Wno-unused-result
+HAVE_NOUNUSED_VARIABLE = 1
+NOUNUSED_VARIABLE_CFLAGS = -Wno-unused-variable
+
 OS = Linux
 TARGET = retroarch.brick
 OBJ :=
@@ -135,7 +141,7 @@ LINK := $(CXX)
 DEF_FLAGS := -march=armv8-a -mtune=cortex-a53 -fPIE -mcpu=cortex-a53+crc+fp+simd -ffast-math -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -MMD
-DEF_FLAGS += -Wall -Wno-unused-variable -fno-lto
+DEF_FLAGS += -Wall -fno-lto
 DEF_FLAGS += -D_GNU_SOURCE
 LIBS := -lz -lrt -lcrypto -lssl -ludev -lasound -lvulkan -lEGL -lGLESv2 -lIMGegl -lglslcompiler -lsrv_um -lusc -ltmenu -ltinyalsa -lfreetype -lSDL2 -lSDL2_ttf -lSDL2_mixer -lSDL2_image -lmad -pthread -ldl
 CFLAGS := -std=gnu99
@@ -151,8 +157,8 @@ DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ALSA -DHAVE_OPENSSL -DHAVE_UDEV -DHAVE_
 DEFINES += -DHAVE_ONLINE_UPDATER -DHAVE_UPDATE_CORES -DHAVE_UPDATE_CORE_INFO
 DEFINES += -DHAVE_UPDATE_ASSETS
 
-SDL2_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
-SDL2_LIBS := $(shell $(SDL2_CONFIG) --libs)
+SDL2_CFLAGS := -D_REENTRANT -I$(INC_DIR)/SDL2
+SDL2_LIBS := -Wl,-rpath,$(LIB_DIR) -Wl,--enable-new-dtags -lSDL2 -lasound
 MMAP_LIBS = -lc
 EGL_LIBS = -lEGL
 OPENGLES_LIBS = -lGLESv2
