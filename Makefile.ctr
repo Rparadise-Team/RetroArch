@@ -155,7 +155,6 @@ LIBDIRS := -L. -L$(CTRULIB)/lib
 ARCH     := -march=armv6k -mtune=mpcore -mfloat-abi=hard -marm -mfpu=vfp -mtp=soft
 
 CFLAGS	+= -mword-relocations \
-	   -ffast-math \
 	   $(ARCH)
 
 #CFLAGS	+= -Wall
@@ -202,7 +201,7 @@ CFLAGS += -Werror=implicit-function-declaration
 
 ASFLAGS	 := -g $(ARCH) -O3
 LDFLAGS  += -specs=ctr/3dsx_custom.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
-CFLAGS   += -std=gnu99 -ffast-math
+CFLAGS   += -std=gnu99
 
 LIB_CORE      :=
 LIB_CORE_FULL :=

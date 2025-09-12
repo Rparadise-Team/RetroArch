@@ -108,7 +108,7 @@ TARGET = retroarch.flip32
 
 OBJ :=
 LINK := $(CXX)
-DEF_FLAGS := -march=armv8.2-a -mtune=cortex-a55 -mfpu=neon-fp-armv8 -fPIE -mcpu=cortex-a55 -ffast-math -fomit-frame-pointer
+DEF_FLAGS := -march=armv8.2-a -mtune=cortex-a55 -mfpu=neon-fp-armv8 -fPIE -mcpu=cortex-a55 -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -MMD
 DEF_FLAGS += -Wall -Wno-unused-variable -flto

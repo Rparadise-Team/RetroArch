@@ -138,7 +138,7 @@ OS = Linux
 TARGET = retroarch.brick
 OBJ :=
 LINK := $(CXX)
-DEF_FLAGS := -march=armv8-a -mtune=cortex-a53 -fPIE -mcpu=cortex-a53+crc+fp+simd -ffast-math -fomit-frame-pointer
+DEF_FLAGS := -march=armv8-a -mtune=cortex-a53 -fPIE -mcpu=cortex-a53+crc+fp+simd -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -MMD
 DEF_FLAGS += -Wall -fno-lto

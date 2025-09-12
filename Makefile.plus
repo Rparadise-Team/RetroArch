@@ -131,7 +131,7 @@ TARGET = $(PACKAGE_NAME)
 
 OBJ := miyoo.o
 LINK := $(CXX)
-DEF_FLAGS := -marm -mtune=cortex-a7 -march=armv7ve+simd -mfpu=neon-vfpv4 -mfloat-abi=hard -ffast-math -fomit-frame-pointer
+DEF_FLAGS := -marm -mtune=cortex-a7 -march=armv7ve+simd -mfpu=neon-vfpv4 -mfloat-abi=hard -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
 DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOOMINI -DDINGUX -MMD
 DEF_FLAGS += -Wall -Wno-unused-function -Wno-unused-variable -flto
