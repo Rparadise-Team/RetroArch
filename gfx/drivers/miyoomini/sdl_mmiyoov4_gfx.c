@@ -725,52 +725,91 @@ static void sdl_miyoomini_input_driver_init(
 }
 
 static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width, unsigned height, bool rgb32) {
-   vid->content_width  = width;
+   vid->content_width = width;
    vid->content_height = height;
    if (vid->rotate & 1) { width = vid->content_height; height = vid->content_width; }
 
-   /* Calculate scaling factor */
-   uint32_t xmul = (res_x<<16) / width;
-   uint32_t ymul = (res_y<<16) / height;
+   /* USAR 640x480 como base de cálculo */
+   #define BASE_WIDTH 640
+   #define BASE_HEIGHT 480
+   
+   /* Calculate scaling factor usando 640x480 como base */
+   uint32_t xmul = (BASE_WIDTH<<16) / width;
+   uint32_t ymul = (BASE_HEIGHT<<16) / height;
    uint32_t mul_int = (xmul < ymul ? xmul : ymul)>>16;
-   /* Change to aspect/fullscreen scaler when integer & screen size is over (no crop) */
-   if (vid->scale_integer && mul_int) {
-      /* Integer Scaling */
-      vid->video_w = width * mul_int;
-      vid->video_h = height * mul_int;
-      if (!vid->keep_aspect) {
-         if(!(width == res_x && height == res_y)) {
-            /* Integer + Fullscreen , keep 4:3 for CRT console emulators */
+
+   /* Calcular viewport basándose en las opciones */
+   if (vid->keep_aspect) {
+      /* MANTENER ASPECTO - calcular dimensiones que respeten AR */
+      if (vid->scale_integer && mul_int) {
+         /* Escalado entero */
+         vid->video_w = width * mul_int;
+         vid->video_h = height * mul_int;
+         vid->video_x = (BASE_WIDTH - vid->video_w) >> 1;
+         vid->video_y = (BASE_HEIGHT - vid->video_h) >> 1;
+      } else {
+         /* Escalado suave manteniendo aspecto */
+         if (xmul > ymul) {
+            vid->video_w = (width * BASE_HEIGHT) / height;
+            vid->video_h = BASE_HEIGHT;
+            vid->video_x = (BASE_WIDTH - vid->video_w) >> 1;
+            vid->video_y = 0;
+         } else {
+            vid->video_w = BASE_WIDTH;
+            vid->video_h = (height * BASE_WIDTH) / width;
+            vid->video_x = 0;
+            vid->video_y = (BASE_HEIGHT - vid->video_h) >> 1;
+         }
+      }
+   } else {
+      /* NO MANTENER ASPECTO - fullscreen */
+      if (vid->scale_integer && mul_int) {
+         /* Integer + Fullscreen, keep 4:3 for CRT */
+         vid->video_w = width * mul_int;
+         vid->video_h = height * mul_int;
+         
+         if(!(width == BASE_WIDTH && height == BASE_HEIGHT)) {
             uint32_t Wx3 = vid->video_w * 3;
             uint32_t Hx4 = vid->video_h * 4;
             if (Wx3 != Hx4) {
                if (Wx3 > Hx4) vid->video_h = Wx3 / 4;
-               else           vid->video_w = Hx4 / 3;
+               else vid->video_w = Hx4 / 3;
             }
          }
+         vid->video_x = (BASE_WIDTH - vid->video_w) >> 1;
+         vid->video_y = (BASE_HEIGHT - vid->video_h) >> 1;
+      } else {
+         /* Fullscreen sin restricciones */
+         vid->video_w = BASE_WIDTH;
+         vid->video_h = BASE_HEIGHT;
+         vid->video_x = 0;
+         vid->video_y = 0;
       }
+   }
+
+   /* ESCALAR desde 640x480 a 752x560 */
+   float scale_factor_x = (float)res_x / (float)BASE_WIDTH;
+   float scale_factor_y = (float)res_y / (float)BASE_HEIGHT;
+   
+   vid->video_w = (unsigned)((float)vid->video_w * scale_factor_x);
+   vid->video_h = (unsigned)((float)vid->video_h * scale_factor_y);
+   vid->video_x = (unsigned)((float)vid->video_x * scale_factor_x);
+   vid->video_y = (unsigned)((float)vid->video_y * scale_factor_y);
+
+   /* Si scale_integer está ON, redondear a múltiplo del core */
+   if (vid->scale_integer && mul_int) {
+      unsigned base_unit_w = (unsigned)(width * scale_factor_x);
+      unsigned base_unit_h = (unsigned)(height * scale_factor_y);
+      
+      /* Redondear video_w y video_h a múltiplos de base_unit */
+      vid->video_w = (vid->video_w / base_unit_w) * base_unit_w;
+      vid->video_h = (vid->video_h / base_unit_h) * base_unit_h;
+      
+      /* Recentrar */
       vid->video_x = (res_x - vid->video_w) >> 1;
       vid->video_y = (res_y - vid->video_h) >> 1;
-   } else if (vid->keep_aspect) {
-      /* Aspect Scaling */
-      if (xmul > ymul) {
-         vid->video_w  = (width * res_y) / height;
-         vid->video_h = res_y;
-         vid->video_x = (res_x - vid->video_w) >> 1;
-         vid->video_y = 0;
-      } else {
-         vid->video_w  = res_x;
-         vid->video_h = (height * res_x) / width;
-         vid->video_x = 0;
-         vid->video_y = (res_y - vid->video_h) >> 1;
-      }
-   } else {
-      /* Fullscreen */
-      vid->video_w = res_x;
-      vid->video_h = res_y;
-      vid->video_x = 0;
-      vid->video_y = 0;
    }
+
    /* align to x4 bytes */
    if (!rgb32) { vid->video_x &= ~1; vid->video_w &= ~1; }
 
@@ -779,13 +818,17 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
    if ( (vid->filter_type != DINGUX_IPU_FILTER_NEAREST) || (vid->scale_integer && mul_int && vid->keep_aspect) ) {
       scale_xmul = scale_ymul = 1;
       if ( (vid->scale_integer) || (vid->filter_type == DINGUX_IPU_FILTER_BICUBIC) ) {
-         // to be at least 80% of the post-scaling size
-         scale_xmul = ((vid->video_w<<2)/5 / width) +1;
-         scale_ymul = ((vid->video_h<<2)/5 / height) +1;
-         if ((scale_xmul == 3)||(scale_xmul > 4)) scale_xmul = 4; // 4x scaler is faster than 3x
+         // Calcular basándose en el tamaño 640x480
+         uint32_t base_video_w = (unsigned)((float)vid->video_w / scale_factor_x);
+         uint32_t base_video_h = (unsigned)((float)vid->video_h / scale_factor_y);
+         
+         scale_xmul = ((base_video_w<<2)/5 / width) +1;
+         scale_ymul = ((base_video_h<<2)/5 / height) +1;
+         if ((scale_xmul == 3)||(scale_xmul > 4)) scale_xmul = 4;
          if (scale_ymul > 4) scale_ymul = 4;
       }
    }
+
    vid->frame_width  = scale_xmul ? vid->content_width  * scale_xmul : vid->video_w;
    vid->frame_height = scale_ymul ? vid->content_height * scale_ymul : vid->video_h;
 
@@ -804,18 +847,13 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       vid->scale_func = func[rgb32?1:0][(scale_xmul>2)?2:scale_xmul-1][scale_ymul-1];
    }
 
-   //RARCH_LOG("[SCALE] cw:%d ch:%d fw:%d fh:%d x:%d y:%d w:%d h:%d xmul:%d ymul:%d\n",vid->content_width,vid->content_height,
-   //   vid->frame_width,vid->frame_height,vid->video_x,vid->video_y,vid->video_w,vid->video_h,scale_xmul,scale_ymul);
-
    /* Attempt to change video mode */
    GFX_WaitAllDone();
    if (vid->screen) GFX_FreeSurface(vid->screen);
    vid->screen = GFX_CreateRGBSurface(
-         0, vid->frame_width, vid->frame_height, rgb32 ? 32 : 16, 0, 0, 0, 0);
+      0, vid->frame_width, vid->frame_height, rgb32 ? 32 : 16, 0, 0, 0, 0);
 
-   /* Check whether selected display mode is valid */
    if (unlikely(!vid->screen)) RARCH_ERR("[MI_GFX]: Failed to init GFX surface\n");
-   /* Clear border */
    else if (!vid->menu_active) sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
 }
 
