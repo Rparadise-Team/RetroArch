@@ -787,6 +787,18 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       }
    }
 
+   /* Si scale_integer, redondear ANTES de escalar */
+   if (vid->scale_integer && mul_int) {
+      unsigned base_unit_w = width * mul_int;
+      unsigned base_unit_h = height * mul_int;
+      
+      /* Redondear a múltiplos en base 640×480 */
+      vid->video_w = (vid->video_w / base_unit_w) * base_unit_w;
+      vid->video_h = (vid->video_h / base_unit_h) * base_unit_h;
+      vid->video_x = (BASE_WIDTH - vid->video_w) >> 1;
+      vid->video_y = (BASE_HEIGHT - vid->video_h) >> 1;
+   }
+
    /* ESCALAR desde 640x480 a 752x560 */
    float scale_factor_x = (float)res_x / (float)BASE_WIDTH;
    float scale_factor_y = (float)res_y / (float)BASE_HEIGHT;
@@ -796,29 +808,15 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
    vid->video_x = (unsigned)((float)vid->video_x * scale_factor_x);
    vid->video_y = (unsigned)((float)vid->video_y * scale_factor_y);
 
-   /* Si scale_integer está ON, redondear a múltiplo del core */
-   if (vid->scale_integer && mul_int) {
-      unsigned base_unit_w = (unsigned)(width * scale_factor_x);
-      unsigned base_unit_h = (unsigned)(height * scale_factor_y);
-      
-      /* Redondear video_w y video_h a múltiplos de base_unit */
-      vid->video_w = (vid->video_w / base_unit_w) * base_unit_w;
-      vid->video_h = (vid->video_h / base_unit_h) * base_unit_h;
-      
-      /* Recentrar */
-      vid->video_x = (res_x - vid->video_w) >> 1;
-      vid->video_y = (res_y - vid->video_h) >> 1;
-   }
-
    /* align to x4 bytes */
    if (!rgb32) { vid->video_x &= ~1; vid->video_w &= ~1; }
 
-   /* Select scaler to use */
+   /* Select scaler to use - CALCULAR CON BASE_WIDTH/HEIGHT */
    uint32_t scale_xmul = 0, scale_ymul = 0;
    if ( (vid->filter_type != DINGUX_IPU_FILTER_NEAREST) || (vid->scale_integer && mul_int && vid->keep_aspect) ) {
       scale_xmul = scale_ymul = 1;
       if ( (vid->scale_integer) || (vid->filter_type == DINGUX_IPU_FILTER_BICUBIC) ) {
-         // Calcular basándose en el tamaño 640x480
+         // Usar las dimensiones BASE (antes del escalado)
          uint32_t base_video_w = (unsigned)((float)vid->video_w / scale_factor_x);
          uint32_t base_video_h = (unsigned)((float)vid->video_h / scale_factor_y);
          
@@ -829,6 +827,7 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       }
    }
 
+   /* Calcular frame_width/height EXACTAMENTE como en el código normal */
    vid->frame_width  = scale_xmul ? vid->content_width  * scale_xmul : vid->video_w;
    vid->frame_height = scale_ymul ? vid->content_height * scale_ymul : vid->video_h;
 
