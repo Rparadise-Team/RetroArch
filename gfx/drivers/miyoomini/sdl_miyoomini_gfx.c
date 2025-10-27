@@ -612,7 +612,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 }
 
 static void sdl_miyoomini_toggle_powersave(bool state) {
-   sdl_miyoomini_set_cpugovernor(state ? POWERSAVE : PERFORMANCE);
+   sdl_miyoomini_set_cpugovernor(state ? ONDEMAND: PERFORMANCE);
 }
 
 static void sdl_miyoomini_sighandler(int sig) {
