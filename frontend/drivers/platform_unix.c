@@ -63,6 +63,12 @@
 #include "../../dingux/dingux_utils.h"
 #endif
 
+#if defined(MIYOOMINI)
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#endif
+
 #include <boolean.h>
 #include <retro_dirent.h>
 #include <retro_inline.h>
@@ -1181,6 +1187,49 @@ static enum frontend_powerstate frontend_unix_get_powerstate(
     * to be used while charging...) */
    int battery_level = dingux_get_battery_level();
 
+#if defined(MIYOOMINI)
+	
+	int crg = 0;
+	int is_charging = 0;
+    int MMplus = access("/customer/app/axp_test", F_OK);
+  
+    if (MMplus == 0) {
+        char *cmd = "cd /customer/app/ ; ./axp_test";
+        int axp_response_size = 100;
+        char buf[axp_response_size];
+        int bat = 0;
+        int vol = 0;
+
+        FILE *fp;
+        fp = popen(cmd, "r");
+        if (fgets(buf, axp_response_size, fp) != NULL)
+            sscanf(buf,  "{\"battery\":%d, \"voltage\":%d, \"charging\":%d}", &bat, &vol, &crg);
+        pclose(fp);
+    } else {
+        FILE *file = fopen("/sys/devices/gpiochip0/gpio/gpio59/value", "r");
+        if (file!=NULL) {
+            fscanf(file, "%i", &crg);
+            fclose(file);
+		}
+    }
+
+    is_charging = crg;
+
+   if (is_charging == 0) {
+       if (battery_level < 0)
+           *percent = -1;
+       else if (battery_level <= 100)
+       {
+           *percent = battery_level;
+            ret      = FRONTEND_POWERSTATE_ON_POWER_SOURCE;
+	   }
+   } else {
+	  *percent = battery_level;
+      ret      = FRONTEND_POWERSTATE_CHARGING;
+   }
+	
+#else
+	
    if (battery_level < 0)
       *percent = -1;
    else
@@ -1188,6 +1237,7 @@ static enum frontend_powerstate frontend_unix_get_powerstate(
       *percent = battery_level;
       ret      = FRONTEND_POWERSTATE_ON_POWER_SOURCE;
    }
+#endif
 
    /* 'Time left' reporting is unsupported */
    *seconds = -1;

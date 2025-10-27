@@ -369,7 +369,7 @@ int dingux_get_battery_level(void)
 
    return (int)(((voltage_now - voltage_min) * 100) / (voltage_max - voltage_min));
 #elif defined(MIYOOMINI)
-    // for miyoomini plus
+/*    // for miyoomini plus
 #define AXPDEV "/dev/i2c-1"
 #define AXPID (0x34)
     static uint32_t mmplus = 2;
@@ -433,7 +433,19 @@ int dingux_get_battery_level(void)
         percBat = 100;
     }
 
-    return percBat;
+    return percBat;*/
+	
+	// read battery from batmon
+	
+	int percBat = 0;
+	
+	FILE *file = fopen("/tmp/batt", "r");
+        if (file!=NULL) {
+            fscanf(file, "%i", &percBat);
+            fclose(file);
+        }
+	
+	return percBat;
 #elif defined(MIYOO)
    /* miyoo-battery only provides "voltage_now". Results are based on
     * value distribution while running a game at max load. */
