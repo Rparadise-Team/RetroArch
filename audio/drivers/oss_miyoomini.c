@@ -225,19 +225,13 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
 static bool oss_stop(void *data)
 {
    oss_audio_t *ossaudio = (oss_audio_t*)data;
-   
-   if (ossaudio->is_paused)
+   if (ossaudio->is_paused) {
       return true;
-
-   RARCH_LOG("[OSS audio]: Pausing\n");
-
-   /* Reset DSP to clear buffers */
-   #ifndef RETROFW
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_RESET, 0) < 0)
-      RARCH_WARN("[OSS]: Failed to reset DSP: %s\n", strerror(errno));
-   #endif
-
-   ossaudio->is_paused = true;
+   }
+   RARCH_LOG("[OSS audio]: Pausing.\n");
+   if (!ossaudio->is_paused) {
+      ossaudio->is_paused = true;
+   }
    return true;
 }
 
