@@ -57,7 +57,13 @@ typedef struct sdl_audio
    bool nonblock;
    bool is_paused;
    size_t bufsize;
-   
+
+   size_t frame_bytes;
+   size_t callback_frames;
+   size_t target_frames;
+   int drift_accum;
+   bool audioserver_mode;
+
    /* NEW: For better underrun handling */
    int16_t last_samples[2]; /* Cache last stereo sample to avoid pops */
    Uint8 silence_value;     /* SDL's silence value for this format */
@@ -66,30 +72,66 @@ typedef struct sdl_audio
 static void sdl_audio_playback_cb(void *data, Uint8 *stream, int len)
 {
    sdl_audio_t  *sdl = (sdl_audio_t*)data;
-   size_t      avail = FIFO_READ_AVAIL(sdl->buffer);
-   size_t       _len = (len > (int)avail) ? avail : (size_t)len;
-   
-   fifo_read(sdl->buffer, stream, _len);
-   
+   size_t frame_bytes   = sdl->frame_bytes ? sdl->frame_bytes : (size_t)4;
+   size_t frames_in_cb  = len / frame_bytes;
+   size_t avail_bytes   = FIFO_READ_AVAIL(sdl->buffer);
+   size_t avail_frames  = avail_bytes / frame_bytes;
+   size_t drop_frames   = 0;
+   size_t dup_frames    = 0;
+
+   if (sdl->audioserver_mode && sdl->callback_frames > 0)
+   {
+      int deviation = (int)avail_frames - (int)sdl->target_frames;
+      sdl->drift_accum += deviation;
+
+      if (sdl->drift_accum > (int)sdl->callback_frames)
+      {
+         drop_frames = 1;
+         sdl->drift_accum -= (int)sdl->callback_frames;
+      }
+      else if (sdl->drift_accum < -(int)sdl->callback_frames)
+      {
+         dup_frames = 1;
+         sdl->drift_accum += (int)sdl->callback_frames;
+      }
+   }
+
+   if (dup_frames > frames_in_cb)
+      dup_frames = frames_in_cb;
+
+   size_t frames_to_read = frames_in_cb - dup_frames;
+   size_t bytes_to_read  = frames_to_read * frame_bytes;
+
+   if (bytes_to_read > avail_bytes)
+   {
+      bytes_to_read  = avail_bytes - (avail_bytes % frame_bytes);
+      frames_to_read = bytes_to_read / frame_bytes;
+   }
+
+   fifo_read(sdl->buffer, stream, bytes_to_read);
+
 #ifdef HAVE_THREADS
    scond_signal(sdl->cond);
 #endif
 
+   size_t produced_bytes = bytes_to_read;
+
    /* IMPROVED: Handle underrun with better technique */
-   if (_len < len) {
-      size_t remaining = len - _len;
-      Uint8 *fill_start = stream + _len;
-      
+   if (produced_bytes < (size_t)len) {
+      size_t remaining = len - produced_bytes;
+      Uint8 *fill_start = stream + produced_bytes;
+
       /* If we have cached samples, repeat them to avoid pop */
-      if (_len >= 4) { /* At least one stereo sample was written */
-         int16_t *last_pos = (int16_t*)(stream + _len - 4);
+      if (produced_bytes >= frame_bytes) { /* At least one stereo sample was written */
+         int16_t *last_pos = (int16_t*)(stream + produced_bytes - frame_bytes);
          sdl->last_samples[0] = last_pos[0];
          sdl->last_samples[1] = last_pos[1];
-         
+
          /* Repeat last sample instead of silence */
          int16_t *fill_ptr = (int16_t*)fill_start;
-         size_t samples_to_fill = remaining / 4;
-         for (size_t i = 0; i < samples_to_fill; i++) {
+         size_t samples_to_fill = remaining / sizeof(int16_t);
+         size_t stereo_pairs    = samples_to_fill / 2;
+         for (size_t i = 0; i < stereo_pairs; i++) {
             fill_ptr[i * 2] = sdl->last_samples[0];
             fill_ptr[i * 2 + 1] = sdl->last_samples[1];
          }
@@ -97,11 +139,38 @@ static void sdl_audio_playback_cb(void *data, Uint8 *stream, int len)
          /* No data at all, use silence */
          memset(fill_start, sdl->silence_value, remaining);
       }
-   } else if (_len >= 4) {
+      produced_bytes = len;
+   } else if (produced_bytes >= frame_bytes) {
       /* Cache last sample for next potential underrun */
-      int16_t *last_pos = (int16_t*)(stream + _len - 4);
+      int16_t *last_pos = (int16_t*)(stream + produced_bytes - frame_bytes);
       sdl->last_samples[0] = last_pos[0];
       sdl->last_samples[1] = last_pos[1];
+   }
+
+   if (drop_frames > 0 && frame_bytes)
+   {
+      size_t dropped     = 0;
+      uint8_t scratch[16];
+
+      while (dropped < drop_frames && FIFO_READ_AVAIL(sdl->buffer) >= frame_bytes)
+      {
+         size_t remaining = frame_bytes;
+
+         while (remaining > 0)
+         {
+            size_t chunk = remaining;
+            if (chunk > sizeof(scratch))
+               chunk = sizeof(scratch);
+
+            fifo_read(sdl->buffer, scratch, chunk);
+            remaining -= chunk;
+         }
+
+         dropped++;
+      }
+
+      if (dropped < drop_frames && sdl->audioserver_mode && sdl->callback_frames > 0)
+         sdl->drift_accum += (int)sdl->callback_frames;
    }
 }
 
@@ -145,7 +214,19 @@ static void *sdl_audio_init(const char *device,
    spec.freq     = rate;
    spec.format   = AUDIO_S16SYS;
    spec.channels = 2;
-   spec.samples  = SDL_AUDIO_SAMPLES; /* Now 512 instead of 256 */
+
+   {
+      const char *env_samples = getenv("MIYOO_SDL_SAMPLES");
+      long env_value          = 0;
+
+      if (env_samples)
+         env_value = strtol(env_samples, NULL, 0);
+
+      if (env_value >= 128 && env_value <= 4096 && (env_value & (env_value - 1)) == 0)
+         spec.samples = (Uint16)env_value;
+      else
+         spec.samples = SDL_AUDIO_SAMPLES; /* Now 512 instead of 256 */
+   }
    spec.callback = sdl_audio_playback_cb;
    spec.userdata = sdl;
 
@@ -176,16 +257,39 @@ static void *sdl_audio_init(const char *device,
    sdl->last_samples[0] = 0;
    sdl->last_samples[1] = 0;
 
-   /* IMPROVED: Increase prefill from 50% to 66% for better initial buffering */
+   sdl->frame_bytes     = out.channels * sizeof(int16_t);
+   sdl->callback_frames = out.samples;
+   sdl->audioserver_mode = getValueMM("audiofix") != 0;
+   sdl->drift_accum      = 0;
+
    size_t prefill_size = (sdl->bufsize * 2) / 3;
-   tmp = calloc(1, prefill_size);
-   if (tmp) {
-      fifo_write(sdl->buffer, tmp, prefill_size);
-      free(tmp);
+   prefill_size -= prefill_size % (sdl->frame_bytes ? sdl->frame_bytes : 1);
+
+   if (sdl->frame_bytes)
+   {
+      size_t max_frames = sdl->bufsize / sdl->frame_bytes;
+      sdl->target_frames = prefill_size / sdl->frame_bytes;
+
+      if (sdl->target_frames < sdl->callback_frames)
+         sdl->target_frames = sdl->callback_frames;
+      if (max_frames > 0 && sdl->target_frames > max_frames)
+         sdl->target_frames = max_frames;
+   }
+   else
+      sdl->target_frames = 0;
+
+   /* IMPROVED: Increase prefill from 50% to 66% for better initial buffering */
+   if (prefill_size)
+   {
+      tmp = calloc(1, prefill_size);
+      if (tmp) {
+         fifo_write(sdl->buffer, tmp, prefill_size);
+         free(tmp);
+      }
    }
 
    {
-      bool audioserver_mode = getValueMM("audiofix") != 0;
+      bool audioserver_mode = sdl->audioserver_mode;
       if (!apply_miyoomini_volume(audioserver_mode))
          RARCH_WARN("[SDL audio]: Failed to apply Miyoo Mini volume settings.\n");
 
@@ -202,8 +306,16 @@ static void *sdl_audio_init(const char *device,
       else
          RARCH_ERR("[SDL audio]: Failed to compose brightness command.\n");
 
-      RARCH_LOG("[SDL audio]: %s audioserver\n",
-            audioserver_mode ? "with" : "without");
+      if (sdl->audioserver_mode && sdl->frame_bytes && sdl->callback_frames)
+      {
+         float target_ms = (float)(sdl->target_frames) * 1000.0f / (float)(*new_rate);
+         RARCH_LOG("[SDL audio]: with audioserver (callback=%zu frames, target=%.2f ms)\n",
+               sdl->callback_frames, target_ms);
+      }
+      else
+      {
+         RARCH_LOG("[SDL audio]: without audioserver\n");
+      }
    }
 
    SDL_PauseAudio(0);

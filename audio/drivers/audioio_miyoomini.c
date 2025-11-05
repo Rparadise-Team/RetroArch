@@ -76,29 +76,27 @@ static void *miao_init(const char *device,
    miaoaudio->audioserver_fd = -1;
 
    if (miaoaudio->audioserver_mode) {
-      /* Open FIFO in write-only mode, avoid blocking if server is absent */
-      miaoaudio->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY | O_NONBLOCK);
+      /* Open FIFO in write-only mode */
+      miaoaudio->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY);
       if (miaoaudio->audioserver_fd < 0) {
-         RARCH_WARN("[MIAO]: audioserver FIFO unavailable (errno=%d), falling back to direct mode.\n",
-               errno);
-         miaoaudio->audioserver_mode = false;
-         miaoaudio->audioserver_fd   = -1;
+         RARCH_ERR("[MIAO]: Failed to open audioserver FIFO (errno=%d)\n", errno);
+         free(miaoaudio);
+         return NULL;
       }
+      
+      /* Set initial volume using set_snd_level */
+      int target_vol = getVolumeMM();
+      set_snd_level(target_vol);
    }
 
    /* Continue with normal initialization */
    const int freqtable[] = { 8000,11025,12000,16000,22050,24000,32000,44100,48000 };
    for (uint32_t i=0; i<(sizeof(freqtable)/sizeof(int)); i++) {
       if (rate <= freqtable[i]) { miaoaudio->freq = freqtable[i]; break; }
-   }
-   if (rate > 48000)
-      miaoaudio->freq = 48000;
-
-   if (new_rate)
-      *new_rate = miaoaudio->freq;
-
+   } if (rate > 48000) miaoaudio->freq = 48000;
    if (miaoaudio->freq != rate) {
-      RARCH_WARN("[MIAO]: Requested sample rate not supported, adjusting output rate to %d Hz.\n", miaoaudio->freq);
+      *new_rate = miaoaudio->freq;
+      RARCH_WARN("[MIAO]: Requested sample rate not supported, adjusting output rate to %d Hz.\n", *new_rate);
    }
 
    miaoaudio->bufsize = (latency * miaoaudio->freq / 1000) << 2;
@@ -139,9 +137,6 @@ static void *miao_init(const char *device,
       RARCH_LOG("[MIAO]: With audioserver\n");
    }
 
-   if (!apply_miyoomini_volume(miaoaudio->audioserver_mode))
-      RARCH_WARN("[MIAO]: Failed to apply Miyoo Mini volume settings.\n");
-
    return miaoaudio;
 
 error:
@@ -155,34 +150,32 @@ error:
 static ssize_t miao_write(void *data, const void *buf, size_t size)
 {
    miao_audio_t *miaoaudio = (miao_audio_t*)data;
-   const uint8_t *write_buf = (const uint8_t*)buf;
-
-   if ((!size) || miaoaudio->is_paused)
-      return 0;
+   if ((!size)||(miaoaudio->is_paused)) return 0;
 
    /* If audioserver mode is active, write to FIFO */
    if (miaoaudio->audioserver_mode && miaoaudio->audioserver_fd >= 0) {
+      const uint8_t *write_buf = (const uint8_t*)buf;
       size_t total_written = 0;
-
+      
       /* Write in chunks, handle blocking intelligently */
       while (total_written < size) {
-         ssize_t ret = write(miaoaudio->audioserver_fd,
-               write_buf + total_written, size - total_written);
-
+         ssize_t ret = write(miaoaudio->audioserver_fd, write_buf + total_written, size - total_written);
+         
          if (ret > 0) {
             total_written += ret;
          } else if (ret < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                /* FIFO full, wait a bit if blocking mode */
-               if (miaoaudio->nonblock)
-                  return (total_written > 0) ? (ssize_t)total_written : 0;
-
+               if (miaoaudio->nonblock) {
+                  /* In nonblock mode, return what we wrote */
+                  return (total_written > 0) ? total_written : 0;
+               }
                /* Wait for FIFO to have space using select */
                fd_set wfds;
                struct timeval tv;
                FD_ZERO(&wfds);
                FD_SET(miaoaudio->audioserver_fd, &wfds);
-               tv.tv_sec  = 0;
+               tv.tv_sec = 0;
                tv.tv_usec = 10000; /* 10ms timeout */
                select(miaoaudio->audioserver_fd + 1, NULL, &wfds, NULL, &tv);
                continue;
@@ -199,93 +192,43 @@ static ssize_t miao_write(void *data, const void *buf, size_t size)
             break;
          }
       }
-      return (ssize_t)total_written;
+      return total_written;
    }
 
-   /* Normal mode operation (same as original, but chunked) */
-   size_t total_written = 0;
-
-   while (total_written < size) {
-      size_t chunk       = size - total_written;
-      MI_AO_ChnState_t status;
-      uint32_t usleepclock;
-
-      if (chunk > miaoaudio->bufsize)
-         chunk = miaoaudio->bufsize;
-
-      miaoaudio->AoSendFrame.apVirAddr[0] = (void*)(write_buf + total_written);
-
-      MI_AO_QueryChnStat(0, 0, &status);
-
-      int avail = (int)miaoaudio->bufsize - (int)status.u32ChnBusyNum;
-
-      if (avail < (int)chunk) {
-         if (miaoaudio->nonblock) {
-            if (avail <= 0)
-               break;
-            chunk = avail;
-         }
-      }
-
-      if (chunk == 0) {
-         if (miaoaudio->nonblock)
-            break;
-
-         /* Busy buffer, wait before retrying */
-         usleepclock = (uint64_t)status.u32ChnBusyNum * 1000000 /
-               (miaoaudio->freq << 2);
-#ifndef YIELD_WAIT
-         if (usleepclock)
-            usleep(usleepclock);
-#else
-         if (usleepclock > 0x2800)
-            usleep(usleepclock - 0x2800); /* 0.24ms margin */
-         {
-            const struct sched_param scprm = {0};
-            int policy = sched_getscheduler(0);
-            sched_setscheduler(0, SCHED_IDLE, &scprm);
-            do {
-               sched_yield();
-               MI_AO_QueryChnStat(0, 0, &status);
-            } while(status.u32ChnBusyNum > miaoaudio->bufsize);
-            sched_setscheduler(0, policy, &scprm);
-         }
-#endif
-         continue;
-      }
-
-      miaoaudio->AoSendFrame.u32Len = chunk;
+   /* Normal mode operation (same as original) */
+   miaoaudio->AoSendFrame.apVirAddr[0] = (void*)buf;
+   ssize_t write_bytes;
+   uint32_t usleepclock;
+   MI_AO_ChnState_t status;
+   MI_AO_QueryChnStat(0, 0, &status);
+   int avail = miaoaudio->bufsize - status.u32ChnBusyNum;
+   if ( (avail < size) && (!miaoaudio->nonblock) ) {
+      write_bytes = size;
+      miaoaudio->AoSendFrame.u32Len = write_bytes;
       MI_AO_SendFrame(0, 0, &miaoaudio->AoSendFrame, 0);
-
-      total_written += chunk;
-
-      if (!miaoaudio->nonblock) {
-         MI_AO_QueryChnStat(0, 0, &status);
-         if (status.u32ChnBusyNum > miaoaudio->bufsize) {
-            usleepclock = (uint64_t)(status.u32ChnBusyNum - miaoaudio->bufsize) *
-               1000000 / (miaoaudio->freq << 2);
+      MI_AO_QueryChnStat(0, 0, &status);
+      if (status.u32ChnBusyNum > miaoaudio->bufsize) {
+         usleepclock = (uint64_t)(status.u32ChnBusyNum - miaoaudio->bufsize) * 1000000 / (miaoaudio->freq << 2);
 #ifndef YIELD_WAIT
-            if (usleepclock)
-               usleep(usleepclock);
+         if ( usleepclock ) usleep(usleepclock);
 #else
-            if (usleepclock > 0x2800)
-               usleep(usleepclock - 0x2800); /* 0.24ms margin */
-            {
-               const struct sched_param scprm = {0};
-               int policy = sched_getscheduler(0);
-               sched_setscheduler(0, SCHED_IDLE, &scprm);
-               do {
-                  sched_yield();
-                  MI_AO_QueryChnStat(0, 0, &status);
-               } while(status.u32ChnBusyNum > miaoaudio->bufsize);
-               sched_setscheduler(0, policy, &scprm);
-            }
+         if ( usleepclock > 0x2800 ) usleep(usleepclock - 0x2800); /* 0.24ms margin */
+         const struct sched_param scprm = {0};
+         int policy = sched_getscheduler(0);
+         sched_setscheduler(0, SCHED_IDLE, &scprm);
+         do { sched_yield(); MI_AO_QueryChnStat(0, 0, &status);
+         } while(status.u32ChnBusyNum > miaoaudio->bufsize);
+         sched_setscheduler(0, policy, &scprm);
 #endif
-         }
       }
+   } else {
+      write_bytes = avail > size ? size : avail;
+      if (write_bytes > 0) {
+         miaoaudio->AoSendFrame.u32Len = write_bytes;
+         MI_AO_SendFrame(0, 0, &miaoaudio->AoSendFrame, 0);
+      } else return 0;
    }
-
-   return (ssize_t)total_written;
+   return write_bytes;
 }
 
 static bool miao_stop(void *data)
