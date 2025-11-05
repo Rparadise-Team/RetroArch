@@ -11,6 +11,7 @@
 #include "SDL_hints.h"
 #include "../SDL_sysrender.h"
 #include "../../video/mini/SDL_video_mini.h"
+#include "../../video/mini/SDL_gles_mini.h"
 
 typedef struct Mini_TextureData {
     void *data;
@@ -202,7 +203,7 @@ static int Mini_QueueCopy(SDL_Renderer *renderer, SDL_RenderCommand *cmd, SDL_Te
 
     debug("%s, texture=%p, src:%d,%d,%d,%d, dst:%d,%d,%d,%d, scale=%.2f, pitch=%d, pixels=%p\n", 
         __func__, texture, src.x, src.y, src.w, src.h, dst.x, dst.y, dst.w, dst.h, scale, pitch, pixels);
-    GFX_Copy(pixels, src, dst, pitch, 0, E_MI_GFX_ROTATE_180);
+    GFX_Copy(pixels, src, dst, pitch, 0, glGetMiniRotation());
     return 0;
 }
 

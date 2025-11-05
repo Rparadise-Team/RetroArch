@@ -22,8 +22,9 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_video.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_version.h>
 
 #include <gfx/video_frame.h>
 #include <string/stdstring.h>
@@ -77,6 +78,10 @@ struct sdl_miyoomini_video
 {
    SDL_Surface *screens[2];
    SDL_Surface *screen;
+   SDL_Window *window;
+   SDL_Renderer *renderer;
+   SDL_Texture *frame_tex;
+   SDL_Texture *menu_tex;
    uint16_t screen_fence[2];
    unsigned screen_index;
    void (*scale_func)(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp);
@@ -110,6 +115,82 @@ struct sdl_miyoomini_video
    unsigned msg_count;
    char msg_tmp[OSD_TEXT_LEN_MAX];
 };
+
+static void sdl_miyoomini_destroy_textures(sdl_miyoomini_video_t *vid)
+{
+   if (!vid)
+      return;
+
+   if (vid->frame_tex)
+   {
+      SDL_DestroyTexture(vid->frame_tex);
+      vid->frame_tex = NULL;
+   }
+
+   if (vid->menu_tex)
+   {
+      SDL_DestroyTexture(vid->menu_tex);
+      vid->menu_tex = NULL;
+   }
+}
+
+static bool sdl_miyoomini_ensure_texture(sdl_miyoomini_video_t *vid,
+      SDL_Texture **tex, unsigned width, unsigned height, bool rgb32)
+{
+   Uint32 format;
+
+   if (!vid || !tex || !vid->renderer || !width || !height)
+      return false;
+
+   format = rgb32 ? SDL_PIXELFORMAT_ARGB8888 : SDL_PIXELFORMAT_RGB565;
+
+   if (*tex)
+   {
+      Uint32 existing_format = 0;
+      int tex_w = 0, tex_h = 0;
+
+      if (SDL_QueryTexture(*tex, &existing_format, NULL, &tex_w, &tex_h) == 0 &&
+            existing_format == format &&
+            tex_w == (int)width && tex_h == (int)height)
+         return true;
+
+      SDL_DestroyTexture(*tex);
+      *tex = NULL;
+   }
+
+   *tex = SDL_CreateTexture(vid->renderer, format,
+         SDL_TEXTUREACCESS_STREAMING, width, height);
+
+   if (!*tex)
+   {
+      RARCH_ERR("[SDL2]: Failed to create Miyoo texture (%ux%u): %s\n",
+            width, height, SDL_GetError());
+      return false;
+   }
+
+   SDL_SetTextureBlendMode(*tex, SDL_BLENDMODE_NONE);
+   return true;
+}
+
+static bool sdl_miyoomini_present_texture(sdl_miyoomini_video_t *vid,
+      SDL_Texture *tex, const SDL_Rect *dst_rect)
+{
+   if (!vid || !vid->renderer || !tex)
+      return false;
+
+   SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
+   SDL_RenderClear(vid->renderer);
+
+   if (SDL_RenderCopy(vid->renderer, tex, NULL, dst_rect) < 0)
+   {
+      RARCH_ERR("[SDL2]: Failed to render Miyoo texture: %s\n",
+            SDL_GetError());
+      return false;
+   }
+
+   SDL_RenderPresent(vid->renderer);
+   return true;
+}
 
 /* Clear OSD text area, without video_rect, rotate180 */
 static void sdl_miyoomini_clear_msgarea(void* buf, unsigned x, unsigned y, unsigned w, unsigned h, unsigned lines) {
@@ -662,6 +743,7 @@ static void sdl_miyoomini_gfx_free(void *data) {
       GFX_SetFlipCallback(NULL, NULL); usleep(0x2000); /* wait for finish callback */
    }
    GFX_WaitAllDone();
+   sdl_miyoomini_destroy_textures(vid);
    for (unsigned i = 0; i < 2; i++) {
       if (vid->screen_fence[i]) {
          MI_GFX_WaitAllDone(FALSE, vid->screen_fence[i]);
@@ -678,6 +760,12 @@ static void sdl_miyoomini_gfx_free(void *data) {
 #ifdef HAVE_OVERLAY
    if (vid->overlay_surface) { GFX_SetupOverlaySurface(NULL); GFX_FreeSurface(vid->overlay_surface); }
 #endif
+   if (vid->renderer)
+   {
+      SDL_DestroyRenderer(vid->renderer);
+      vid->renderer = NULL;
+   }
+   vid->window = NULL;
    GFX_Quit();
 
    if (vid->osd_font) bitmapfont_free_lut(vid->osd_font);
@@ -929,6 +1017,17 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       vid->screen       = vid->screens[vid->screen_index];
    }
 
+   if (vid->renderer)
+   {
+      if (!sdl_miyoomini_ensure_texture(vid, &vid->frame_tex,
+               vid->frame_width, vid->frame_height, rgb32))
+      {
+         RARCH_ERR("[SDL2]: Failed to initialise Miyoo frame texture\n");
+         vid->screen = NULL;
+         return;
+      }
+   }
+
    if (!vid->menu_active && (viewport_changed || surface_size_changed || surface_format_changed))
       sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
 
@@ -963,6 +1062,36 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    if (!vid) return NULL;
 
    GFX_Init();
+   glSetMiniRotation(stOpt.eRotate);
+
+   vid->window = GFX_GetWindow();
+   if (!vid->window)
+   {
+      RARCH_ERR("[SDL2]: Failed to acquire Miyoo window handle\n");
+      goto error;
+   }
+
+   vid->renderer = SDL_GetRenderer(vid->window);
+   if (!vid->renderer)
+   {
+      unsigned renderer_flags = SDL_RENDERER_ACCELERATED;
+
+      if (video->vsync)
+         renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
+
+      vid->renderer = SDL_CreateRenderer(vid->window, -1, renderer_flags);
+      if (!vid->renderer)
+      {
+         RARCH_ERR("[SDL2]: Failed to create Miyoo renderer: %s\n",
+               SDL_GetError());
+         goto error;
+      }
+   }
+
+#if SDL_VERSION_ATLEAST(2,0,18)
+   SDL_RenderSetVSync(vid->renderer, video->vsync ? 1 : 0);
+#endif
+   SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
 
    vid->menuscreen = GFX_CreateRGBSurface(
          0, res_x, res_y, 16, 0, 0, 0, 0);
@@ -987,6 +1116,11 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->ff_frame_time_min = 16667;
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
+
+   if (vid->renderer &&
+         !sdl_miyoomini_ensure_texture(vid, &vid->menu_tex,
+               res_x, res_y, false))
+      goto error;
 
    GFX_SetFlipFlags(vid->vsync ? GFX_BLOCKING : 0);
 
@@ -1085,9 +1219,29 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          return false;
       /* SW Blit frame to GFX surface with scaling */
       vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
-      /* HW Blit GFX surface to Framebuffer and Flip */
-      GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
-      vid->screen_fence[vid->screen_index] = flipFence;
+      if (!sdl_miyoomini_ensure_texture(vid, &vid->frame_tex,
+               vid->frame_width, vid->frame_height, vid->rgb32))
+         return false;
+
+      if (SDL_UpdateTexture(vid->frame_tex, NULL,
+               vid->screen->pixels, vid->screen->pitch) < 0)
+      {
+         RARCH_ERR("[SDL2]: Failed to update Miyoo frame texture: %s\n",
+               SDL_GetError());
+         return false;
+      }
+
+      SDL_Rect dst_rect = {
+         (int)vid->video_x,
+         (int)vid->video_y,
+         (int)vid->video_w,
+         (int)vid->video_h
+      };
+
+      if (!sdl_miyoomini_present_texture(vid, vid->frame_tex, &dst_rect))
+         return false;
+
+      vid->screen_fence[vid->screen_index] = 0;
    } else {
       settings_t *settings       = config_get_ptr();
       if (unlikely(!settings))
@@ -1100,9 +1254,20 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          }
          SDL_SoftStretch(vid->menuscreen_rgui, NULL, vid->menuscreen, settings->bools.menu_rgui_fullscreen_stretch ? NULL : &rgui_menu_dest_rect);
       }
-      stOpt.eRotate = E_MI_GFX_ROTATE_180;
-      GFX_Flip(vid->menuscreen);
-      stOpt.eRotate = vid->rotate;
+      if (!sdl_miyoomini_ensure_texture(vid, &vid->menu_tex,
+               res_x, res_y, false))
+         return false;
+
+      if (SDL_UpdateTexture(vid->menu_tex, NULL,
+               vid->menuscreen->pixels, vid->menuscreen->pitch) < 0)
+      {
+         RARCH_ERR("[SDL2]: Failed to update Miyoo menu texture: %s\n",
+               SDL_GetError());
+         return false;
+      }
+
+      if (!sdl_miyoomini_present_texture(vid, vid->menu_tex, NULL))
+         return false;
    }
    return true;
 }
@@ -1147,6 +1312,10 @@ static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
    {
       vid->vsync              = vsync;
       GFX_SetFlipFlags(vsync ? GFX_BLOCKING : 0);
+#if SDL_VERSION_ATLEAST(2,0,18)
+      if (vid->renderer)
+         SDL_RenderSetVSync(vid->renderer, vsync ? 1 : 0);
+#endif
    }
 }
 
@@ -1192,6 +1361,7 @@ static void sdl_miyoomini_gfx_set_rotation(void *data, unsigned rotation) {
    }
    if (vid->rotate != stOpt.eRotate) {
       vid->rotate = stOpt.eRotate;
+      glSetMiniRotation(stOpt.eRotate);
       sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
    }
 }
