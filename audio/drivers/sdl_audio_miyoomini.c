@@ -28,6 +28,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <boolean.h>
 #include <rthreads/rthreads.h>
@@ -183,31 +184,26 @@ static void *sdl_audio_init(const char *device,
       free(tmp);
    }
 
-   int audiofix = getValueMM("audiofix");
-   if (audiofix == 0) {
-      int target_vol = getVolumeMM();
-      int volumeMM = setVolumeMM();
-      char command[100];
-      sprintf(command, "tinymix set 6 %d", volumeMM);
-      system(command); //set volume without audiofix
-      
-      set_snd_level(target_vol);
-      
+   {
+      bool audioserver_mode = getValueMM("audiofix") != 0;
+      if (!apply_miyoomini_volume(audioserver_mode))
+         RARCH_WARN("[SDL audio]: Failed to apply Miyoo Mini volume settings.\n");
+
       int brightnessMM = setBrightnessMM();
       char command2[100];
-      sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
-      system(command2);
+      int written = snprintf(command2, sizeof(command2),
+            "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
+      if (written >= 0 && written < (int)sizeof(command2))
+      {
+         int ret = system(command2);
+         if (ret != 0)
+            RARCH_WARN("[SDL audio]: Brightness command returned %d.\n", ret);
+      }
+      else
+         RARCH_ERR("[SDL audio]: Failed to compose brightness command.\n");
 
-      RARCH_LOG("[SDL audio]: without audioserver\n");
-   } else {
-      int target_vol = getVolumeMM();
-      set_snd_level(target_vol);
-      int brightnessMM = setBrightnessMM();
-      char command2[100];
-      sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
-      system(command2);
-
-      RARCH_LOG("[SDL audio]: with audioserver\n");
+      RARCH_LOG("[SDL audio]: %s audioserver\n",
+            audioserver_mode ? "with" : "without");
    }
 
    SDL_PauseAudio(0);
@@ -279,12 +275,15 @@ static bool sdl_audio_stop(void *data)
 
    if (!sdl->is_paused) {
       sdl->is_paused = true;
-      slock_lock(sdl->lock);
 
 #ifdef HAVE_THREADS
-      scond_broadcast(sdl->cond);
+      if (sdl->lock)
+         slock_lock(sdl->lock);
+      if (sdl->cond)
+         scond_broadcast(sdl->cond);
+      if (sdl->lock)
+         slock_unlock(sdl->lock);
 #endif
-      slock_unlock(sdl->lock);
 
       SDL_PauseAudio(1);
       fifo_clear(sdl->buffer);

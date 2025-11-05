@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_video.h>
@@ -68,7 +69,10 @@
 typedef struct sdl_miyoomini_video sdl_miyoomini_video_t;
 struct sdl_miyoomini_video
 {
+   SDL_Surface *screens[2];
    SDL_Surface *screen;
+   uint16_t screen_fence[2];
+   unsigned screen_index;
    void (*scale_func)(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp);
    /* Scaling/padding/cropping parameters */
    unsigned content_width;
@@ -652,7 +656,17 @@ static void sdl_miyoomini_gfx_free(void *data) {
       GFX_SetFlipCallback(NULL, NULL); usleep(0x2000); /* wait for finish callback */
    }
    GFX_WaitAllDone();
-   if (vid->screen) GFX_FreeSurface(vid->screen);
+   for (unsigned i = 0; i < 2; i++) {
+      if (vid->screen_fence[i]) {
+         MI_GFX_WaitAllDone(FALSE, vid->screen_fence[i]);
+         vid->screen_fence[i] = 0;
+      }
+      if (vid->screens[i]) {
+         GFX_FreeSurface(vid->screens[i]);
+         vid->screens[i] = NULL;
+      }
+   }
+   vid->screen = NULL;
    if (vid->menuscreen) GFX_FreeSurface(vid->menuscreen);
    if (vid->menuscreen_rgui) GFX_FreeSurface(vid->menuscreen_rgui);
 #ifdef HAVE_OVERLAY
@@ -719,6 +733,16 @@ static void sdl_miyoomini_input_driver_init(
 }
 
 static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width, unsigned height, bool rgb32) {
+   unsigned old_video_x      = vid->video_x;
+   unsigned old_video_y      = vid->video_y;
+   unsigned old_video_w      = vid->video_w;
+   unsigned old_video_h      = vid->video_h;
+   unsigned old_frame_width  = vid->frame_width;
+   unsigned old_frame_height = vid->frame_height;
+   SDL_Surface *ref_screen   = vid->screen ? vid->screen :
+         (vid->screens[0] ? vid->screens[0] : vid->screens[1]);
+   unsigned old_bpp          = ref_screen ? ref_screen->format->BitsPerPixel : 0;
+
    vid->content_width  = width;
    vid->content_height = height;
    if (vid->rotate & 1) { width = vid->content_height; height = vid->content_width; }
@@ -779,8 +803,12 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
          if (scale_ymul > 4) scale_ymul = 4;
       }
    }
-   vid->frame_width  = scale_xmul ? vid->content_width  * scale_xmul : vid->video_w;
-   vid->frame_height = scale_ymul ? vid->content_height * scale_ymul : vid->video_h;
+
+   unsigned new_frame_width  = scale_xmul ? vid->content_width  * scale_xmul : vid->video_w;
+   unsigned new_frame_height = scale_ymul ? vid->content_height * scale_ymul : vid->video_h;
+
+   vid->frame_width  = new_frame_width;
+   vid->frame_height = new_frame_height;
 
    static void (* const func[2][3][4])(void*, void* __restrict, void* __restrict, uint32_t, uint32_t, uint32_t, uint32_t) = {
       { { &scale1x1_16, &scale1x2_16, &scale1x3_16, &scale1x4_16 },
@@ -799,17 +827,56 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
 
    //RARCH_LOG("[SCALE] cw:%d ch:%d fw:%d fh:%d x:%d y:%d w:%d h:%d xmul:%d ymul:%d\n",vid->content_width,vid->content_height,
    //   vid->frame_width,vid->frame_height,vid->video_x,vid->video_y,vid->video_w,vid->video_h,scale_xmul,scale_ymul);
+   bool viewport_changed = (vid->video_x != old_video_x) ||
+                          (vid->video_y != old_video_y) ||
+                          (vid->video_w != old_video_w) ||
+                          (vid->video_h != old_video_h);
 
-   /* Attempt to change video mode */
-   GFX_WaitAllDone();
-   if (vid->screen) GFX_FreeSurface(vid->screen);
-   vid->screen = GFX_CreateRGBSurface(
-         0, vid->frame_width, vid->frame_height, rgb32 ? 32 : 16, 0, 0, 0, 0);
+   bool surface_size_changed   = (vid->frame_width  != old_frame_width) ||
+                                (vid->frame_height != old_frame_height);
+   bool surface_format_changed = ((rgb32 ? 32u : 16u) != old_bpp);
 
-   /* Check whether selected display mode is valid */
-   if (unlikely(!vid->screen)) RARCH_ERR("[MI_GFX]: Failed to init GFX surface\n");
-   /* Clear border */
-   else if (!vid->menu_active) sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+   if (!vid->screens[0] || !vid->screens[1] || surface_size_changed || surface_format_changed) {
+      bool ok = true;
+      GFX_WaitAllDone();
+      for (unsigned i = 0; i < 2; i++) {
+         if (vid->screen_fence[i]) {
+            MI_GFX_WaitAllDone(FALSE, vid->screen_fence[i]);
+            vid->screen_fence[i] = 0;
+         }
+         if (vid->screens[i]) {
+            GFX_FreeSurface(vid->screens[i]);
+            vid->screens[i] = NULL;
+         }
+      }
+      for (unsigned i = 0; i < 2; i++) {
+         vid->screens[i] = GFX_CreateRGBSurface(
+               0, vid->frame_width, vid->frame_height, rgb32 ? 32 : 16, 0, 0, 0, 0);
+         vid->screen_fence[i] = 0;
+         if (!vid->screens[i]) {
+            ok = false;
+            break;
+         }
+      }
+      if (!ok) {
+         RARCH_ERR("[MI_GFX]: Failed to init GFX surface\n");
+         for (unsigned i = 0; i < 2; i++) {
+            if (vid->screens[i]) {
+               GFX_FreeSurface(vid->screens[i]);
+               vid->screens[i] = NULL;
+            }
+         }
+         vid->screen = NULL;
+         return;
+      }
+      vid->screen_index = 1;
+      vid->screen       = vid->screens[vid->screen_index];
+   }
+
+   if (!vid->menu_active && (viewport_changed || surface_size_changed || surface_format_changed))
+      sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+
+   vid->rgb32 = rgb32;
 }
 
 static void *sdl_miyoomini_gfx_init(const video_info_t *video,
@@ -941,12 +1008,23 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
                     (vid->content_height != height) )) {
          sdl_miyoomini_set_output(vid, width, height, vid->rgb32);
       }
-      /* WaitAllDone to make sure the most recent frame is drawn complete */
-      MI_GFX_WaitAllDone(FALSE, flipFence);
+      {
+         unsigned next_index = vid->screen_index ^ 1;
+         unsigned target_slot = vid->screens[next_index] ? next_index : vid->screen_index;
+         if (vid->screen_fence[target_slot]) {
+            MI_GFX_WaitAllDone(FALSE, vid->screen_fence[target_slot]);
+            vid->screen_fence[target_slot] = 0;
+         }
+         vid->screen_index = target_slot;
+         vid->screen       = vid->screens[target_slot];
+      }
+      if (unlikely(!vid->screen))
+         return false;
       /* SW Blit frame to GFX surface with scaling */
       vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
       /* HW Blit GFX surface to Framebuffer and Flip */
       GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+      vid->screen_fence[vid->screen_index] = flipFence;
    } else {
       scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels, RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0,0);
       stOpt.eRotate = E_MI_GFX_ROTATE_180;

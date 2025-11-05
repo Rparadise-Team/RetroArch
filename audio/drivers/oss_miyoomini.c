@@ -1,27 +1,28 @@
-/*  RetroArch - A frontend for libretro.
- *  Copyright (C) 2010-2014 - Hans-Kristian Arntzen
- *  Copyright (C) 2011-2017 - Daniel De Matteis
+/* RetroArch - A frontend for libretro.
+ * Copyright (C) 2010-2014 - Hans-Kristian Arntzen
+ * Copyright (C) 2011-2017 - Daniel De Matteis
  *
- *  RetroArch is free software: you can redistribute it and/or modify it under the terms
- *  of the GNU General Public License as published by the Free Software Found-
- *  ation, either version 3 of the License, or (at your option) any later version.
+ * RetroArch is free software: you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License as published by the Free Software Found-
+ * ation, either version 3 of the License, or (at your option) any later version.
  *
- *  RetroArch is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- *  PURPOSE.  See the GNU General Public License for more details.
+ * RetroArch is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See the GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along with RetroArch.
- *  If not, see <http://www.gnu.org/licenses/>.
- */
+ * You should have received a copy of the GNU General Public License along with RetroArch.
+ * If not, see <http://www.gnu.org/licenses/>.
+*/
 
 /*
-      Modified OSS driver for miyoomini - AGGRESSIVE VERSION for gpSP
-      
-      Additional improvements for gpSP crackling:
-      - Doubled fragment count (better buffering for resampling)
-      - Minimum 3 fragments (was 2)
-      - Better write error recovery
-      - Proper handling of partial writes
+Modified OSS driver for miyoomini
+
+Additional improvements for gpSP crackling:
+- Doubled fragment count (better buffering for resampling)
+- Minimum 3 fragments (was 2)
+- Better write error recovery
+- Proper handling of partial writes
+- Base from 1.19.0 stable version
 */
 
 /* To use audioserver, must use open instead of open64 */
@@ -53,294 +54,282 @@
 
 typedef struct oss_audio
 {
-   int fd;
-   bool is_paused;
-   bool nonblock;
-   bool audioserver;
-   int16_t last_samples[2];
-   size_t written_bytes;  /* Track total written for debugging */
+	int fd;
+	bool is_paused;
+	bool nonblock;
+	bool audioserver;
+	int16_t last_samples[2];
+	size_t written_bytes;
 } oss_audio_t;
 
 static void *oss_init(const char *device,
-      unsigned rate, unsigned latency,
-      unsigned block_frames,
-      unsigned *new_out_rate)
+		unsigned rate, unsigned latency,
+		unsigned block_frames,
+		unsigned *new_out_rate)
 {
-   int frags, frag, channels, format, new_rate;
-   oss_audio_t *ossaudio  = (oss_audio_t*)calloc(1, sizeof(oss_audio_t));
-   const char *oss_device = device ? device : DEFAULT_OSS_DEV;
+	int frags, frag, channels, format, new_rate;
+	oss_audio_t *ossaudio = (oss_audio_t*)calloc(1, sizeof(oss_audio_t));
+	const char *oss_device = device ? device : DEFAULT_OSS_DEV;
 
-   if (!ossaudio)
-      return NULL;
+	if (!ossaudio)
+		return NULL;
 
-   ossaudio->last_samples[0] = 0;
-   ossaudio->last_samples[1] = 0;
-   ossaudio->written_bytes = 0;
+	ossaudio->fd = -1;
+	ossaudio->last_samples[0] = 0;
+	ossaudio->last_samples[1] = 0;
+	ossaudio->written_bytes = 0;
 
-   /* Use __open first for audioserver detection */
-   extern int __open(const char *file, int oflag);
-   
-   if ((ossaudio->fd = __open(oss_device, O_WRONLY)) < 0) {
-      if ((ossaudio->fd = open(oss_device, O_WRONLY)) < 0) {
-         free(ossaudio);
-         RARCH_ERR("[OSS]: Failed to open %s: %s\n", oss_device, strerror(errno));
-         return NULL;
-      }
-      ossaudio->audioserver = true;
-      new_rate = rate;
-      
-      RARCH_LOG("[OSS]: Using audioserver\n");
-   } else {
-      /* Stock OSS supports 48k, 32k, 16k, 8k only */
-      if (rate > 32000) new_rate = 48000;
-      else if (rate > 16000) new_rate = 32000;
-      else if (rate > 8000) new_rate = 16000;
-      else new_rate = 8000;
-      
-      int volumeMM = setVolumeMM();
-      char command[100];
-      sprintf(command, "tinymix set 6 %d", volumeMM);
-      system(command);
-      
-      RARCH_LOG("[OSS]: Without audioserver\n");
-   }
+	/* Use __open first for audioserver detection */
+	extern int __open(const char *file, int oflag);
+	if ((ossaudio->fd = __open(oss_device, O_WRONLY)) < 0) {
+		if ((ossaudio->fd = open(oss_device, O_WRONLY)) < 0) {
+			RARCH_ERR("[OSS]: Failed to open %s: %s\n", oss_device, strerror(errno));
+			free(ossaudio);
+			return NULL;
+		}
+		ossaudio->audioserver = true;
+		new_rate = rate;
+		RARCH_LOG("[OSS]: Using audioserver\n");
+	} else {
+		/* Stock OSS supports 48k, 32k, 16k, 8k only */
+		if (rate > 32000) new_rate = 48000;
+		else if (rate > 16000) new_rate = 32000;
+		else if (rate > 8000) new_rate = 16000;
+		else new_rate = 8000;
+		RARCH_LOG("[OSS]: Without audioserver\n");
+	}
 
-   /* AGGRESSIVE: Much larger buffer for heavy resampling (like gpSP 65536->48000) */
-   /* Original formula: (latency * new_rate * 4) / (1000 * (1 << 10)) */
-   /* New: Double the fragments AND add 2 extra */
-   frags = (((latency * new_rate * 4) / (1000 * (1 << 10))) * 2) + 2;
-   if (frags < 3) frags = 3; /* Minimum 3 fragments (was 2) */
-   
-   frag = (frags << 16) | 10;
+	/* AGGRESSIVE: Much larger buffer for heavy resampling (like gpSP 65536->48000) */
+	/* Original formula: (latency * new_rate * 4) / (1000 * (1 << 10)) */
+	/* New: Double the fragments AND add 2 extra */
+	frags = (((latency * new_rate * 4) / (1000 * (1 << 10))) * 2) + 2;
+	if (frags < 3) frags = 3;  /* Minimum 3 fragments (was 2) */
+	frag = (frags << 16) | 10;
 
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFRAGMENT, &frag) < 0)
-      RARCH_WARN("[OSS]: Cannot set fragment sizes. Latency might not be as expected\n");
+	if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFRAGMENT, &frag) < 0)
+		RARCH_WARN("[OSS]: Cannot set fragment sizes. Latency might not be as expected\n");
 
-   channels = 2;
-   format = AFMT_S16_LE;
+	channels = 2;
+	format = AFMT_S16_LE;
 
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_CHANNELS, &channels) < 0) {
-      RARCH_ERR("[OSS]: Failed to set channels: %s\n", strerror(errno));
-      goto error;
-   }
+	if (ioctl(ossaudio->fd, SNDCTL_DSP_CHANNELS, &channels) < 0) {
+		RARCH_ERR("[OSS]: Failed to set channels: %s\n", strerror(errno));
+		goto error;
+	}
 
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFMT, &format) < 0) {
-      RARCH_ERR("[OSS]: Failed to set format: %s\n", strerror(errno));
-      goto error;
-   }
+	if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFMT, &format) < 0) {
+		RARCH_ERR("[OSS]: Failed to set format: %s\n", strerror(errno));
+		goto error;
+	}
 
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_SPEED, &new_rate) < 0) {
-      RARCH_ERR("[OSS]: Failed to set speed: %s\n", strerror(errno));
-      goto error;
-   }
+	if (ioctl(ossaudio->fd, SNDCTL_DSP_SPEED, &new_rate) < 0) {
+		RARCH_ERR("[OSS]: Failed to set speed: %s\n", strerror(errno));
+		goto error;
+	}
 
-   if (new_rate != (int)rate)
-   {
-      RARCH_WARN("[OSS]: Requested sample rate %u not supported. Adjusting output rate to %d Hz\n", 
-                 rate, new_rate);
-      *new_out_rate = new_rate;
-   }
+	if (!ossaudio->audioserver) {
+		/* mi_ao init is required for stock oss */
+		MI_AUDIO_Attr_t attr;
+		memset(&attr, 0, sizeof(attr));
+		attr.eSamplerate = (MI_AUDIO_SampleRate_e)new_rate;
+		attr.eSoundmode = E_MI_AUDIO_SOUND_MODE_STEREO;
+		attr.u32ChnCnt = 2;
+		attr.u32PtNumPerFrm = 256;
+		MI_AO_SetPubAttr(0, &attr);
+	}
 
-   if (!ossaudio->audioserver) {
-      /* mi_ao init is required for stock oss */
-      MI_AUDIO_Attr_t attr;
-      memset(&attr, 0, sizeof(attr));
-      attr.eSamplerate = new_rate;
-      attr.eSoundmode = E_MI_AUDIO_SOUND_MODE_STEREO;
-      attr.u32ChnCnt = 2;
-      attr.u32PtNumPerFrm = 256;
-      MI_AO_SetPubAttr(0, &attr);
-   }
+	if (new_out_rate)
+		*new_out_rate = new_rate;
 
-   RARCH_LOG("[OSS]: Initialized at %d Hz (direct mode, %d fragments)\n", 
-             new_rate, frags);
-
-   return ossaudio;
+	RARCH_LOG("[OSS]: Initialized at %d Hz (%s, %d fragments)\n",
+			new_rate,
+			ossaudio->audioserver ? "audioserver" : "direct mode",
+			frags);
+	return ossaudio;
+	
+	if (!apply_miyoomini_volume(ossaudio->audioserver))
+	RARCH_WARN("[OSS]: Failed to apply Miyoo Mini volume settings.\n");
 
 error:
-   close(ossaudio->fd);
-   free(ossaudio);
-   return NULL;
+	if (ossaudio->fd >= 0)
+		close(ossaudio->fd);
+	free(ossaudio);
+	return NULL;
 }
 
 static ssize_t oss_write(void *data, const void *buf, size_t size)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   ssize_t ret;
-   const uint8_t *write_buf = (const uint8_t*)buf;
-   size_t written = 0;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
+	ssize_t ret;
+	const uint8_t *write_buf = (const uint8_t*)buf;
+	size_t written = 0;
 
-   /* For stock oss, no playback during fast forward */
-   if (size == 0 || ((!ossaudio->audioserver) && ossaudio->nonblock))
-      return 0;
+	/* For stock oss, no playback during fast forward */
+	if (size == 0 || ((!ossaudio->audioserver) && ossaudio->nonblock))
+		return 0;
 
-   /* IMPROVED: Handle partial writes properly */
-   while (written < size) {
-      ret = write(ossaudio->fd, write_buf + written, size - written);
+	/* IMPROVED: Handle partial writes properly */
+	while (written < size) {
+		ret = write(ossaudio->fd, write_buf + written, size - written);
+		if (ret < 0) {
+			if (errno == EAGAIN) {
+				if (ossaudio->nonblock || (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK)) {
+					/* In nonblock mode, return what we've written so far */
+					if (written > 0)
+						return written;
+					return 0;
+				}
+				/* In blocking mode, retry */
+				usleep(1000);  /* 1ms */
+				continue;
+			}
+			if (errno == EINTR) {
+				/* Interrupted, retry */
+				continue;
+			}
+			/* Real error */
+			RARCH_ERR("[OSS]: Write error: %s\n", strerror(errno));
+			return -1;
+		}
+		if (ret == 0) {
+			/* Device returned 0, something is wrong */
+			RARCH_WARN("[OSS]: Write returned 0 bytes\n");
+			break;
+		}
+		written += ret;
+		ossaudio->written_bytes += ret;
+	}
 
-      if (ret < 0) {
-         if (errno == EAGAIN) {
-            if (ossaudio->nonblock || (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK)) {
-               /* In nonblock mode, return what we've written so far */
-               if (written > 0)
-                  return written;
-               return 0;
-            }
-            /* In blocking mode, retry */
-            usleep(1000); /* 1ms */
-            continue;
-         }
-         
-         if (errno == EINTR) {
-            /* Interrupted, retry */
-            continue;
-         }
-         
-         /* Real error */
-         RARCH_ERR("[OSS]: Write error: %s\n", strerror(errno));
-         return -1;
-      }
+	/* Cache last stereo sample */
+	if (written >= 4) {
+		const int16_t *samples = (const int16_t*)buf;
+		size_t sample_count = written / 4;
+		ossaudio->last_samples[0] = samples[(sample_count - 1) * 2];
+		ossaudio->last_samples[1] = samples[(sample_count - 1) * 2 + 1];
+	}
 
-      if (ret == 0) {
-         /* Device returned 0, something is wrong */
-         RARCH_WARN("[OSS]: Write returned 0 bytes\n");
-         break;
-      }
-
-      written += ret;
-      ossaudio->written_bytes += ret;
-   }
-
-   /* Cache last stereo sample */
-   if (written >= 4) {
-      const int16_t *samples = (const int16_t*)buf;
-      size_t sample_count = written / 4;
-      ossaudio->last_samples[0] = samples[(sample_count - 1) * 2];
-      ossaudio->last_samples[1] = samples[(sample_count - 1) * 2 + 1];
-   }
-
-   return written;
+	return written;
 }
 
 static bool oss_stop(void *data)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   if (ossaudio->is_paused) {
-      return true;
-   }
-   RARCH_LOG("[OSS audio]: Pausing.\n");
-   if (!ossaudio->is_paused) {
-      ossaudio->is_paused = true;
-   }
-   return true;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
+
+	if (ossaudio->is_paused) {
+		return true;
+	}
+
+	RARCH_LOG("[OSS audio]: Pausing.\n");
+	if (!ossaudio->is_paused) {
+		ossaudio->is_paused = true;
+	}
+
+	return true;
 }
 
 static bool oss_start(void *data, bool is_shutdown)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   
-   if (!ossaudio)
-      return false;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
 
-   if (is_shutdown)
-      return true;
+	if (!ossaudio)
+		return false;
 
-   if (ossaudio->is_paused) {
-      RARCH_LOG("[OSS audio]: Resuming\n");
-   }
+	if (is_shutdown)
+		return true;
 
-   ossaudio->is_paused = false;
-   return true;
+	if (ossaudio->is_paused) {
+		RARCH_LOG("[OSS audio]: Resuming\n");
+	}
+	
+	if (!apply_miyoomini_volume(ossaudio->audioserver))
+		RARCH_WARN("[OSS]: Failed to apply Miyoo Mini volume settings.\n");
+
+	ossaudio->is_paused = false;
+	return true;
 }
 
 static bool oss_alive(void *data)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   return ossaudio && !ossaudio->is_paused;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
+	return ossaudio && !ossaudio->is_paused;
 }
 
 static void oss_set_nonblock_state(void *data, bool state)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   int flags, rc;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
+	int flags, rc;
 
-   if (!ossaudio)
-      return;
+	if (!ossaudio)
+		return;
 
-   flags = fcntl(ossaudio->fd, F_GETFL);
-   
-   if (state)
-      rc = fcntl(ossaudio->fd, F_SETFL, flags | O_NONBLOCK);
-   else
-      rc = fcntl(ossaudio->fd, F_SETFL, flags & (~O_NONBLOCK));
-   
-   if (rc != 0)
-      RARCH_WARN("[OSS]: Could not set nonblocking state: %s\n", strerror(errno));
+	flags = fcntl(ossaudio->fd, F_GETFL);
+	if (state)
+		rc = fcntl(ossaudio->fd, F_SETFL, flags | O_NONBLOCK);
+	else
+		rc = fcntl(ossaudio->fd, F_SETFL, flags & (~O_NONBLOCK));
 
-   ossaudio->nonblock = state;
+	if (rc != 0)
+		RARCH_WARN("[OSS]: Could not set nonblocking state: %s\n", strerror(errno));
+
+	ossaudio->nonblock = state;
 }
 
 static void oss_free(void *data)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
 
-   if (!ossaudio)
-      return;
+	if (!ossaudio)
+		return;
 
-   RARCH_LOG("[OSS]: Closing (wrote %zu bytes total)\n", ossaudio->written_bytes);
+	RARCH_LOG("[OSS]: Closing (wrote %zu bytes total)\n", ossaudio->written_bytes);
 
-   /* Clean reset before closing */
-   #ifndef RETROFW
-   ioctl(ossaudio->fd, SNDCTL_DSP_RESET, 0);
-   #endif
-
-   close(ossaudio->fd);
-   free(ossaudio);
+	close(ossaudio->fd);
+	free(ossaudio);
 }
 
 static size_t oss_write_avail(void *data)
 {
-   audio_buf_info info;
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
+	audio_buf_info info;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
 
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
-      return 0;
+	if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
+		return 0;
 
-   return info.bytes;
+	return info.bytes;
 }
 
 static size_t oss_buffer_size(void *data)
 {
-   audio_buf_info info;
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
+	audio_buf_info info;
+	oss_audio_t *ossaudio = (oss_audio_t*)data;
 
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
-   {
-      RARCH_WARN("[OSS]: SNDCTL_DSP_GETOSPACE failed: %s\n", strerror(errno));
-      return 1;
-   }
+	if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
+	{
+		RARCH_WARN("[OSS]: SNDCTL_DSP_GETOSPACE failed: %s\n", strerror(errno));
+		return 1;
+	}
 
-   return info.fragsize * info.fragstotal;
+	return info.fragsize * info.fragstotal;
 }
 
 static bool oss_use_float(void *data)
 {
-   (void)data;
-   return false;
+	(void)data;
+	return false;
 }
 
 audio_driver_t audio_oss = {
-   oss_init,
-   oss_write,
-   oss_stop,
-   oss_start,
-   oss_alive,
-   oss_set_nonblock_state,
-   oss_free,
-   oss_use_float,
-   "oss",
-   NULL,
-   NULL,
-   oss_write_avail,
-   oss_buffer_size,
+	oss_init,
+	oss_write,
+	oss_stop,
+	oss_start,
+	oss_alive,
+	oss_set_nonblock_state,
+	oss_free,
+	oss_use_float,
+	"oss",
+	NULL,
+	NULL,
+	oss_write_avail,
+	oss_buffer_size,
 };
