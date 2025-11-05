@@ -1,0 +1,3914 @@
+diff --git a/Makefile.mini b/Makefile.mini
+index c09a7feed..388cc3660 100644
+--- a/Makefile.mini
++++ b/Makefile.mini
+@@ -12,7 +12,7 @@ CC = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
+ CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
+ STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
+ 
+-SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
++SDL2_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl2-config
+ FREETYPE_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+ 
+ INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
+@@ -142,12 +142,13 @@ LDFLAGS := -Wl,--gc-sections -s
+ INCLUDE_DIRS = -I$(INC_DIR)
+ LIBRARY_DIRS = -L$(LIB_DIR)
+ DEFINES := -DRARCH_INTERNAL -D_FILE_OFFSET_BITS=64 -UHAVE_STATIC_DUMMY
++DEFINES += -DHAVE_SDL2
+ DEFINES += -DHAVE_C99=1 -DHAVE_CXX=1
+ DEFINES += -DHAVE_GETOPT_LONG=1 -DHAVE_STRCASESTR=1 -DHAVE_DYNAMIC=1 -DHAVE_OSS -DHAVE_AUDIOIO
+ DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ARM_NEON_ASM_OPTIMIZATIONS
+ 
+-SDL_DINGUX_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
+-SDL_DINGUX_LIBS := $(shell $(SDL_CONFIG) --libs)
++SDL_DINGUX_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
++SDL_DINGUX_LIBS := $(shell $(SDL2_CONFIG) --libs)
+ FREETYPE_CFLAGS := $(shell $(FREETYPE_CONFIG) --cflags)
+ FREETYPE_LIBS := $(shell $(FREETYPE_CONFIG) --libs)
+ MMAP_LIBS = -lc
+diff --git a/Makefile.miniflip b/Makefile.miniflip
+index 3a2a9b98b..1b8fbbd0a 100644
+--- a/Makefile.miniflip
++++ b/Makefile.miniflip
+@@ -12,7 +12,7 @@ CC = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
+ CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
+ STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
+ 
+-SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
++SDL2_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl2-config
+ FREETYPE_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+ 
+ INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
+@@ -144,13 +144,14 @@ LDFLAGS := -Wl,--gc-sections -s
+ INCLUDE_DIRS = -I$(INC_DIR)
+ LIBRARY_DIRS = -L$(LIB_DIR)
+ DEFINES := -DRARCH_INTERNAL -D_FILE_OFFSET_BITS=64 -UHAVE_STATIC_DUMMY
++DEFINES += -DHAVE_SDL2
+ DEFINES += -DHAVE_C99=1 -DHAVE_CXX=1
+ DEFINES += -DHAVE_GETOPT_LONG=1 -DHAVE_STRCASESTR=1 -DHAVE_DYNAMIC=1 -DHAVE_SSL -DHAVE_SYSTEMMBEDTLS -DHAVE_OSS -DHAVE_AUDIOIO
+ DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ARM_NEON_ASM_OPTIMIZATIONS
+ DEFINES += -DHAVE_NETWORKING -DHAVE_IFINFO -DHAVE_ONLINE_UPDATER -DHAVE_UPDATE_ASSETS -DHAVE_UPDATE_CORES -DHAVE_NETWORK_CMD -DHAVE_NETPLAYDISCOVERY -DHAVE_UPDATE_CORE_INFO
+ 
+-SDL_DINGUX_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
+-SDL_DINGUX_LIBS := $(shell $(SDL_CONFIG) --libs)
++SDL_DINGUX_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
++SDL_DINGUX_LIBS := $(shell $(SDL2_CONFIG) --libs)
+ FREETYPE_CFLAGS := $(shell $(FREETYPE_CONFIG) --cflags)
+ FREETYPE_LIBS := $(shell $(FREETYPE_CONFIG) --libs)
+ MMAP_LIBS = -lc
+diff --git a/Makefile.miniv4 b/Makefile.miniv4
+index 2be03ca5e..021463d5d 100644
+--- a/Makefile.miniv4
++++ b/Makefile.miniv4
+@@ -12,7 +12,7 @@ CC = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
+ CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
+ STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
+ 
+-SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
++SDL2_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl2-config
+ FREETYPE_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+ 
+ INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
+@@ -143,12 +143,13 @@ LDFLAGS := -Wl,--gc-sections -s
+ INCLUDE_DIRS = -I$(INC_DIR)
+ LIBRARY_DIRS = -L$(LIB_DIR)
+ DEFINES := -DRARCH_INTERNAL -D_FILE_OFFSET_BITS=64 -UHAVE_STATIC_DUMMY
++DEFINES += -DHAVE_SDL2
+ DEFINES += -DHAVE_C99=1 -DHAVE_CXX=1
+ DEFINES += -DHAVE_GETOPT_LONG=1 -DHAVE_STRCASESTR=1 -DHAVE_DYNAMIC=1 -DHAVE_OSS -DHAVE_AUDIOIO
+ DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ARM_NEON_ASM_OPTIMIZATIONS
+ 
+-SDL_DINGUX_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
+-SDL_DINGUX_LIBS := $(shell $(SDL_CONFIG) --libs)
++SDL_DINGUX_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
++SDL_DINGUX_LIBS := $(shell $(SDL2_CONFIG) --libs)
+ FREETYPE_CFLAGS := $(shell $(FREETYPE_CONFIG) --cflags)
+ FREETYPE_LIBS := $(shell $(FREETYPE_CONFIG) --libs)
+ MMAP_LIBS = -lc
+diff --git a/Makefile.plus b/Makefile.plus
+index 6e2fb22a3..602b948d6 100644
+--- a/Makefile.plus
++++ b/Makefile.plus
+@@ -12,7 +12,7 @@ CC = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
+ CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
+ STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
+ 
+-SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
++SDL2_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl2-config
+ FREETYPE_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+ 
+ INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
+@@ -144,13 +144,14 @@ LDFLAGS := -Wl,--gc-sections -s
+ INCLUDE_DIRS = -I$(INC_DIR)
+ LIBRARY_DIRS = -L$(LIB_DIR)
+ DEFINES := -DRARCH_INTERNAL -D_FILE_OFFSET_BITS=64 -UHAVE_STATIC_DUMMY
++DEFINES += -DHAVE_SDL2
+ DEFINES += -DHAVE_C99=1 -DHAVE_CXX=1
+ DEFINES += -DHAVE_GETOPT_LONG=1 -DHAVE_STRCASESTR=1 -DHAVE_DYNAMIC=1 -DHAVE_SSL -DHAVE_SYSTEMMBEDTLS -DHAVE_OSS -DHAVE_AUDIOIO
+ DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ARM_NEON_ASM_OPTIMIZATIONS
+ DEFINES += -DHAVE_NETWORKING -DHAVE_IFINFO -DHAVE_ONLINE_UPDATER -DHAVE_UPDATE_ASSETS -DHAVE_UPDATE_CORES -DHAVE_NETWORK_CMD -DHAVE_NETPLAYDISCOVERY -DHAVE_UPDATE_CORE_INFO
+ 
+-SDL_DINGUX_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
+-SDL_DINGUX_LIBS := $(shell $(SDL_CONFIG) --libs)
++SDL_DINGUX_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
++SDL_DINGUX_LIBS := $(shell $(SDL2_CONFIG) --libs)
+ FREETYPE_CFLAGS := $(shell $(FREETYPE_CONFIG) --cflags)
+ FREETYPE_LIBS := $(shell $(FREETYPE_CONFIG) --libs)
+ MMAP_LIBS = -lc
+diff --git a/audio/drivers/sdl_audio_miyoomini.c b/audio/drivers/sdl_audio_miyoomini.c
+index 6e869ae8d..cffe5d3ca 100644
+--- a/audio/drivers/sdl_audio_miyoomini.c
++++ b/audio/drivers/sdl_audio_miyoomini.c
+@@ -36,8 +36,8 @@
+ #include <retro_inline.h>
+ #include <retro_math.h>
+ 
+-#include "SDL.h"
+-#include "SDL_audio.h"
++#include <SDL2/SDL.h>
++#include <SDL2/SDL_audio.h>
+ 
+ #include "../audio_driver.h"
+ #include "../../verbosity.h"
+@@ -64,11 +64,31 @@ typedef struct sdl_audio
+    int drift_accum;
+    bool audioserver_mode;
+ 
++   SDL_AudioDeviceID device_id;
++
+    /* NEW: For better underrun handling */
+    int16_t last_samples[2]; /* Cache last stereo sample to avoid pops */
+    Uint8 silence_value;     /* SDL's silence value for this format */
+ } sdl_audio_t;
+ 
++static inline void sdl_audio_pause_device(sdl_audio_t *sdl, int pause_on)
++{
++   if (sdl && sdl->device_id)
++      SDL_PauseAudioDevice(sdl->device_id, pause_on);
++}
++
++static inline void sdl_audio_lock_device(sdl_audio_t *sdl)
++{
++   if (sdl && sdl->device_id)
++      SDL_LockAudioDevice(sdl->device_id);
++}
++
++static inline void sdl_audio_unlock_device(sdl_audio_t *sdl)
++{
++   if (sdl && sdl->device_id)
++      SDL_UnlockAudioDevice(sdl->device_id);
++}
++
+ static void sdl_audio_playback_cb(void *data, Uint8 *stream, int len)
+ {
+    sdl_audio_t  *sdl = (sdl_audio_t*)data;
+@@ -230,7 +250,8 @@ static void *sdl_audio_init(const char *device,
+    spec.callback = sdl_audio_playback_cb;
+    spec.userdata = sdl;
+ 
+-   if (SDL_OpenAudio(&spec, &out) < 0)
++   sdl->device_id = SDL_OpenAudioDevice(NULL, 0, &spec, &out, 0);
++   if (sdl->device_id == 0)
+    {
+       RARCH_ERR("[SDL audio]: Failed to open SDL audio: %s\n", SDL_GetError());
+       goto error;
+@@ -318,11 +339,16 @@ static void *sdl_audio_init(const char *device,
+       }
+    }
+ 
+-   SDL_PauseAudio(0);
++   sdl_audio_pause_device(sdl, 0);
+ 
+    return sdl;
+ 
+ error:
++   if (sdl)
++   {
++      if (sdl->device_id)
++         SDL_CloseAudioDevice(sdl->device_id);
++   }
+    free(sdl);
+    return NULL;
+ }
+@@ -336,11 +362,11 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
+    {
+       size_t avail, write_amt;
+ 
+-      SDL_LockAudio();
++      sdl_audio_lock_device(sdl);
+       avail     = FIFO_WRITE_AVAIL(sdl->buffer);
+       write_amt = (avail > size) ? size : avail;
+       fifo_write(sdl->buffer, buf, write_amt);
+-      SDL_UnlockAudio();
++      sdl_audio_unlock_device(sdl);
+       ret       = write_amt;
+    }
+    else
+@@ -351,12 +377,12 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
+       {
+          size_t avail;
+ 
+-         SDL_LockAudio();
++         sdl_audio_lock_device(sdl);
+          avail = FIFO_WRITE_AVAIL(sdl->buffer);
+ 
+          if (avail == 0)
+          {
+-            SDL_UnlockAudio();
++            sdl_audio_unlock_device(sdl);
+ #ifdef HAVE_THREADS
+             slock_lock(sdl->lock);
+             scond_wait(sdl->cond, sdl->lock);
+@@ -367,7 +393,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
+          {
+             size_t write_amt = size - written > avail ? avail : size - written;
+             fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
+-            SDL_UnlockAudio();
++            sdl_audio_unlock_device(sdl);
+             written += write_amt;
+          }
+       }
+@@ -397,7 +423,7 @@ static bool sdl_audio_stop(void *data)
+          slock_unlock(sdl->lock);
+ #endif
+ 
+-      SDL_PauseAudio(1);
++      sdl_audio_pause_device(sdl, 1);
+       fifo_clear(sdl->buffer);
+    }
+ 
+@@ -423,7 +449,7 @@ static bool sdl_audio_start(void *data, bool is_shutdown)
+       return true;
+ 
+    sdl->is_paused = false;
+-   SDL_PauseAudio(0);
++   sdl_audio_pause_device(sdl, 0);
+    return true;
+ }
+ 
+@@ -440,7 +466,8 @@ static void sdl_audio_free(void *data)
+ 
+    if (sdl)
+    {
+-      SDL_CloseAudio();
++      if (sdl->device_id)
++         SDL_CloseAudioDevice(sdl->device_id);
+ 
+       if (sdl->buffer)
+          fifo_free(sdl->buffer);
+@@ -464,9 +491,9 @@ static bool sdl_audio_use_float(void *data)
+ static size_t sdl_audio_write_avail(void *data)
+ {
+    sdl_audio_t *sdl = (sdl_audio_t*)data;
+-   SDL_LockAudio();
++   sdl_audio_lock_device(sdl);
+    size_t avail = FIFO_WRITE_AVAIL(sdl->buffer);
+-   SDL_UnlockAudio();
++   sdl_audio_unlock_device(sdl);
+    return avail;
+ }
+ 
+diff --git a/ext_code/sdl2/src/render/mini/SDL_render_mini.c b/ext_code/sdl2/src/render/mini/SDL_render_mini.c
+index 0797628d2..f243e5567 100644
+--- a/ext_code/sdl2/src/render/mini/SDL_render_mini.c
++++ b/ext_code/sdl2/src/render/mini/SDL_render_mini.c
+@@ -11,6 +11,7 @@
+ #include "SDL_hints.h"
+ #include "../SDL_sysrender.h"
+ #include "../../video/mini/SDL_video_mini.h"
++#include "../../video/mini/SDL_gles_mini.h"
+ 
+ typedef struct Mini_TextureData {
+     void *data;
+@@ -202,7 +203,7 @@ static int Mini_QueueCopy(SDL_Renderer *renderer, SDL_RenderCommand *cmd, SDL_Te
+ 
+     debug("%s, texture=%p, src:%d,%d,%d,%d, dst:%d,%d,%d,%d, scale=%.2f, pitch=%d, pixels=%p\n", 
+         __func__, texture, src.x, src.y, src.w, src.h, dst.x, dst.y, dst.w, dst.h, scale, pitch, pixels);
+-    GFX_Copy(pixels, src, dst, pitch, 0, E_MI_GFX_ROTATE_180);
++    GFX_Copy(pixels, src, dst, pitch, 0, glGetMiniRotation());
+     return 0;
+ }
+ 
+diff --git a/ext_code/sdl2/src/video/mini/SDL_gles_mini.c b/ext_code/sdl2/src/video/mini/SDL_gles_mini.c
+index cbeb68e2d..ee0a3c8ca 100644
+--- a/ext_code/sdl2/src/video/mini/SDL_gles_mini.c
++++ b/ext_code/sdl2/src/video/mini/SDL_gles_mini.c
+@@ -13,6 +13,27 @@ static EGLContext context = 0;
+ static EGLSurface surface = 0;
+ static EGLConfig config = 0;
+ static void *fb_cb = NULL;
++static int g_mini_rotation = E_MI_GFX_ROTATE_180;
++
++void glSetMiniRotation(int rotate)
++{
++    switch (rotate) {
++    case E_MI_GFX_ROTATE_0:
++    case E_MI_GFX_ROTATE_90:
++    case E_MI_GFX_ROTATE_180:
++    case E_MI_GFX_ROTATE_270:
++        g_mini_rotation = rotate;
++        break;
++    default:
++        g_mini_rotation = E_MI_GFX_ROTATE_180;
++        break;
++    }
++}
++
++int glGetMiniRotation(void)
++{
++    return g_mini_rotation;
++}
+ 
+ EGLBoolean eglUpdateBufferSettings(EGLDisplay display, EGLSurface surface, void *cb, void *p0, void *p1);
+ 
+diff --git a/ext_code/sdl2/src/video/mini/SDL_gles_mini.h b/ext_code/sdl2/src/video/mini/SDL_gles_mini.h
+index 835f6544e..def081c31 100644
+--- a/ext_code/sdl2/src/video/mini/SDL_gles_mini.h
++++ b/ext_code/sdl2/src/video/mini/SDL_gles_mini.h
+@@ -25,6 +25,8 @@ int glUpdateBufferSettings(void *cb);
+ void glDeleteContext(_THIS, SDL_GLContext context);
+ void glUnloadLibrary(_THIS);
+ SDL_GLContext glCreateContext(_THIS, SDL_Window *window);
++void glSetMiniRotation(int rotate);
++int glGetMiniRotation(void);
+ 
+ #endif
+ 
+diff --git a/gfx/drivers/miyoomini/gfx.c b/gfx/drivers/miyoomini/gfx.c
+index 9ef0eda15..fa8e0b4de 100644
+--- a/gfx/drivers/miyoomini/gfx.c
++++ b/gfx/drivers/miyoomini/gfx.c
+@@ -6,11 +6,13 @@
+ #include <linux/fb.h>
+ #include <sys/ioctl.h>
+ #include <sys/mman.h>
+-#include <SDL/SDL.h>
++#include <SDL2/SDL.h>
+ #include <mi_sys.h>
+ #include <mi_gfx.h>
+ 
+-#define	pixelsPa	unused1
++#include <stdbool.h>
++
++#include "miyoomini_sdl2_compat.h"
+ #define ALIGN4K(val)	((val+4095)&(~4095))
+ //	FREEMMA		: force free all allocated MMAs when init & quit
+ #define FREEMMA
+@@ -21,7 +23,7 @@
+ //	GFX_FLIPWAIT	: wait until Blit is done when flip
+ //			:  when NOWAIT, do not clear/write source surface immediately after Flip
+ //			:  if absolutely necessary, use GFX_WaitAllDone() before write (or GFX_FlipWait())
+-enum { GFX_BLOCKING = 1, GFX_FLIPWAIT = 2 };
++enum { GFX_BLOCKING = 1, GFX_FLIPWAIT = 2 };
+ //#define	DEFAULTFLIPFLAGS	(GFX_BLOCKING | GFX_FLIPWAIT)		// low performance with blocking
+ //#define	DEFAULTFLIPFLAGS	(GFX_FLIPWAIT)				// middle performance nonblock, recommended for most cases
+ #define	DEFAULTFLIPFLAGS	0					// high performance but with the above precautions
+@@ -51,6 +53,9 @@ MI_GFX_Rect_t		sHWRect;
+ MI_GFX_Opt_t		sHWOpt;
+ void			(*flip_callback)(void*) = NULL;
+ void			*userdata_callback = NULL;
++#ifdef HAVE_SDL2
++static SDL_Window		*g_sdl_window = NULL;
++#endif
+ #ifdef	HAVE_OVERLAY
+ SDL_Surface		*ovrsurface;
+ MI_GFX_Surface_t	OvrSrc;
+@@ -74,9 +79,9 @@ static void* GFX_FlipThread(void* param) {
+ 	while(1) {
+ 		while (!now_flipping) pthread_cond_wait(&flip_req, &flip_mx);
+ 		Fence = flipFence;
+-		do {	target_offset = vinfo.yoffset + 480;
+-			if ( target_offset == 1440 ) target_offset = 0;
+-			vinfo.yoffset = target_offset;
++		do {	target_offset = vinfo.yoffset + 480;
++			if ( target_offset == 1440 ) target_offset = 0;
++			vinfo.yoffset = target_offset;
+ 			pthread_cond_signal(&flip_start);
+ 			pthread_mutex_unlock(&flip_mx);
+ #ifdef	HAVE_OVERLAY
+@@ -100,6 +105,27 @@ static void* GFX_FlipThread(void* param) {
+ 	return 0;
+ }
+ 
++#ifdef HAVE_SDL2
++static void *GFX_FramebufferAddress(void)
++{
++	if (!fb_addr)
++		return NULL;
++
++	return (uint8_t*)fb_addr + (size_t)vinfo.yoffset * stDst.u32Stride;
++}
++
++static void GFX_SetBufferCallback(bool enable)
++{
++	if (!SDL_WasInit(SDL_INIT_VIDEO))
++		return;
++
++	if (enable && fb_addr)
++		glUpdateBufferSettings(GFX_FramebufferAddress);
++	else
++		glUpdateBufferSettings(NULL);
++}
++#endif
++
+ //
+ //	Actual Flip thread ( for single HW surface )
+ //		blit from sHWsurface to FB every frame
+@@ -115,7 +141,7 @@ static void* GFX_FlipThreadSingleHW(void* param) {
+ 
+ 	while(1) {
+ 		MI_SYS_FlushInvCache(sHWsurface->pixels, sHWsize4K);
+-		target_offset = vinfo.yoffset ^ 480;
++		target_offset = vinfo.yoffset ^ 480;
+ 		Dst.phyAddr = finfo.smem_start + (640*target_offset*4);
+ 		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &stOpt, &Fence);
+ #ifdef	HAVE_OVERLAY
+@@ -126,7 +152,7 @@ static void* GFX_FlipThreadSingleHW(void* param) {
+ 		}
+ #endif
+ 		usleep(0x2000);	// wait about 10ms
+-		vinfo.yoffset = target_offset;
++		vinfo.yoffset = target_offset;
+ 		if (flip_callback) flip_callback(userdata_callback);
+ 		ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
+ 	}
+@@ -190,7 +216,7 @@ static inline void FlushCacheNeeded(void* pixels, uint32_t pitch, uint32_t y, ui
+ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
+ 	uint32_t	target_offset, surfacesize;
+ 
+-	if ((fd_fb)&&(surface)&&(surface->pixelsPa)) {
++	if ((fd_fb)&&(surface)&&(miyoomini_surface_get_phys(surface))) {
+ 		surfacesize = surface->pitch * surface->h;
+ 		stSrc.eColorFmt = GFX_ColorFmt(surface);
+ 		stSrc.u32Width = surface->w;
+@@ -213,7 +239,7 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
+ 			if (surface != sHWsurface) {
+ 				// blit to sHWsurface when direct draw mode
+ 				MI_U16 Fence;
+-				stSrc.phyAddr = surface->pixelsPa;
++				stSrc.phyAddr = miyoomini_surface_get_phys(surface);
+ 				FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
+ 				MI_GFX_BitBlit(&stSrc, &stSrcRect, &sHW, &sHWRect, &sHWOpt, &Fence);
+ 			}
+@@ -225,7 +251,7 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
+ 			if (flipFence) MI_GFX_WaitAllDone(FALSE, flipFence);
+ 			// prepare intermediate buffer if needed
+ 			if (shadowsize < surfacesize) {
+-				if (shadowPa) MI_SYS_MMA_Free(shadowPa);
++				if (shadowPa) MI_SYS_MMA_Free(shadowPa);
+ 				if (MI_SYS_MMA_Alloc(NULL, ALIGN4K(surfacesize), &shadowPa)) {
+ 					shadowPa = shadowsize = 0; goto NOWAIT;
+ 				}
+@@ -235,12 +261,12 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
+ 			uint32_t ofs = surface->pitch * stSrcRect.s32Ypos;
+ 			uint32_t size = surface->pitch * stSrcRect.u32Height;
+ 			MI_SYS_FlushInvCache((uint8_t*)surface->pixels + ofs, ALIGN4K(size));
+-			MI_SYS_MemcpyPa(shadowPa + ofs, surface->pixelsPa + ofs, size);
++			MI_SYS_MemcpyPa(shadowPa + ofs, miyoomini_surface_get_phys(surface) + ofs, size);
+ 			// blit from intermediate buffer
+ 			stSrc.phyAddr = shadowPa;
+ 		} else {
+ 		NOWAIT:	FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
+-			stSrc.phyAddr = surface->pixelsPa;
++			stSrc.phyAddr = miyoomini_surface_get_phys(surface);
+ 		}
+ 
+ 		pthread_mutex_lock(&flip_mx);
+@@ -275,6 +301,16 @@ void	GFX_FlipForce(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX
+ uint32_t	GFX_GetFlipFlags(void) { return flipFlags; }
+ void		GFX_SetFlipFlags(uint32_t flags) { flipFlags = flags; }
+ 
++SDL_Window     *GFX_GetWindow(void)
++{
++#ifdef HAVE_SDL2
++        return g_sdl_window;
++#else
++        return NULL;
++#endif
++}
++
++
+ //
+ //	Get/Set Flip callback, for use direct draw to framebuffer
+ //		(Battery icon, RetroArch OSD text, etc)
+@@ -308,7 +344,7 @@ void	freemma(void) {
+ 				baseaddr = finfo.smem_start - offset; continue;
+ 			}
+ 			if (!strcmp(str,"ao-Dev0-tmp")) continue; // ao .. Audio buffer, skip
+-			// For daemon program authors, MMA allocated as "daemon" will not be released
++			// For daemon program authors, MMA allocated as "daemon" will not be released
+ 			if (strncmp(str,"daemon",6)) { // others except "daemon" .. release
+ 				if (!MI_SYS_MMA_Free(baseaddr + offset)) {
+ 					fprintf(stderr, "MMA_Released %s offset : %08X length : %08X\n", str, offset, length);
+@@ -327,8 +363,8 @@ void	freemma(void) {
+ //
+ SDL_Surface*	GFX_CreateRGBSurface(uint32_t flags, int width, int height, int depth, uint32_t Rmask, uint32_t Gmask, uint32_t Bmask, uint32_t Amask) {
+ 	SDL_Surface*	surface;
+-	MI_PHY		phyAddr;
+-	void*		virAddr;
++	MI_PHY		phyAddr;
++	void*		virAddr;
+ 	if (!width) width = 640;
+ 	if (!height) height = 480;
+ 	if (depth != 16) depth = 32;
+@@ -351,7 +387,7 @@ SDL_Surface*	GFX_CreateRGBSurface(uint32_t flags, int width, int height, int dep
+ 
+ 	surface = SDL_CreateRGBSurfaceFrom(virAddr,width,height,depth,pitch,Rmask,Gmask,Bmask,Amask);
+ 	if (surface) {
+-		surface->pixelsPa = phyAddr;
++		miyoomini_surface_set_phys(surface, phyAddr);
+ 		memset(surface->pixels, 0, size);
+ 	}
+ 	return surface;
+@@ -362,8 +398,8 @@ SDL_Surface*	GFX_CreateRGBSurface(uint32_t flags, int width, int height, int dep
+ //
+ void	GFX_FreeSurface(SDL_Surface *surface) {
+ 	if (surface) {
+-		MI_PHY		phyAddr = surface->pixelsPa;
+-		void*		virAddr = surface->pixels;
++		MI_PHY		phyAddr = miyoomini_surface_get_phys(surface);
++		void*		virAddr = surface->pixels;
+ 		uint32_t	size = surface->pitch * surface->h;
+ 
+ 		// stop flip thread when sHWsurface is freed
+@@ -373,10 +409,11 @@ void	GFX_FreeSurface(SDL_Surface *surface) {
+ 			sHWsurface = NULL;
+ 		}
+ 
++		miyoomini_surface_clear_extra(surface);
+ 		SDL_FreeSurface(surface);
+ 		if (phyAddr) {
+-			MI_SYS_Munmap(virAddr, ALIGN4K(size));
+-			MI_SYS_MMA_Free(phyAddr);
++			MI_SYS_Munmap(virAddr, ALIGN4K(size));
++			MI_SYS_MMA_Free(phyAddr);
+ #ifndef	FREEMMA
+ 			for (uint32_t i=0; i<MMADBMAX; i++) {
+ 				if (mma_db[i] == phyAddr) {
+@@ -402,8 +439,13 @@ void	GFX_Init(void) {
+ 		MI_GFX_Open();
+ 		fd_fb = open("/dev/fb0", O_RDWR);
+ 
++		if (fd_fb < 0) {
++			MI_GFX_Close();
++			MI_SYS_Exit();
++			return;
++		}
++
+ 		// 640 x 480 x 32bpp x 3screen init
+-		SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
+ 		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
+ 		vinfo.yres_virtual = 1440; vinfo.yoffset = 0;
+ 		/* vinfo.xres = vinfo.xres_virtual = 640; vinfo.yres = 480;
+@@ -417,7 +459,7 @@ void	GFX_Init(void) {
+ 		ioctl(fd_fb, FBIOGET_FSCREENINFO, &finfo);
+ 
+ 		// map fb memory
+-		fb_addr = mmap(0, finfo.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd_fb, 0);
++		fb_addr = mmap(0, finfo.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd_fb, 0);
+ 
+ 		// clear entire FB
+ 		GFX_ClearFrameBuffer();
+@@ -454,6 +496,22 @@ void	GFX_Init(void) {
+ 		sHWsurface = videosurface = NULL;
+ 		flipFlags = DEFAULTFLIPFLAGS;
+ 		pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
++
++#ifdef HAVE_SDL2
++	if (!g_sdl_window)
++	{
++		g_sdl_window = SDL_CreateWindow(
++			"RetroArch",
++			SDL_WINDOWPOS_CENTERED,
++			SDL_WINDOWPOS_CENTERED,
++			stDst.u32Width,
++			stDst.u32Height,
++			SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN);
++		if (g_sdl_window)
++			GFX_SetBufferCallback(true);
++	}
++#endif
++
+ 	}
+ }
+ 
+@@ -499,6 +557,15 @@ void	GFX_Quit(void) {
+ 		close(fd_fb);
+ 		fd_fb = 0;
+ 
++#ifdef HAVE_SDL2
++		GFX_SetBufferCallback(false);
++		if (g_sdl_window)
++		{
++			SDL_DestroyWindow(g_sdl_window);
++			g_sdl_window = NULL;
++		}
++#endif
++
+ 		MI_GFX_Close();
+ 		MI_SYS_Exit();
+ 	}
+@@ -521,7 +588,7 @@ SDL_Surface*	GFX_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
+ 	MI_GFX_WaitAllDone(TRUE, 0);
+ 	if (sHWsurface) { SDL_Surface* sHWpush = sHWsurface; sHWsurface = NULL; GFX_FreeSurface(sHWpush); }
+ 	if (videosurface) { GFX_FreeSurface(videosurface); videosurface = NULL; }
+-	if (shadowPa) { MI_SYS_MMA_Free(shadowPa); shadowPa = shadowsize = 0; }
++	if (shadowPa) { MI_SYS_MMA_Free(shadowPa); shadowPa = shadowsize = 0; }
+ 	flip_mx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+ 	flip_req = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+ 	flip_start = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+@@ -529,11 +596,17 @@ SDL_Surface*	GFX_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
+ 	GFX_ClearFrameBuffer();
+ 	ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
+ 
++	stDst.u32Width = width;
++	stDst.u32Height = height;
++	stDst.u32Stride = width * (uint32_t)(bpp / 8);
++	stDstRect.u32Width = width;
++	stDstRect.u32Height = height;
++
+ 	if ((flags&SDL_HWSURFACE)&&(!(flags&SDL_DOUBLEBUF))) {
+ 		// single HW surface, direct draw mode
+ 		sHWsurface = GFX_CreateRGBSurface(flags, width, height, bpp, 0,0,0,0);
+ 		if (sHWsurface) {
+-			sHW.phyAddr = sHWsurface->pixelsPa;
++			sHW.phyAddr = miyoomini_surface_get_phys(sHWsurface);
+ 			sHW.u32Width = sHWsurface->w;
+ 			sHW.u32Height = sHWsurface->h;
+ 			sHW.u32Stride = sHWsurface->pitch;
+@@ -546,11 +619,27 @@ SDL_Surface*	GFX_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
+ 			sHWOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+ 			pthread_create(&flip_pt, NULL, GFX_FlipThreadSingleHW, NULL);
+ 		} else pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
++#ifdef HAVE_SDL2
++		if (g_sdl_window)
++		{
++			SDL_SetWindowSize(g_sdl_window, width, height);
++			SDL_SetWindowFullscreen(g_sdl_window, SDL_WINDOW_FULLSCREEN);
++			GFX_SetBufferCallback(true);
++		}
++#endif
+ 		return sHWsurface;
+ 	} else {
+ 		// others
+ 		pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
+ 		videosurface = GFX_CreateRGBSurface(flags, width, height, bpp, 0,0,0,0);
++#ifdef HAVE_SDL2
++		if (g_sdl_window)
++		{
++			SDL_SetWindowSize(g_sdl_window, width, height);
++			SDL_SetWindowFullscreen(g_sdl_window, SDL_WINDOW_FULLSCREEN);
++			GFX_SetBufferCallback(true);
++		}
++#endif
+ 		return videosurface;
+ 	}
+ }
+@@ -573,10 +662,10 @@ void	GFX_CopySurface(SDL_Surface *src, SDL_Surface *dst) {
+ 	if ((src)&&(dst)) {
+ 		uint32_t size = src->pitch * src->h;
+ 		if (size == (uint32_t)(dst->pitch * dst->h)) {
+-			if ((src->pixelsPa)&&(dst->pixelsPa)) {
++			if ((miyoomini_surface_get_phys(src))&&(miyoomini_surface_get_phys(dst))) {
+ 				MI_SYS_FlushInvCache(src->pixels, ALIGN4K(size));
+ 				MI_SYS_FlushInvCache(dst->pixels, ALIGN4K(size));
+-				MI_SYS_MemcpyPa(dst->pixelsPa, src->pixelsPa, size);
++				MI_SYS_MemcpyPa(miyoomini_surface_get_phys(dst), miyoomini_surface_get_phys(src), size);
+ 			} else {
+ 				memcpy(dst->pixels, src->pixels, size);
+ 			}
+@@ -650,7 +739,7 @@ SDL_Surface*	GFX_DuplicateSurface(SDL_Surface *src) {
+ 		dst = GFX_CreateRGBSurface(0, 640, 480, 32, 0,0,0,0);
+ 		if (dst) {
+ 			MI_GFX_WaitAllDone(TRUE, 0);
+-			MI_SYS_MemcpyPa(dst->pixelsPa, finfo.smem_start + 640*vinfo.yoffset*4, 640*480*4);
++			MI_SYS_MemcpyPa(miyoomini_surface_get_phys(dst), finfo.smem_start + 640*vinfo.yoffset*4, 640*480*4);
+ 			RotateSurfaceNEON(dst->pixels);
+ 		}
+ 	}
+@@ -663,7 +752,7 @@ SDL_Surface*	GFX_DuplicateSurface(SDL_Surface *src) {
+ //		*Note* blit from entire screen(or clip_rect if specified) to framebuffer(or sHWsurface) rect
+ //
+ void	GFX_UpdateRectExec(SDL_Surface *screen, int x, int y, int w, int h, uint32_t flags) {
+-	if ((fd_fb)&&(screen)&&(screen->pixelsPa)) {
++	if ((fd_fb)&&(screen)&&(miyoomini_surface_get_phys(screen))) {
+ 		if (x|y|w|h) {
+ 			if (!sHWsurface) {
+ 				MI_GFX_Rect_t DstRectPush = stDstRect;
+@@ -734,7 +823,7 @@ SDL_Rect* CheckRect(SDL_Surface* dst, SDL_Rect* dstrect) {
+ //		*Note* color : in case of RGB565 : 2 pixel color values used alternately
+ //
+ void	GFX_FillRectSYS(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
+-	if ((dst)&&(dst->pixelsPa)) {
++	if ((dst)&&(miyoomini_surface_get_phys(dst))) {
+ 		SDL_Rect dstrect_tmp;
+ 		if (!dstrect) {
+ 			dstrect_tmp.x = 0;
+@@ -747,7 +836,7 @@ void	GFX_FillRectSYS(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
+ 		MI_SYS_FrameData_t Buf;
+ 		MI_SYS_WindowRect_t Rect;
+ 
+-		Buf.phyAddr[0] = dst->pixelsPa;
++		Buf.phyAddr[0] = miyoomini_surface_get_phys(dst);
+ 		Buf.u16Width = dst->w;
+ 		Buf.u16Height = dst->h;
+ 		Buf.u32Stride[0] = dst->pitch;
+@@ -768,7 +857,7 @@ void	GFX_FillRectSYS(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
+ //		nowait : 0 = wait until done / 1 = no wait
+ //
+ void	GFX_FillRectExec(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color, uint32_t nowait) {
+-	if ((dst)&&(dst->pixelsPa)) {
++	if ((dst)&&(miyoomini_surface_get_phys(dst))) {
+ 		SDL_Rect dstrect_tmp;
+ 		if (!dstrect) {
+ 			dstrect_tmp.x = 0;
+@@ -782,7 +871,7 @@ void	GFX_FillRectExec(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color, uint3
+ 		MI_GFX_Rect_t DstRect;
+ 		MI_U16 Fence;
+ 
+-		Dst.phyAddr = dst->pixelsPa;
++		Dst.phyAddr = miyoomini_surface_get_phys(dst);
+ 		Dst.eColorFmt = GFX_ColorFmt(dst);
+ 		Dst.u32Width = dst->w;
+ 		Dst.u32Height = dst->h;
+@@ -816,8 +905,8 @@ void	GFX_WaitAllDone(void) {
+ //		*Note* Just a copy (no convert scale/bpp)
+ //
+ void GFX_BlitSurfaceSYS(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
+-	if ((src)&&(dst)&&(src->pixelsPa)&&(dst->pixelsPa)) {
+-		MI_SYS_FrameData_t SrcBuf;
++	if ((src)&&(dst)&&(miyoomini_surface_get_phys(src))&&(miyoomini_surface_get_phys(dst))) {
++		MI_SYS_FrameData_t SrcBuf;
+ 		MI_SYS_FrameData_t DstBuf;
+ 		MI_SYS_WindowRect_t SrcRect;
+ 		MI_SYS_WindowRect_t DstRect;
+@@ -841,7 +930,7 @@ void GFX_BlitSurfaceSYS(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, S
+ 		if (!(CheckRect(dst, &dstrect_tmp))) return;
+ 
+ 		memset(&SrcBuf, 0, sizeof(SrcBuf));
+-		SrcBuf.phyAddr[0] = src->pixelsPa;
++		SrcBuf.phyAddr[0] = miyoomini_surface_get_phys(src);
+ 		SrcBuf.u16Width = src->w;
+ 		SrcBuf.u16Height = src->h;
+ 		SrcBuf.u32Stride[0] = src->pitch;
+@@ -852,7 +941,7 @@ void GFX_BlitSurfaceSYS(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, S
+ 		SrcRect.u16Height = srcrect_tmp.h;
+ 
+ 		memset(&DstBuf, 0, sizeof(DstBuf));
+-		DstBuf.phyAddr[0] = dst->pixelsPa;
++		DstBuf.phyAddr[0] = miyoomini_surface_get_phys(dst);
+ 		DstBuf.u16Width = dst->w;
+ 		// **HACK** rect.h is not working properly for some reason, so adjust dst height
+ 		DstBuf.u16Height = dstrect_tmp.y + dstrect_tmp.h; // dst->h;
+@@ -878,7 +967,7 @@ void GFX_BlitSurfaceSYS(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, S
+ //
+ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect,
+ 			 uint32_t rotate, uint32_t mirror, uint32_t nowait) {
+-	if ((src)&&(dst)&&(src->pixelsPa)&&(dst->pixelsPa)) {
++	if ((src)&&(dst)&&(miyoomini_surface_get_phys(src))&&(miyoomini_surface_get_phys(dst))) {
+ 		MI_GFX_Surface_t Src;
+ 		MI_GFX_Surface_t Dst;
+ 		MI_GFX_Rect_t SrcRect;
+@@ -886,7 +975,7 @@ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_
+ 		MI_GFX_Opt_t Opt;
+ 		MI_U16 Fence;
+ 
+-		Src.phyAddr = src->pixelsPa;
++		Src.phyAddr = miyoomini_surface_get_phys(src);
+ 		Src.u32Width = src->w;
+ 		Src.u32Height = src->h;
+ 		Src.u32Stride = src->pitch;
+@@ -903,7 +992,7 @@ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_
+ 			SrcRect.u32Height = Src.u32Height;
+ 		}
+ 
+-		Dst.phyAddr = dst->pixelsPa;
++		Dst.phyAddr = miyoomini_surface_get_phys(dst);
+ 		Dst.u32Width = dst->w;
+ 		Dst.u32Height = dst->h;
+ 		Dst.u32Stride = dst->pitch;
+@@ -926,22 +1015,32 @@ static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_
+ 		}
+ 
+ 		memset(&Opt, 0, sizeof(Opt));
+-		if (src->flags & SDL_SRCALPHA) {
+-			Opt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
+-			Opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+-			if (src->format->alpha == SDL_ALPHA_TRANSPARENT) return;
+-			if (src->format->alpha != SDL_ALPHA_OPAQUE) {
+-				Opt.u32GlobalSrcConstColor = (src->format->alpha << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
+-				Opt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
+-						   (E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
++		{
++			Uint8 alpha_mod = SDL_ALPHA_OPAQUE;
++			if (miyoomini_surface_get_alpha(src, &alpha_mod)) {
++				if (alpha_mod == SDL_ALPHA_TRANSPARENT)
++					return;
++				Opt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
++				Opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
++				if (alpha_mod != SDL_ALPHA_OPAQUE) {
++					Opt.u32GlobalSrcConstColor =
++						((uint32_t)alpha_mod << (src->format->Ashift - src->format->Aloss)) &
++						src->format->Amask;
++					Opt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
++						(E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA |
++						 E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
++				}
+ 			}
+ 		}
+-		if (src->flags & SDL_SRCCOLORKEY) {
+-			Opt.stSrcColorKeyInfo.bEnColorKey = TRUE;
+-			Opt.stSrcColorKeyInfo.eCKeyFmt = Src.eColorFmt;
+-			Opt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
+-			Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart =
+-			Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = src->format->colorkey;
++		{
++			Uint32 color_key = 0;
++			if (miyoomini_surface_has_colorkey(src, &color_key)) {
++				Opt.stSrcColorKeyInfo.bEnColorKey = TRUE;
++				Opt.stSrcColorKeyInfo.eCKeyFmt = Src.eColorFmt;
++				Opt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
++				Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart = color_key;
++				Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = color_key;
++			}
+ 		}
+ 		Opt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+ 		Opt.eRotate = (MI_GFX_Rotate_e)rotate;
+@@ -982,9 +1081,9 @@ void GFX_BlitSurfaceMirrorNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surfac
+ //	GFX SetupOverlaySurface / Setup Overlay Surface (mainly for retroarch)
+ //
+ void GFX_SetupOverlaySurface(SDL_Surface *src) {
+-	if ((!src)||(!src->pixelsPa)) { ovrsurface = NULL; return; }
++	if ((!src)||(!miyoomini_surface_get_phys(src))) { ovrsurface = NULL; return; }
+ 
+-	OvrSrc.phyAddr = src->pixelsPa;
++	OvrSrc.phyAddr = miyoomini_surface_get_phys(src);
+ 	OvrSrc.u32Width = src->w;
+ 	OvrSrc.u32Height = src->h;
+ 	OvrSrc.u32Stride = src->pitch;
+@@ -993,22 +1092,29 @@ void GFX_SetupOverlaySurface(SDL_Surface *src) {
+ 	OvrSrcRect.u32Height = OvrSrc.u32Height;
+ 
+ 	memset(&OvrOpt, 0, sizeof(OvrOpt));
+-	if (src->flags & SDL_SRCALPHA) {
+-		OvrOpt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
+-		OvrOpt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+-		if (src->format->alpha == SDL_ALPHA_TRANSPARENT) { ovrsurface = NULL; return; }
+-		if (src->format->alpha != SDL_ALPHA_OPAQUE) {
+-			OvrOpt.u32GlobalSrcConstColor = (src->format->alpha << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
+-			OvrOpt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
+-					   (E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
++	{
++		Uint8 alpha_mod = SDL_ALPHA_OPAQUE;
++		if (miyoomini_surface_get_alpha(src, &alpha_mod)) {
++			if (alpha_mod == SDL_ALPHA_TRANSPARENT) { ovrsurface = NULL; return; }
++			OvrOpt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
++			OvrOpt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
++			if (alpha_mod != SDL_ALPHA_OPAQUE) {
++				OvrOpt.u32GlobalSrcConstColor =
++					((uint32_t)alpha_mod << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
++				OvrOpt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
++					(E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
++			}
+ 		}
+ 	}
+-	if (src->flags & SDL_SRCCOLORKEY) {
+-		OvrOpt.stSrcColorKeyInfo.bEnColorKey = TRUE;
+-		OvrOpt.stSrcColorKeyInfo.eCKeyFmt = OvrSrc.eColorFmt;
+-		OvrOpt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
+-		OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart =
+-		OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = src->format->colorkey;
++	{
++		Uint32 color_key = 0;
++		if (miyoomini_surface_has_colorkey(src, &color_key)) {
++			OvrOpt.stSrcColorKeyInfo.bEnColorKey = TRUE;
++			OvrOpt.stSrcColorKeyInfo.eCKeyFmt = OvrSrc.eColorFmt;
++			OvrOpt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
++			OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart = color_key;
++			OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = color_key;
++		}
+ 	}
+ 	OvrOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+ 
+diff --git a/gfx/drivers/miyoomini/gfx_mmv4.c b/gfx/drivers/miyoomini/gfx_mmv4.c
+index c212a0032..c2264357b 100644
+--- a/gfx/drivers/miyoomini/gfx_mmv4.c
++++ b/gfx/drivers/miyoomini/gfx_mmv4.c
+@@ -1,1045 +1,1158 @@
+-#include <stdio.h>
+-#include <unistd.h>
+-#include <fcntl.h>
+-#include <stdint.h>
+-#include <pthread.h>
+-#include <linux/fb.h>
+-#include <sys/ioctl.h>
+-#include <sys/mman.h>
+-#include <SDL/SDL.h>
+-#include <mi_sys.h>
+-#include <mi_gfx.h>
+-
+-#define	pixelsPa	unused1
+-#define ALIGN4K(val)	((val+4095)&(~4095))
+-//	FREEMMA		: force free all allocated MMAs when init & quit
+-#define FREEMMA
+-//	CLEARFBATQUIT	: clear framebuffer when quit
+-#define CLEARFBATQUIT
+-//	GFX_BLOCKING	: limit to 60fps but never skips frames
+-//			:  in case of clearing all buffers by GFX_Flip()x3, needs to use BLOCKING (or GFX_FlipForce())
+-//	GFX_FLIPWAIT	: wait until Blit is done when flip
+-//			:  when NOWAIT, do not clear/write source surface immediately after Flip
+-//			:  if absolutely necessary, use GFX_WaitAllDone() before write (or GFX_FlipWait())
+-enum { GFX_BLOCKING = 1, GFX_FLIPWAIT = 2 };
+-//#define	DEFAULTFLIPFLAGS	(GFX_BLOCKING | GFX_FLIPWAIT)		// low performance with blocking
+-//#define	DEFAULTFLIPFLAGS	(GFX_FLIPWAIT)				// middle performance nonblock, recommended for most cases
+-#define	DEFAULTFLIPFLAGS	0					// high performance but with the above precautions
+-
+-int			fd_fb = 0;
+-void			*fb_addr;
+-int 			res_x, res_y;
+-struct			fb_fix_screeninfo finfo;
+-struct			fb_var_screeninfo vinfo;
+-MI_GFX_Surface_t	stSrc;
+-MI_GFX_Rect_t		stSrcRect;
+-MI_GFX_Surface_t	stDst;
+-MI_GFX_Rect_t		stDstRect;
+-MI_GFX_Opt_t		stOpt;
+-volatile uint32_t	now_flipping;
+-MI_PHY			shadowPa;
+-uint32_t		shadowsize;
+-pthread_t		flip_pt;
+-pthread_mutex_t		flip_mx;
+-pthread_cond_t		flip_req;
+-pthread_cond_t		flip_start;
+-MI_U16			flipFence;
+-uint32_t		flipFlags;
+-SDL_Surface		*sHWsurface;
+-SDL_Surface		*videosurface;
+-MI_GFX_Surface_t	sHW;
+-MI_GFX_Rect_t		sHWRect;
+-MI_GFX_Opt_t		sHWOpt;
+-void			(*flip_callback)(void*) = NULL;
+-void			*userdata_callback = NULL;
+-#ifdef	HAVE_OVERLAY
+-SDL_Surface		*ovrsurface;
+-MI_GFX_Surface_t	OvrSrc;
+-MI_GFX_Rect_t		OvrSrcRect;
+-MI_GFX_Surface_t	OvrDst;
+-MI_GFX_Rect_t		OvrDstRect;
+-MI_GFX_Opt_t		OvrOpt;
+-#endif
+-#ifndef	FREEMMA
+-#define			MMADBMAX	100
+-uint32_t		mma_db[MMADBMAX];
+-#endif
+-
+-//
+-//	Actual Flip thread
+-//
+-static void* GFX_FlipThread(void* param) {
+-	uint32_t	target_offset;
+-	MI_U16		Fence;
+-	pthread_mutex_lock(&flip_mx);
+-	while(1) {
+-		while (!now_flipping) pthread_cond_wait(&flip_req, &flip_mx);
+-		Fence = flipFence;
+-		do {	target_offset = vinfo.yoffset + res_y;
+-			if ( target_offset == res_y * 3 ) target_offset = 0;
+-			vinfo.yoffset = target_offset;
+-			pthread_cond_signal(&flip_start);
+-			pthread_mutex_unlock(&flip_mx);
+-#ifdef	HAVE_OVERLAY
+-			if (ovrsurface) {
+-				MI_GFX_WaitAllDone(FALSE, flipFence);
+-				OvrDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
+-				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
+-				MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0;
+-				if (flip_callback) flip_callback(userdata_callback);
+-			} else
+-#endif
+-			if (flip_callback) {
+-				// Wait done always when callback is active
+-				MI_GFX_WaitAllDone(FALSE, flipFence); Fence = 0;
+-				flip_callback(userdata_callback);
+-			} else if (Fence) { MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0; }
+-			ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
+-			pthread_mutex_lock(&flip_mx);
+-		} while(--now_flipping);
+-	}
+-	return 0;
+-}
+-
+-//
+-//	Actual Flip thread ( for single HW surface )
+-//		blit from sHWsurface to FB every frame
+-//
+-static void* GFX_FlipThreadSingleHW(void* param) {
+-	MI_GFX_Surface_t Src = sHW;
+-	MI_GFX_Rect_t SrcRect = sHWRect;
+-	MI_GFX_Surface_t Dst = stDst;
+-	MI_GFX_Rect_t DstRect = stDstRect;
+-	MI_U16 Fence;
+-	uint32_t sHWsize4K = ALIGN4K(sHWsurface->pitch * sHWsurface->h);
+-	uint32_t target_offset;
+-
+-	while(1) {
+-		MI_SYS_FlushInvCache(sHWsurface->pixels, sHWsize4K);
+-		target_offset = vinfo.yoffset ^ res_y;
+-		Dst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
+-		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &stOpt, &Fence);
+-#ifdef	HAVE_OVERLAY
+-		if (ovrsurface) {
+-			MI_GFX_WaitAllDone(FALSE, Fence);
+-			OvrDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
+-			MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
+-		}
+-#endif
+-		usleep(0x2000);	// wait about 10ms
+-		vinfo.yoffset = target_offset;
+-		if (flip_callback) flip_callback(userdata_callback);
+-		ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
+-	}
+-	return 0;
+-}
+-
+-//
+-//	Get GFX_ColorFmt from SDL_Surface
+-//
+-static inline MI_GFX_ColorFmt_e	GFX_ColorFmt(SDL_Surface *surface) {
+-	if (surface) {
+-		if (surface->format->BytesPerPixel == 2) {
+-			if (surface->format->Amask == 0x0000) return E_MI_GFX_FMT_RGB565;
+-			if (surface->format->Amask == 0x8000) return E_MI_GFX_FMT_ARGB1555;
+-			if (surface->format->Amask == 0xF000) return E_MI_GFX_FMT_ARGB4444;
+-			if (surface->format->Amask == 0x0001) return E_MI_GFX_FMT_RGBA5551;
+-			if (surface->format->Amask == 0x000F) return E_MI_GFX_FMT_RGBA4444;
+-			return E_MI_GFX_FMT_RGB565;
+-		}
+-		if (surface->format->Bmask == 0x000000FF) return E_MI_GFX_FMT_ARGB8888;
+-		if (surface->format->Rmask == 0x000000FF) return E_MI_GFX_FMT_ABGR8888;
+-	}
+-	return E_MI_GFX_FMT_ARGB8888;
+-}
+-
+-//
+-//	Get SYS_PixelFormat from SDL_Surface
+-//
+-static inline MI_SYS_PixelFormat_e	SYS_PixelFormat(SDL_Surface *surface) {
+-	if (surface) {
+-		if (surface->format->BytesPerPixel == 2) {
+-			if (surface->format->Amask == 0x0000) return E_MI_SYS_PIXEL_FRAME_RGB565;
+-			if (surface->format->Amask == 0x8000) return E_MI_SYS_PIXEL_FRAME_ARGB1555;
+-			if (surface->format->Amask == 0xF000) return E_MI_SYS_PIXEL_FRAME_ARGB4444;
+-			return E_MI_SYS_PIXEL_FRAME_RGB565;
+-		}
+-		if (surface->format->Bmask == 0x000000FF) return E_MI_SYS_PIXEL_FRAME_ARGB8888;
+-		if (surface->format->Rmask == 0x000000FF) return E_MI_SYS_PIXEL_FRAME_ABGR8888;
+-		if (surface->format->Amask == 0x000000FF) return E_MI_SYS_PIXEL_FRAME_BGRA8888;
+-	}
+-	return E_MI_SYS_PIXEL_FRAME_ARGB8888;
+-}
+-
+-//
+-//	Flush write cache of needed segments
+-//		x and w are not considered since 4K units
+-//
+-static inline void FlushCacheNeeded(void* pixels, uint32_t pitch, uint32_t y, uint32_t h) {
+-	uintptr_t pixptr = (uintptr_t)pixels;
+-	uintptr_t startaddress = (pixptr + pitch*y)&(~4095);
+-	uint32_t size = ALIGN4K(pixptr + pitch*(y+h)) - startaddress;
+-	if (size) MI_SYS_FlushInvCache((void*)startaddress, size);
+-}
+-
+-//
+-//	GFX Flip / in place of SDL_Flip
+-//		HW Blit : surface -> FB(backbuffer) with Rotate180/bppConvert/Scaling
+-//			and Request Flip
+-//		*Note* blit from entire surface(or clip_rect if specified) to entire framebuffer(or sHWsurface)
+-//
+-void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
+-	uint32_t	target_offset, surfacesize;
+-
+-	if ((fd_fb)&&(surface)&&(surface->pixelsPa)) {
+-		surfacesize = surface->pitch * surface->h;
+-		stSrc.eColorFmt = GFX_ColorFmt(surface);
+-		stSrc.u32Width = surface->w;
+-		stSrc.u32Height = surface->h;
+-		stSrc.u32Stride = surface->pitch;
+-		if (surface->clip_rect.w|surface->clip_rect.h) {
+-			// when clip_rect is specified
+-			stSrcRect.s32Xpos = surface->clip_rect.x;
+-			stSrcRect.s32Ypos = surface->clip_rect.y;
+-			stSrcRect.u32Width = surface->clip_rect.w;
+-			stSrcRect.u32Height = surface->clip_rect.h;
+-		} else {// entire screen
+-			stSrcRect.s32Xpos = 0;
+-			stSrcRect.s32Ypos = 0;
+-			stSrcRect.u32Width = stSrc.u32Width;
+-			stSrcRect.u32Height = stSrc.u32Height;
+-		}
+-
+-		if (sHWsurface) {
+-			if (surface != sHWsurface) {
+-				// blit to sHWsurface when direct draw mode
+-				MI_U16 Fence;
+-				stSrc.phyAddr = surface->pixelsPa;
+-				FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
+-				MI_GFX_BitBlit(&stSrc, &stSrcRect, &sHW, &sHWRect, &sHWOpt, &Fence);
+-			}
+-			return;
+-		}
+-
+-		if (flags & GFX_FLIPWAIT) {
+-			// wait for recent flip is done
+-			if (flipFence) MI_GFX_WaitAllDone(FALSE, flipFence);
+-			// prepare intermediate buffer if needed
+-			if (shadowsize < surfacesize) {
+-				if (shadowPa) MI_SYS_MMA_Free(shadowPa);
+-				if (MI_SYS_MMA_Alloc(NULL, ALIGN4K(surfacesize), &shadowPa)) {
+-					shadowPa = shadowsize = 0; goto NOWAIT;
+-				}
+-				shadowsize = surfacesize;
+-			}
+-			// copy surface to intermediate buffer
+-			uint32_t ofs = surface->pitch * stSrcRect.s32Ypos;
+-			uint32_t size = surface->pitch * stSrcRect.u32Height;
+-			MI_SYS_FlushInvCache((uint8_t*)surface->pixels + ofs, ALIGN4K(size));
+-			MI_SYS_MemcpyPa(shadowPa + ofs, surface->pixelsPa + ofs, size);
+-			// blit from intermediate buffer
+-			stSrc.phyAddr = shadowPa;
+-		} else {
+-		NOWAIT:	FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
+-			stSrc.phyAddr = surface->pixelsPa;
+-		}
+-
+-		pthread_mutex_lock(&flip_mx);
+-		if (flags & GFX_BLOCKING) {
+-			while (now_flipping == 2) pthread_cond_wait(&flip_start, &flip_mx);
+-		}
+-		target_offset = vinfo.yoffset + res_y;
+-		if ( target_offset == res_y * 3 ) target_offset = 0;
+-		stDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
+-		MI_GFX_BitBlit(&stSrc, &stSrcRect, &stDst, &stDstRect, &stOpt, &flipFence);
+-
+-		// Request Flip
+-		if (!now_flipping) {
+-			now_flipping = 1;
+-			pthread_cond_signal(&flip_req);
+-			pthread_cond_wait(&flip_start, &flip_mx);
+-		} else {
+-			now_flipping = 2;
+-		}
+-		pthread_mutex_unlock(&flip_mx);
+-	}
+-}
+-void	GFX_Flip(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags); }
+-void	GFX_FlipNoWait(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags & ~GFX_FLIPWAIT); }
+-void	GFX_FlipWait(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX_FLIPWAIT); }
+-void	GFX_FlipForce(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX_BLOCKING); }
+-
+-//
+-//	Get/Set Flipflags
+-//		GFX_BLOCKING/GFX_FLIPWAIT flags used for GFX_Flip/UpdateRect
+-//
+-uint32_t	GFX_GetFlipFlags(void) { return flipFlags; }
+-void		GFX_SetFlipFlags(uint32_t flags) { flipFlags = flags; }
+-
+-//
+-//	Get/Set Flip callback, for use direct draw to framebuffer
+-//		(Battery icon, RetroArch OSD text, etc)
+-//		*Note* framebuffer is rotated 180 degrees
+-//
+-void*	GFX_GetFlipCallback(void) { return (void*)flip_callback; }
+-void	GFX_SetFlipCallback(void (*callback)(void*), void *userdata) {
+-	userdata_callback = userdata; flip_callback = callback;
+-}
+-
+-#ifdef	FREEMMA
+-//
+-//	Free all allocated MMAs (except "daemon")
+-//
+-void	freemma(void) {
+-	FILE		*fp;
+-	const char	*heapinfoname = "/proc/mi_modules/mi_sys_mma/mma_heap_name0";
+-	char		str[256];
+-	uint32_t	offset, length, usedflag;
+-	uint32_t	baseaddr = finfo.smem_start - 0x021000;	// default baseaddr (tmp)
+-
+-	// open heap information file
+-	fp = fopen(heapinfoname, "r");
+-	if (fp) {
+-		// skip reading until chunk information
+-		do { if (fscanf(fp, "%255s", str) == EOF) { fclose(fp); return; } } while (strcmp(str,"sys-logConfig"));
+-		// get MMA each chunk information and release
+-		while(fscanf(fp, "%x %x %x %255s", &offset, &length, &usedflag, str) != EOF) {
+-			if (!usedflag) continue; // NA
+-			if (!strcmp(str,"fb_device")) { // FB .. fix baseaddr
+-				baseaddr = finfo.smem_start - offset; continue;
+-			}
+-			if (!strcmp(str,"ao-Dev0-tmp")) continue; // ao .. Audio buffer, skip
+-			// For daemon program authors, MMA allocated as "daemon" will not be released
+-			if (strncmp(str,"daemon",6)) { // others except "daemon" .. release
+-				if (!MI_SYS_MMA_Free(baseaddr + offset)) {
+-					fprintf(stderr, "MMA_Released %s offset : %08X length : %08X\n", str, offset, length);
+-				}
+-			}
+-		}
+-		fclose(fp);
+-	}
+-}
+-#endif
+-
+-//
+-//	Create GFX Surface / in place of SDL_CreateRGBSurface
+-//		supports 16/32bpp only / flags has no meaning, fixed to SWSURFACE
+-//		Additional return value : surface->unused1 = Physical address of surface
+-//
+-SDL_Surface*	GFX_CreateRGBSurface(uint32_t flags, int width, int height, int depth, uint32_t Rmask, uint32_t Gmask, uint32_t Bmask, uint32_t Amask) {
+-	SDL_Surface*	surface;
+-	MI_PHY		phyAddr;
+-	void*		virAddr;
+-	if (!width) width = res_x;
+-	if (!height) height = res_y;
+-	if (depth != 16) depth = 32;
+-	int		pitch = width * (uint32_t)(depth/8);
+-	uint32_t	size = pitch * height;
+-
+-	if (MI_SYS_MMA_Alloc(NULL, ALIGN4K(size), &phyAddr)) {
+-		// No MMA left .. create normal SDL surface
+-		return SDL_CreateRGBSurface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
+-	}
+-#ifndef	FREEMMA
+-	uint32_t i;
+-	for (i=0; i<MMADBMAX; i++) {
+-		if (!mma_db[i]) {
+-			mma_db[i] = phyAddr; break;
+-		}
+-	} if (i==MMADBMAX) { MI_SYS_MMA_Free(phyAddr); return NULL; }
+-#endif
+-	MI_SYS_Mmap(phyAddr, ALIGN4K(size), &virAddr, TRUE);	// write cache ON needs Flush when r/w Pa directly
+-
+-	surface = SDL_CreateRGBSurfaceFrom(virAddr,width,height,depth,pitch,Rmask,Gmask,Bmask,Amask);
+-	if (surface) {
+-		surface->pixelsPa = phyAddr;
+-		memset(surface->pixels, 0, size);
+-	}
+-	return surface;
+-}
+-
+-//
+-//	Free GFX Surface / in place of SDL_FreeSurface
+-//
+-void	GFX_FreeSurface(SDL_Surface *surface) {
+-	if (surface) {
+-		MI_PHY		phyAddr = surface->pixelsPa;
+-		void*		virAddr = surface->pixels;
+-		uint32_t	size = surface->pitch * surface->h;
+-
+-		// stop flip thread when sHWsurface is freed
+-		if (surface == sHWsurface) {
+-			pthread_cancel(flip_pt);
+-			pthread_join(flip_pt, NULL);
+-			sHWsurface = NULL;
+-		}
+-
+-		SDL_FreeSurface(surface);
+-		if (phyAddr) {
+-			MI_SYS_Munmap(virAddr, ALIGN4K(size));
+-			MI_SYS_MMA_Free(phyAddr);
+-#ifndef	FREEMMA
+-			for (uint32_t i=0; i<MMADBMAX; i++) {
+-				if (mma_db[i] == phyAddr) {
+-					mma_db[i] = 0; break;
+-				}
+-			}
+-#endif
+-		}
+-	}
+-}
+-
+-//
+-//	Clear entire FrameBuffer
+-//
+-void	GFX_ClearFrameBuffer(void) { memset(fb_addr, 0, finfo.smem_len); }
+-
+-//
+-//	GFX Init / Prepare for HW Blit to FB, call after SDL_Init
+-//
+-void	GFX_Init(void) {
+-	if (!fd_fb) {
+-		MI_SYS_Init();
+-		MI_GFX_Open();
+-		fd_fb = open("/dev/fb0", O_RDWR);
+-
+-		FILE *file = fopen("/tmp/screen_resolution", "r");
+-		if (file == NULL || !(fscanf(file, "%dx%d", &res_x, &res_y) == 2))
+-			return;
+-		fclose(file);
+-		// screen init
+-		SDL_SetVideoMode(res_x, res_y, 32, SDL_SWSURFACE);
+-		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
+-		vinfo.yres_virtual = res_y * 3; vinfo.yoffset = 0;
+-		/* vinfo.xres = vinfo.xres_virtual = 640; vinfo.yres = 480;
+-		vinfo.xoffset = vinfo.yoffset = vinfo.red.msb_right = vinfo.green.msb_right = 
+-		vinfo.blue.msb_right = vinfo.transp.msb_right = vinfo.blue.offset = 0;
+-		vinfo.red.length = vinfo.green.length = vinfo.blue.length = vinfo.transp.length = vinfo.green.offset = 8;
+-		vinfo.red.offset = 16; vinfo.transp.offset = 24; vinfo.bits_per_pixel = 32; */
+-		ioctl(fd_fb, FBIOPUT_VSCREENINFO, &vinfo);
+-
+-		// get physical address of FB
+-		ioctl(fd_fb, FBIOGET_FSCREENINFO, &finfo);
+-
+-		// map fb memory
+-		fb_addr = mmap(0, finfo.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd_fb, 0);
+-
+-		// clear entire FB
+-		GFX_ClearFrameBuffer();
+-#ifdef	FREEMMA
+-		freemma();
+-#else
+-		memset(mma_db, 0, sizeof(mma_db));
+-#endif
+-		// prepare for Flip
+-		stDst.phyAddr = finfo.smem_start;
+-		stDst.eColorFmt = E_MI_GFX_FMT_ARGB8888;
+-		stDst.u32Width = res_x;
+-		stDst.u32Height = res_y;
+-		stDst.u32Stride = res_x*4;
+-		stDstRect.s32Xpos = 0;
+-		stDstRect.s32Ypos = 0;
+-		stDstRect.u32Width = res_x;
+-		stDstRect.u32Height = res_y;
+-#ifdef	HAVE_OVERLAY
+-		// prepare for OverlaySurface
+-		OvrSrcRect.s32Xpos = 0;
+-		OvrSrcRect.s32Ypos = 0;
+-		OvrDst = stDst;
+-		OvrDstRect = stDstRect;
+-#endif
+-		memset(&stOpt, 0, sizeof(stOpt));
+-		stOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+-		stOpt.eRotate = E_MI_GFX_ROTATE_180;
+-
+-		flip_mx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+-		flip_req = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+-		flip_start = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+-		now_flipping = shadowPa = shadowsize = flipFence = 0;
+-		sHWsurface = videosurface = NULL;
+-		flipFlags = DEFAULTFLIPFLAGS;
+-		pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
+-	}
+-}
+-
+-//
+-//	GFX Quit / call before SDL_Quit
+-//
+-void	GFX_Quit(void) {
+-	if (fd_fb) {
+-		pthread_cancel(flip_pt);
+-		pthread_join(flip_pt, NULL);
+-
+-		MI_GFX_WaitAllDone(TRUE, 0);
+-		if (sHWsurface) { SDL_Surface* sHWpush = sHWsurface; sHWsurface = NULL; GFX_FreeSurface(sHWpush); }
+-		if (videosurface) { GFX_FreeSurface(videosurface); videosurface = NULL; }
+-		if (shadowPa) { MI_SYS_MMA_Free(shadowPa); shadowPa = 0; }
+-#ifdef	FREEMMA
+-		freemma();
+-#else
+-		for (uint32_t i=0; i<MMADBMAX; i++) {
+-			if (mma_db[i]) {
+-				if (!MI_SYS_MMA_Free(mma_db[i])) {
+-					fprintf(stderr, "MMA_Released offset : %08X\n", mma_db[i]);
+-					mma_db[i] = 0;
+-				}
+-			}
+-		}
+-#endif
+-#ifdef CLEARFBATQUIT
+-		// clear entire FB
+-		GFX_ClearFrameBuffer();
+-#else
+-		// copy current frame to initial frame
+-		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
+-		if (vinfo.yoffset) MI_SYS_MemcpyPa(finfo.smem_start, finfo.smem_start + (res_x*vinfo.yoffset*4), res_x*res_y*4);
+-#endif
+-		// reset yoffset
+-		vinfo.yoffset = 0;
+-		ioctl(fd_fb, FBIOPUT_VSCREENINFO, &vinfo);
+-
+-		// unmap fb memory
+-		munmap(fb_addr, finfo.smem_len);
+-
+-		close(fd_fb);
+-		fd_fb = 0;
+-
+-		MI_GFX_Close();
+-		MI_SYS_Exit();
+-	}
+-}
+-
+-//
+-//	SetVideomode / in place of SDL_SetVideoMode
+-//		if flags == SDL_HWSURFACE & non SDL_DOUBLEBUF, change to direct draw mode
+-//		 otherwise, same as GFX_CreateRGBSurface
+-//
+-SDL_Surface*	GFX_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
+-	if (!fd_fb) GFX_Init();
+-	if (!width) width = res_x;
+-	if (!height) height = res_y;
+-	if (bpp != 16) bpp = 32;
+-
+-	// reinit Flip thread
+-	pthread_cancel(flip_pt);
+-	pthread_join(flip_pt, NULL);
+-	MI_GFX_WaitAllDone(TRUE, 0);
+-	if (sHWsurface) { SDL_Surface* sHWpush = sHWsurface; sHWsurface = NULL; GFX_FreeSurface(sHWpush); }
+-	if (videosurface) { GFX_FreeSurface(videosurface); videosurface = NULL; }
+-	if (shadowPa) { MI_SYS_MMA_Free(shadowPa); shadowPa = shadowsize = 0; }
+-	flip_mx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+-	flip_req = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+-	flip_start = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+-	now_flipping = flipFence = vinfo.yoffset = 0;
+-	GFX_ClearFrameBuffer();
+-	ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
+-
+-	if ((flags&SDL_HWSURFACE)&&(!(flags&SDL_DOUBLEBUF))) {
+-		// single HW surface, direct draw mode
+-		sHWsurface = GFX_CreateRGBSurface(flags, width, height, bpp, 0,0,0,0);
+-		if (sHWsurface) {
+-			sHW.phyAddr = sHWsurface->pixelsPa;
+-			sHW.u32Width = sHWsurface->w;
+-			sHW.u32Height = sHWsurface->h;
+-			sHW.u32Stride = sHWsurface->pitch;
+-			sHW.eColorFmt = GFX_ColorFmt(sHWsurface);
+-			sHWRect.s32Xpos = 0;
+-			sHWRect.s32Ypos = 0;
+-			sHWRect.u32Width = sHW.u32Width;
+-			sHWRect.u32Height = sHW.u32Height;
+-			memset(&sHWOpt, 0, sizeof(sHWOpt));
+-			sHWOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+-			pthread_create(&flip_pt, NULL, GFX_FlipThreadSingleHW, NULL);
+-		} else pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
+-		return sHWsurface;
+-	} else {
+-		// others
+-		pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
+-		videosurface = GFX_CreateRGBSurface(flags, width, height, bpp, 0,0,0,0);
+-		return videosurface;
+-	}
+-}
+-
+-//
+-//	Clear GFX/SDL Surface (entire)
+-//
+-void	GFX_ClearSurface(SDL_Surface *surface) {
+-	if (surface) {
+-		uint32_t size = surface->pitch * surface->h;
+-		memset(surface->pixels, 0, size);
+-	}
+-}
+-
+-//
+-//	Copy GFX/SDL Surface (entire)
+-//		src/dst surfaces must be the same size
+-//
+-void	GFX_CopySurface(SDL_Surface *src, SDL_Surface *dst) {
+-	if ((src)&&(dst)) {
+-		uint32_t size = src->pitch * src->h;
+-		if (size == (uint32_t)(dst->pitch * dst->h)) {
+-			if ((src->pixelsPa)&&(dst->pixelsPa)) {
+-				MI_SYS_FlushInvCache(src->pixels, ALIGN4K(size));
+-				MI_SYS_FlushInvCache(dst->pixels, ALIGN4K(size));
+-				MI_SYS_MemcpyPa(dst->pixelsPa, src->pixelsPa, size);
+-			} else {
+-				memcpy(dst->pixels, src->pixels, size);
+-			}
+-		}
+-	}
+-}
+-
+-//
+-//	Rotate 640x480x32bpp surface NEON / for duplicate FB
+-//
+-void	RotateSurfaceNEON(void* src) {
+-	asm volatile (
+-	"	add r1,%0,#(640*240*4)	;"
+-	"	mov r2,r1		;"
+-	"	mov r3,r1		;"
+-	"1:	vldmia r1,{q0-q7}	;"
+-	"	vrev64.32 d31,d0	;"
+-	"	vrev64.32 d30,d1	;"
+-	"	vrev64.32 d29,d2	;"
+-	"	vrev64.32 d28,d3	;"
+-	"	vrev64.32 d27,d4	;"
+-	"	vrev64.32 d26,d5	;"
+-	"	vrev64.32 d25,d6	;"
+-	"	vrev64.32 d24,d7	;"
+-	"	vrev64.32 d23,d8	;"
+-	"	vrev64.32 d22,d9	;"
+-	"	vrev64.32 d21,d10	;"
+-	"	vrev64.32 d20,d11	;"
+-	"	vrev64.32 d19,d12	;"
+-	"	vrev64.32 d18,d13	;"
+-	"	vrev64.32 d17,d14	;"
+-	"	vrev64.32 d16,d15	;"
+-	"	vldmdb r3!,{q0-q7}	;"
+-	"	vstmdb r2!,{q8-q15}	;"
+-	"	vrev64.32 d31,d0	;"
+-	"	vrev64.32 d30,d1	;"
+-	"	vrev64.32 d29,d2	;"
+-	"	vrev64.32 d28,d3	;"
+-	"	vrev64.32 d27,d4	;"
+-	"	vrev64.32 d26,d5	;"
+-	"	vrev64.32 d25,d6	;"
+-	"	vrev64.32 d24,d7	;"
+-	"	vrev64.32 d23,d8	;"
+-	"	vrev64.32 d22,d9	;"
+-	"	vrev64.32 d21,d10	;"
+-	"	vrev64.32 d20,d11	;"
+-	"	vrev64.32 d19,d12	;"
+-	"	vrev64.32 d18,d13	;"
+-	"	vrev64.32 d17,d14	;"
+-	"	vrev64.32 d16,d15	;"
+-	"	vstmia r1!,{q8-q15}	;"
+-	"	cmp %0,r2		;"
+-	"	bne 1b			"
+-	:: "r"(src)
+-	: "r1","r2","r3","q0","q1","q2","q3","q4","q5","q6","q7",
+-	    "q8","q9","q10","q11","q12","q13","q14","q15","memory","cc"
+-	);
+-}
+-
+-void RotateSurface(SDL_Surface *surface)
+-{
+-    if (!surface || surface->format->BytesPerPixel != 4)
+-        return;
+-
+-    int width = surface->w;
+-    int height = surface->h;
+-    uint32_t *pixels = (uint32_t *)surface->pixels;
+-
+-    for (int y = 0; y < height / 2; y++) {
+-        for (int x = 0; x < width; x++) {
+-            uint32_t topPixel = pixels[y * width + x];
+-            uint32_t bottomPixel = pixels[(height - y - 1) * width + (width - x - 1)];
+-            pixels[y * width + x] = bottomPixel;
+-            pixels[(height - y - 1) * width + (width - x - 1)] = topPixel;
+-        }
+-    }
+-}
+-
+-//
+-//	Duplicate GFX Surface from SDL_Surface or FB
+-//		if src is NULL, duplicate from FB currently displayed
+-//
+-SDL_Surface*	GFX_DuplicateSurface(SDL_Surface *src) {
+-	SDL_Surface	*dst;
+-	if (src) {
+-		dst = GFX_CreateRGBSurface(0, src->w, src->h, src->format->BitsPerPixel,
+-			src->format->Rmask, src->format->Gmask, src->format->Bmask, src->format->Amask);
+-		if (dst) GFX_CopySurface(src, dst);
+-	} else {
+-		dst = GFX_CreateRGBSurface(0, res_x, res_y, 32, 0,0,0,0);
+-		if (dst) {
+-			MI_GFX_WaitAllDone(TRUE, 0);
+-			MI_SYS_MemcpyPa(dst->pixelsPa, finfo.smem_start + res_x*vinfo.yoffset*4, res_x*res_y*4);
+-			if(res_x == 640 && res_y == 480)
+-				RotateSurfaceNEON(dst);
+-			else
+-				RotateSurface(dst);
+-		}
+-	}
+-	return dst;
+-}
+-
+-//
+-//	GFX UpdateRect / in place of SDL_UpdateRect
+-//		Flip after setting the update area
+-//		*Note* blit from entire screen(or clip_rect if specified) to framebuffer(or sHWsurface) rect
+-//
+-void	GFX_UpdateRectExec(SDL_Surface *screen, int x, int y, int w, int h, uint32_t flags) {
+-	if ((fd_fb)&&(screen)&&(screen->pixelsPa)) {
+-		if (x|y|w|h) {
+-			if (!sHWsurface) {
+-				MI_GFX_Rect_t DstRectPush = stDstRect;
+-				// for rotate180
+-				stDstRect.s32Xpos = res_x-(x+w);
+-				stDstRect.s32Ypos = res_y-(y+h);
+-				// for RetroArch rotate function
+-				stDstRect.u32Width = (stOpt.eRotate&1) ? h : w;
+-				stDstRect.u32Height = (stOpt.eRotate&1) ? w : h;
+-				GFX_FlipExec(screen, flags);
+-				stDstRect = DstRectPush;
+-			} else if (screen != sHWsurface) {
+-				// direct draw mode, dest = sHWsurface
+-				MI_GFX_Rect_t DstRectPush = sHWRect;
+-				sHWRect.s32Xpos = x;
+-				sHWRect.s32Ypos = y;
+-				sHWRect.u32Width = w;
+-				sHWRect.u32Height = h;
+-				GFX_FlipExec(screen, flags);
+-				sHWRect = DstRectPush;
+-			}
+-		} else {
+-			GFX_FlipExec(screen, flags);
+-		}
+-	}
+-}
+-void	GFX_UpdateRect(SDL_Surface *screen, int x, int y, int w, int h) {
+-	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags); }
+-void	GFX_UpdateRectNoWait(SDL_Surface *screen, int x, int y, int w, int h) {
+-	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags & ~GFX_FLIPWAIT); }
+-void	GFX_UpdateRectWait(SDL_Surface *screen, int x, int y, int w, int h) {
+-	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags | GFX_FLIPWAIT); }
+-void	GFX_UpdateRectForce(SDL_Surface *screen, int x, int y, int w, int h) {
+-	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags | GFX_BLOCKING); }
+-
+-//
+-//	Check Rect Overflow for FillRect/BlitSurfaceSYS
+-//
+-SDL_Rect* CheckRect(SDL_Surface* dst, SDL_Rect* dstrect) {
+-	if ((!dst)||(!dstrect)) return NULL;
+-
+-	int w = dstrect->w; int h = dstrect->h;
+-	if (dst->clip_rect.w|dst->clip_rect.h) {
+-		if (dst->clip_rect.x > dstrect->x) {
+-			w -= (dst->clip_rect.x - dstrect->x); dstrect->x = dst->clip_rect.x;
+-		}
+-		if ((dst->clip_rect.x + dst->clip_rect.w) < (dstrect->x + w)) {
+-			w = dst->clip_rect.w - (dstrect->x - dst->clip_rect.x);
+-		}
+-		if (dst->clip_rect.y > dstrect->y) {
+-			h -= (dst->clip_rect.y - dstrect->y); dstrect->y = dst->clip_rect.y;
+-		}
+-		if ((dst->clip_rect.y + dst->clip_rect.h) < (dstrect->y + h)) {
+-			h = dst->clip_rect.h - (dstrect->y - dst->clip_rect.y);
+-		}
+-	}
+-	if (dstrect->x < 0) { w += dstrect->x; dstrect->x = 0; }
+-	if (dstrect->y < 0) { h += dstrect->y; dstrect->y = 0; }
+-	if ((dstrect->x + w) > dst->w) { w = dst->w - dstrect->x; }
+-	if ((dstrect->y + h) > dst->h) { h = dst->h - dstrect->y; }
+-	if ((w <= 0)||(h <= 0)||(dstrect->x >= dst->w)||(dstrect->y >= dst->h)) return NULL;
+-	dstrect->w = w; dstrect->h = h;
+-	return dstrect;
+-}
+-
+-//
+-//	GFX FillRect (MI_SYS ver) / in place of SDL_FillRect
+-//		*Note* color : in case of RGB565 : 2 pixel color values used alternately
+-//
+-void	GFX_FillRectSYS(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
+-	if ((dst)&&(dst->pixelsPa)) {
+-		SDL_Rect dstrect_tmp;
+-		if (!dstrect) {
+-			dstrect_tmp.x = 0;
+-			dstrect_tmp.y = 0;
+-			dstrect_tmp.w = dst->w;
+-			dstrect_tmp.h = dst->h;
+-		} else 	memcpy(&dstrect_tmp, dstrect, sizeof(dstrect_tmp));
+-		if (!(CheckRect(dst, &dstrect_tmp))) return;
+-
+-		MI_SYS_FrameData_t Buf;
+-		MI_SYS_WindowRect_t Rect;
+-
+-		Buf.phyAddr[0] = dst->pixelsPa;
+-		Buf.u16Width = dst->w;
+-		Buf.u16Height = dst->h;
+-		Buf.u32Stride[0] = dst->pitch;
+-		Buf.ePixelFormat = SYS_PixelFormat(dst);
+-		Rect.u16X = dstrect_tmp.x;
+-		Rect.u16Y = dstrect_tmp.y;
+-		Rect.u16Width = dstrect_tmp.w;
+-		Rect.u16Height = dstrect_tmp.h;
+-
+-		FlushCacheNeeded(dst->pixels, dst->pitch, Rect.u16Y, Rect.u16Height);
+-		MI_SYS_BufFillPa(&Buf, color, &Rect);
+-	} else 	SDL_FillRect(dst, dstrect, color);
+-}
+-
+-//
+-//	GFX FillRect (MI_GFX ver) / in place of SDL_FillRect
+-//		*Note* color : in case of RGB565 : ARGB8888 color value
+-//		nowait : 0 = wait until done / 1 = no wait
+-//
+-void	GFX_FillRectExec(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color, uint32_t nowait) {
+-	if ((dst)&&(dst->pixelsPa)) {
+-		SDL_Rect dstrect_tmp;
+-		if (!dstrect) {
+-			dstrect_tmp.x = 0;
+-			dstrect_tmp.y = 0;
+-			dstrect_tmp.w = dst->w;
+-			dstrect_tmp.h = dst->h;
+-		} else 	memcpy(&dstrect_tmp, dstrect, sizeof(dstrect_tmp));
+-		if (!(CheckRect(dst, &dstrect_tmp))) return;
+-
+-		MI_GFX_Surface_t Dst;
+-		MI_GFX_Rect_t DstRect;
+-		MI_U16 Fence;
+-
+-		Dst.phyAddr = dst->pixelsPa;
+-		Dst.eColorFmt = GFX_ColorFmt(dst);
+-		Dst.u32Width = dst->w;
+-		Dst.u32Height = dst->h;
+-		Dst.u32Stride = dst->pitch;
+-		DstRect.s32Xpos = dstrect_tmp.x;
+-		DstRect.s32Ypos = dstrect_tmp.y;
+-		DstRect.u32Width = dstrect_tmp.w;
+-		DstRect.u32Height = dstrect_tmp.h;
+-
+-		FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Height);
+-		MI_GFX_QuickFill(&Dst, &DstRect, color, &Fence);
+-		if (!nowait) MI_GFX_WaitAllDone(FALSE, Fence);
+-	} else SDL_FillRect(dst, dstrect, color);
+-}
+-void	GFX_FillRect(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
+-	GFX_FillRectExec(dst, dstrect, color, 0);
+-}
+-void	GFX_FillRectNoWait(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
+-	GFX_FillRectExec(dst, dstrect, color, 1);
+-}
+-
+-//
+-//	GFX_WaitAllDone / wait all done for No Wait functions
+-//
+-void	GFX_WaitAllDone(void) {
+-	MI_GFX_WaitAllDone(TRUE, 0);
+-}
+-
+-//
+-//	GFX BlitSurface (MI_SYS ver) / in place of SDL_BlitSurface
+-//		*Note* Just a copy (no convert scale/bpp)
+-//
+-void GFX_BlitSurfaceSYS(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
+-	if ((src)&&(dst)&&(src->pixelsPa)&&(dst->pixelsPa)) {
+-		MI_SYS_FrameData_t SrcBuf;
+-		MI_SYS_FrameData_t DstBuf;
+-		MI_SYS_WindowRect_t SrcRect;
+-		MI_SYS_WindowRect_t DstRect;
+-
+-		SDL_Rect srcrect_tmp, dstrect_tmp;
+-		if (!srcrect) {
+-			srcrect_tmp.x = 0; srcrect_tmp.y = 0;
+-			srcrect_tmp.w = src->w; srcrect_tmp.h = src->h;
+-		} else 	memcpy(&srcrect_tmp, srcrect, sizeof(srcrect_tmp));
+-		if (!dstrect) {
+-			dstrect_tmp.x = 0; dstrect_tmp.y = 0;
+-			dstrect_tmp.w = dst->w; dstrect_tmp.h = dst->h;
+-		} else {
+-			if (dstrect->w|dstrect->h) memcpy(&dstrect_tmp, dstrect, sizeof(dstrect_tmp));
+-			else {	dstrect_tmp.x = dstrect->x; dstrect_tmp.y = dstrect->y;
+-				dstrect_tmp.w = src->w - dstrect->x; dstrect_tmp.h = src->h - dstrect->y;
+-			}
+-		}
+-		// adjust rects from dst surface size and clip_rect
+-		if (!(CheckRect(dst, &srcrect_tmp))) return;
+-		if (!(CheckRect(dst, &dstrect_tmp))) return;
+-
+-		memset(&SrcBuf, 0, sizeof(SrcBuf));
+-		SrcBuf.phyAddr[0] = src->pixelsPa;
+-		SrcBuf.u16Width = src->w;
+-		SrcBuf.u16Height = src->h;
+-		SrcBuf.u32Stride[0] = src->pitch;
+-		SrcBuf.ePixelFormat = SYS_PixelFormat(src);
+-		SrcRect.u16X = srcrect_tmp.x;
+-		SrcRect.u16Y = srcrect_tmp.y;
+-		SrcRect.u16Width = srcrect_tmp.w;
+-		SrcRect.u16Height = srcrect_tmp.h;
+-
+-		memset(&DstBuf, 0, sizeof(DstBuf));
+-		DstBuf.phyAddr[0] = dst->pixelsPa;
+-		DstBuf.u16Width = dst->w;
+-		// **HACK** rect.h is not working properly for some reason, so adjust dst height
+-		DstBuf.u16Height = dstrect_tmp.y + dstrect_tmp.h; // dst->h;
+-		DstBuf.u32Stride[0] = dst->pitch;
+-		DstBuf.ePixelFormat = SYS_PixelFormat(dst);
+-		DstRect.u16X = dstrect_tmp.x;
+-		DstRect.u16Y = dstrect_tmp.y;
+-		DstRect.u16Width = dstrect_tmp.w;
+-		DstRect.u16Height = dstrect_tmp.h;
+-
+-		FlushCacheNeeded(src->pixels, src->pitch, SrcRect.u16Y, SrcRect.u16Height);
+-		FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.u16Y, DstRect.u16Height);
+-		MI_SYS_BufBlitPa(&DstBuf, &DstRect, &SrcBuf, &SrcRect);
+-	} else SDL_BlitSurface(src, srcrect, dst, dstrect);
+-}
+-
+-//
+-//	GFX BlitSurface (MI_GFX ver) / in place of SDL_BlitSurface
+-//		with scale/bpp convert and rotate/mirror
+-//		rotate : 1 = 90 / 2 = 180 / 3 = 270
+-//		mirror : 1 = Horizontal / 2 = Vertical / 3 = Both
+-//		nowait : 0 = wait until done / 1 = no wait
+-//
+-static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect,
+-			 uint32_t rotate, uint32_t mirror, uint32_t nowait) {
+-	if ((src)&&(dst)&&(src->pixelsPa)&&(dst->pixelsPa)) {
+-		MI_GFX_Surface_t Src;
+-		MI_GFX_Surface_t Dst;
+-		MI_GFX_Rect_t SrcRect;
+-		MI_GFX_Rect_t DstRect;
+-		MI_GFX_Opt_t Opt;
+-		MI_U16 Fence;
+-
+-		Src.phyAddr = src->pixelsPa;
+-		Src.u32Width = src->w;
+-		Src.u32Height = src->h;
+-		Src.u32Stride = src->pitch;
+-		Src.eColorFmt = GFX_ColorFmt(src);
+-		if (srcrect) {
+-			SrcRect.s32Xpos = srcrect->x;
+-			SrcRect.s32Ypos = srcrect->y;
+-			SrcRect.u32Width = srcrect->w;
+-			SrcRect.u32Height = srcrect->h;
+-		} else {
+-			SrcRect.s32Xpos = 0;
+-			SrcRect.s32Ypos = 0;
+-			SrcRect.u32Width = Src.u32Width;
+-			SrcRect.u32Height = Src.u32Height;
+-		}
+-
+-		Dst.phyAddr = dst->pixelsPa;
+-		Dst.u32Width = dst->w;
+-		Dst.u32Height = dst->h;
+-		Dst.u32Stride = dst->pitch;
+-		Dst.eColorFmt = GFX_ColorFmt(dst);
+-		if (dstrect) {
+-			DstRect.s32Xpos = dstrect->x;
+-			DstRect.s32Ypos = dstrect->y;
+-			if (dstrect->w|dstrect->h) {
+-				DstRect.u32Width = dstrect->w;
+-				DstRect.u32Height = dstrect->h;
+-			} else {
+-				DstRect.u32Width = SrcRect.u32Width;
+-				DstRect.u32Height = SrcRect.u32Height;
+-			}
+-		} else {
+-			DstRect.s32Xpos = 0;
+-			DstRect.s32Ypos = 0;
+-			DstRect.u32Width = Dst.u32Width;
+-			DstRect.u32Height = Dst.u32Height;
+-		}
+-
+-		memset(&Opt, 0, sizeof(Opt));
+-		if (src->flags & SDL_SRCALPHA) {
+-			Opt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
+-			Opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+-			if (src->format->alpha == SDL_ALPHA_TRANSPARENT) return;
+-			if (src->format->alpha != SDL_ALPHA_OPAQUE) {
+-				Opt.u32GlobalSrcConstColor = (src->format->alpha << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
+-				Opt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
+-						   (E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
+-			}
+-		}
+-		if (src->flags & SDL_SRCCOLORKEY) {
+-			Opt.stSrcColorKeyInfo.bEnColorKey = TRUE;
+-			Opt.stSrcColorKeyInfo.eCKeyFmt = Src.eColorFmt;
+-			Opt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
+-			Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart =
+-			Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = src->format->colorkey;
+-		}
+-		Opt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+-		Opt.eRotate = (MI_GFX_Rotate_e)rotate;
+-		Opt.eMirror = (MI_GFX_Mirror_e)mirror;
+-		Opt.stClipRect.s32Xpos = dst->clip_rect.x;
+-		Opt.stClipRect.s32Ypos = dst->clip_rect.y;
+-		Opt.stClipRect.u32Width = dst->clip_rect.w;
+-		Opt.stClipRect.u32Height = dst->clip_rect.h;
+-
+-		FlushCacheNeeded(src->pixels, src->pitch, SrcRect.s32Ypos, SrcRect.u32Height);
+-		if (rotate & 1) FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Width);
+-		else FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Height);
+-
+-		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &Opt, &Fence);
+-		if (!nowait) MI_GFX_WaitAllDone(FALSE, Fence);
+-	} else SDL_BlitSurface(src, srcrect, dst, dstrect);
+-}
+-void GFX_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
+-	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, 0, 0);
+-}
+-void GFX_BlitSurfaceNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
+-	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, 0, 1);
+-}
+-void GFX_BlitSurfaceRotate(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t rotate) {
+-	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, rotate, 0, 0);
+-}
+-void GFX_BlitSurfaceRotateNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t rotate) {
+-	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, rotate, 0, 1);
+-}
+-void GFX_BlitSurfaceMirror(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t mirror) {
+-	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, mirror, 0);
+-}
+-void GFX_BlitSurfaceMirrorNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t mirror) {
+-	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, mirror, 1);
+-}
+-#ifdef	HAVE_OVERLAY
+-//
+-//	GFX SetupOverlaySurface / Setup Overlay Surface (mainly for retroarch)
+-//
+-void GFX_SetupOverlaySurface(SDL_Surface *src) {
+-	if ((!src)||(!src->pixelsPa)) { ovrsurface = NULL; return; }
+-
+-	OvrSrc.phyAddr = src->pixelsPa;
+-	OvrSrc.u32Width = src->w;
+-	OvrSrc.u32Height = src->h;
+-	OvrSrc.u32Stride = src->pitch;
+-	OvrSrc.eColorFmt = GFX_ColorFmt(src);
+-	OvrSrcRect.u32Width = OvrSrc.u32Width;
+-	OvrSrcRect.u32Height = OvrSrc.u32Height;
+-
+-	memset(&OvrOpt, 0, sizeof(OvrOpt));
+-	if (src->flags & SDL_SRCALPHA) {
+-		OvrOpt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
+-		OvrOpt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+-		if (src->format->alpha == SDL_ALPHA_TRANSPARENT) { ovrsurface = NULL; return; }
+-		if (src->format->alpha != SDL_ALPHA_OPAQUE) {
+-			OvrOpt.u32GlobalSrcConstColor = (src->format->alpha << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
+-			OvrOpt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
+-					   (E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
+-		}
+-	}
+-	if (src->flags & SDL_SRCCOLORKEY) {
+-		OvrOpt.stSrcColorKeyInfo.bEnColorKey = TRUE;
+-		OvrOpt.stSrcColorKeyInfo.eCKeyFmt = OvrSrc.eColorFmt;
+-		OvrOpt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
+-		OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart =
+-		OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = src->format->colorkey;
+-	}
+-	OvrOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
+-
+-	ovrsurface = src;
+-	return;
+-}
++#include <stdio.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <stdint.h>
++#include <pthread.h>
++#include <linux/fb.h>
++#include <sys/ioctl.h>
++#include <sys/mman.h>
++#include <SDL2/SDL.h>
++#include <mi_sys.h>
++#include <mi_gfx.h>
++
++#include <stdbool.h>
++
++#include "miyoomini_sdl2_compat.h"
++#define ALIGN4K(val)	((val+4095)&(~4095))
++//	FREEMMA		: force free all allocated MMAs when init & quit
++#define FREEMMA
++//	CLEARFBATQUIT	: clear framebuffer when quit
++#define CLEARFBATQUIT
++//	GFX_BLOCKING	: limit to 60fps but never skips frames
++//			:  in case of clearing all buffers by GFX_Flip()x3, needs to use BLOCKING (or GFX_FlipForce())
++//	GFX_FLIPWAIT	: wait until Blit is done when flip
++//			:  when NOWAIT, do not clear/write source surface immediately after Flip
++//			:  if absolutely necessary, use GFX_WaitAllDone() before write (or GFX_FlipWait())
++enum { GFX_BLOCKING = 1, GFX_FLIPWAIT = 2 };
++//#define	DEFAULTFLIPFLAGS	(GFX_BLOCKING | GFX_FLIPWAIT)		// low performance with blocking
++//#define	DEFAULTFLIPFLAGS	(GFX_FLIPWAIT)				// middle performance nonblock, recommended for most cases
++#define	DEFAULTFLIPFLAGS	0					// high performance but with the above precautions
++
++int			fd_fb = 0;
++void			*fb_addr;
++int 			res_x, res_y;
++struct			fb_fix_screeninfo finfo;
++struct			fb_var_screeninfo vinfo;
++MI_GFX_Surface_t	stSrc;
++MI_GFX_Rect_t		stSrcRect;
++MI_GFX_Surface_t	stDst;
++MI_GFX_Rect_t		stDstRect;
++MI_GFX_Opt_t		stOpt;
++volatile uint32_t	now_flipping;
++MI_PHY			shadowPa;
++uint32_t		shadowsize;
++pthread_t		flip_pt;
++pthread_mutex_t		flip_mx;
++pthread_cond_t		flip_req;
++pthread_cond_t		flip_start;
++MI_U16			flipFence;
++uint32_t		flipFlags;
++SDL_Surface		*sHWsurface;
++SDL_Surface		*videosurface;
++MI_GFX_Surface_t	sHW;
++MI_GFX_Rect_t		sHWRect;
++MI_GFX_Opt_t		sHWOpt;
++void			(*flip_callback)(void*) = NULL;
++void			*userdata_callback = NULL;
++#ifdef HAVE_SDL2
++static SDL_Window		*g_sdl_window = NULL;
++#endif
++#ifdef	HAVE_OVERLAY
++SDL_Surface		*ovrsurface;
++MI_GFX_Surface_t	OvrSrc;
++MI_GFX_Rect_t		OvrSrcRect;
++MI_GFX_Surface_t	OvrDst;
++MI_GFX_Rect_t		OvrDstRect;
++MI_GFX_Opt_t		OvrOpt;
++#endif
++#ifndef	FREEMMA
++#define			MMADBMAX	100
++uint32_t		mma_db[MMADBMAX];
++#endif
++
++//
++//	Actual Flip thread
++//
++static void* GFX_FlipThread(void* param) {
++	uint32_t	target_offset;
++	MI_U16		Fence;
++	pthread_mutex_lock(&flip_mx);
++	while(1) {
++		while (!now_flipping) pthread_cond_wait(&flip_req, &flip_mx);
++		Fence = flipFence;
++		do {	target_offset = vinfo.yoffset + res_y;
++			if ( target_offset == res_y * 3 ) target_offset = 0;
++			vinfo.yoffset = target_offset;
++			pthread_cond_signal(&flip_start);
++			pthread_mutex_unlock(&flip_mx);
++#ifdef	HAVE_OVERLAY
++			if (ovrsurface) {
++				MI_GFX_WaitAllDone(FALSE, flipFence);
++				OvrDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
++				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
++				MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0;
++				if (flip_callback) flip_callback(userdata_callback);
++			} else
++#endif
++			if (flip_callback) {
++				// Wait done always when callback is active
++				MI_GFX_WaitAllDone(FALSE, flipFence); Fence = 0;
++				flip_callback(userdata_callback);
++			} else if (Fence) { MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0; }
++			ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
++			pthread_mutex_lock(&flip_mx);
++		} while(--now_flipping);
++	}
++	return 0;
++}
++
++#ifdef HAVE_SDL2
++static void *GFX_FramebufferAddress(void)
++{
++	if (!fb_addr)
++		return NULL;
++
++	return (uint8_t*)fb_addr + (size_t)vinfo.yoffset * stDst.u32Stride;
++}
++
++static void GFX_SetBufferCallback(bool enable)
++{
++	if (!SDL_WasInit(SDL_INIT_VIDEO))
++		return;
++
++	if (enable && fb_addr)
++		glUpdateBufferSettings(GFX_FramebufferAddress);
++	else
++		glUpdateBufferSettings(NULL);
++}
++#endif
++
++//
++//	Actual Flip thread ( for single HW surface )
++//		blit from sHWsurface to FB every frame
++//
++static void* GFX_FlipThreadSingleHW(void* param) {
++	MI_GFX_Surface_t Src = sHW;
++	MI_GFX_Rect_t SrcRect = sHWRect;
++	MI_GFX_Surface_t Dst = stDst;
++	MI_GFX_Rect_t DstRect = stDstRect;
++	MI_U16 Fence;
++	uint32_t sHWsize4K = ALIGN4K(sHWsurface->pitch * sHWsurface->h);
++	uint32_t target_offset;
++
++	while(1) {
++		MI_SYS_FlushInvCache(sHWsurface->pixels, sHWsize4K);
++		target_offset = vinfo.yoffset ^ res_y;
++		Dst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
++		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &stOpt, &Fence);
++#ifdef	HAVE_OVERLAY
++		if (ovrsurface) {
++			MI_GFX_WaitAllDone(FALSE, Fence);
++			OvrDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
++			MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
++		}
++#endif
++		usleep(0x2000);	// wait about 10ms
++		vinfo.yoffset = target_offset;
++		if (flip_callback) flip_callback(userdata_callback);
++		ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
++	}
++	return 0;
++}
++
++//
++//	Get GFX_ColorFmt from SDL_Surface
++//
++static inline MI_GFX_ColorFmt_e	GFX_ColorFmt(SDL_Surface *surface) {
++	if (surface) {
++		if (surface->format->BytesPerPixel == 2) {
++			if (surface->format->Amask == 0x0000) return E_MI_GFX_FMT_RGB565;
++			if (surface->format->Amask == 0x8000) return E_MI_GFX_FMT_ARGB1555;
++			if (surface->format->Amask == 0xF000) return E_MI_GFX_FMT_ARGB4444;
++			if (surface->format->Amask == 0x0001) return E_MI_GFX_FMT_RGBA5551;
++			if (surface->format->Amask == 0x000F) return E_MI_GFX_FMT_RGBA4444;
++			return E_MI_GFX_FMT_RGB565;
++		}
++		if (surface->format->Bmask == 0x000000FF) return E_MI_GFX_FMT_ARGB8888;
++		if (surface->format->Rmask == 0x000000FF) return E_MI_GFX_FMT_ABGR8888;
++	}
++	return E_MI_GFX_FMT_ARGB8888;
++}
++
++//
++//	Get SYS_PixelFormat from SDL_Surface
++//
++static inline MI_SYS_PixelFormat_e	SYS_PixelFormat(SDL_Surface *surface) {
++	if (surface) {
++		if (surface->format->BytesPerPixel == 2) {
++			if (surface->format->Amask == 0x0000) return E_MI_SYS_PIXEL_FRAME_RGB565;
++			if (surface->format->Amask == 0x8000) return E_MI_SYS_PIXEL_FRAME_ARGB1555;
++			if (surface->format->Amask == 0xF000) return E_MI_SYS_PIXEL_FRAME_ARGB4444;
++			return E_MI_SYS_PIXEL_FRAME_RGB565;
++		}
++		if (surface->format->Bmask == 0x000000FF) return E_MI_SYS_PIXEL_FRAME_ARGB8888;
++		if (surface->format->Rmask == 0x000000FF) return E_MI_SYS_PIXEL_FRAME_ABGR8888;
++		if (surface->format->Amask == 0x000000FF) return E_MI_SYS_PIXEL_FRAME_BGRA8888;
++	}
++	return E_MI_SYS_PIXEL_FRAME_ARGB8888;
++}
++
++//
++//	Flush write cache of needed segments
++//		x and w are not considered since 4K units
++//
++static inline void FlushCacheNeeded(void* pixels, uint32_t pitch, uint32_t y, uint32_t h) {
++	uintptr_t pixptr = (uintptr_t)pixels;
++	uintptr_t startaddress = (pixptr + pitch*y)&(~4095);
++	uint32_t size = ALIGN4K(pixptr + pitch*(y+h)) - startaddress;
++	if (size) MI_SYS_FlushInvCache((void*)startaddress, size);
++}
++
++//
++//	GFX Flip / in place of SDL_Flip
++//		HW Blit : surface -> FB(backbuffer) with Rotate180/bppConvert/Scaling
++//			and Request Flip
++//		*Note* blit from entire surface(or clip_rect if specified) to entire framebuffer(or sHWsurface)
++//
++void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
++	uint32_t	target_offset, surfacesize;
++
++	if ((fd_fb)&&(surface)&&(miyoomini_surface_get_phys(surface))) {
++		surfacesize = surface->pitch * surface->h;
++		stSrc.eColorFmt = GFX_ColorFmt(surface);
++		stSrc.u32Width = surface->w;
++		stSrc.u32Height = surface->h;
++		stSrc.u32Stride = surface->pitch;
++		if (surface->clip_rect.w|surface->clip_rect.h) {
++			// when clip_rect is specified
++			stSrcRect.s32Xpos = surface->clip_rect.x;
++			stSrcRect.s32Ypos = surface->clip_rect.y;
++			stSrcRect.u32Width = surface->clip_rect.w;
++			stSrcRect.u32Height = surface->clip_rect.h;
++		} else {// entire screen
++			stSrcRect.s32Xpos = 0;
++			stSrcRect.s32Ypos = 0;
++			stSrcRect.u32Width = stSrc.u32Width;
++			stSrcRect.u32Height = stSrc.u32Height;
++		}
++
++		if (sHWsurface) {
++			if (surface != sHWsurface) {
++				// blit to sHWsurface when direct draw mode
++				MI_U16 Fence;
++				stSrc.phyAddr = miyoomini_surface_get_phys(surface);
++				FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
++				MI_GFX_BitBlit(&stSrc, &stSrcRect, &sHW, &sHWRect, &sHWOpt, &Fence);
++			}
++			return;
++		}
++
++		if (flags & GFX_FLIPWAIT) {
++			// wait for recent flip is done
++			if (flipFence) MI_GFX_WaitAllDone(FALSE, flipFence);
++			// prepare intermediate buffer if needed
++			if (shadowsize < surfacesize) {
++				if (shadowPa) MI_SYS_MMA_Free(shadowPa);
++				if (MI_SYS_MMA_Alloc(NULL, ALIGN4K(surfacesize), &shadowPa)) {
++					shadowPa = shadowsize = 0; goto NOWAIT;
++				}
++				shadowsize = surfacesize;
++			}
++			// copy surface to intermediate buffer
++			uint32_t ofs = surface->pitch * stSrcRect.s32Ypos;
++			uint32_t size = surface->pitch * stSrcRect.u32Height;
++			MI_SYS_FlushInvCache((uint8_t*)surface->pixels + ofs, ALIGN4K(size));
++			MI_SYS_MemcpyPa(shadowPa + ofs, miyoomini_surface_get_phys(surface) + ofs, size);
++			// blit from intermediate buffer
++			stSrc.phyAddr = shadowPa;
++		} else {
++		NOWAIT:	FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
++			stSrc.phyAddr = miyoomini_surface_get_phys(surface);
++		}
++
++		pthread_mutex_lock(&flip_mx);
++		if (flags & GFX_BLOCKING) {
++			while (now_flipping == 2) pthread_cond_wait(&flip_start, &flip_mx);
++		}
++		target_offset = vinfo.yoffset + res_y;
++		if ( target_offset == res_y * 3 ) target_offset = 0;
++		stDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
++		MI_GFX_BitBlit(&stSrc, &stSrcRect, &stDst, &stDstRect, &stOpt, &flipFence);
++
++		// Request Flip
++		if (!now_flipping) {
++			now_flipping = 1;
++			pthread_cond_signal(&flip_req);
++			pthread_cond_wait(&flip_start, &flip_mx);
++		} else {
++			now_flipping = 2;
++		}
++		pthread_mutex_unlock(&flip_mx);
++	}
++}
++void	GFX_Flip(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags); }
++void	GFX_FlipNoWait(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags & ~GFX_FLIPWAIT); }
++void	GFX_FlipWait(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX_FLIPWAIT); }
++void	GFX_FlipForce(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX_BLOCKING); }
++
++//
++//	Get/Set Flipflags
++//		GFX_BLOCKING/GFX_FLIPWAIT flags used for GFX_Flip/UpdateRect
++//
++uint32_t	GFX_GetFlipFlags(void) { return flipFlags; }
++void		GFX_SetFlipFlags(uint32_t flags) { flipFlags = flags; }
++
++SDL_Window     *GFX_GetWindow(void)
++{
++#ifdef HAVE_SDL2
++        return g_sdl_window;
++#else
++        return NULL;
++#endif
++}
++
++
++//
++//	Get/Set Flip callback, for use direct draw to framebuffer
++//		(Battery icon, RetroArch OSD text, etc)
++//		*Note* framebuffer is rotated 180 degrees
++//
++void*	GFX_GetFlipCallback(void) { return (void*)flip_callback; }
++void	GFX_SetFlipCallback(void (*callback)(void*), void *userdata) {
++	userdata_callback = userdata; flip_callback = callback;
++}
++
++#ifdef	FREEMMA
++//
++//	Free all allocated MMAs (except "daemon")
++//
++void	freemma(void) {
++	FILE		*fp;
++	const char	*heapinfoname = "/proc/mi_modules/mi_sys_mma/mma_heap_name0";
++	char		str[256];
++	uint32_t	offset, length, usedflag;
++	uint32_t	baseaddr = finfo.smem_start - 0x021000;	// default baseaddr (tmp)
++
++	// open heap information file
++	fp = fopen(heapinfoname, "r");
++	if (fp) {
++		// skip reading until chunk information
++		do { if (fscanf(fp, "%255s", str) == EOF) { fclose(fp); return; } } while (strcmp(str,"sys-logConfig"));
++		// get MMA each chunk information and release
++		while(fscanf(fp, "%x %x %x %255s", &offset, &length, &usedflag, str) != EOF) {
++			if (!usedflag) continue; // NA
++			if (!strcmp(str,"fb_device")) { // FB .. fix baseaddr
++				baseaddr = finfo.smem_start - offset; continue;
++			}
++			if (!strcmp(str,"ao-Dev0-tmp")) continue; // ao .. Audio buffer, skip
++			// For daemon program authors, MMA allocated as "daemon" will not be released
++			if (strncmp(str,"daemon",6)) { // others except "daemon" .. release
++				if (!MI_SYS_MMA_Free(baseaddr + offset)) {
++					fprintf(stderr, "MMA_Released %s offset : %08X length : %08X\n", str, offset, length);
++				}
++			}
++		}
++		fclose(fp);
++	}
++}
++#endif
++
++//
++//	Create GFX Surface / in place of SDL_CreateRGBSurface
++//		supports 16/32bpp only / flags has no meaning, fixed to SWSURFACE
++//		Additional return value : surface->unused1 = Physical address of surface
++//
++SDL_Surface*	GFX_CreateRGBSurface(uint32_t flags, int width, int height, int depth, uint32_t Rmask, uint32_t Gmask, uint32_t Bmask, uint32_t Amask) {
++	SDL_Surface*	surface;
++	MI_PHY		phyAddr;
++	void*		virAddr;
++	if (!width) width = res_x;
++	if (!height) height = res_y;
++	if (depth != 16) depth = 32;
++	int		pitch = width * (uint32_t)(depth/8);
++	uint32_t	size = pitch * height;
++
++	if (MI_SYS_MMA_Alloc(NULL, ALIGN4K(size), &phyAddr)) {
++		// No MMA left .. create normal SDL surface
++		return SDL_CreateRGBSurface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
++	}
++#ifndef	FREEMMA
++	uint32_t i;
++	for (i=0; i<MMADBMAX; i++) {
++		if (!mma_db[i]) {
++			mma_db[i] = phyAddr; break;
++		}
++	} if (i==MMADBMAX) { MI_SYS_MMA_Free(phyAddr); return NULL; }
++#endif
++	MI_SYS_Mmap(phyAddr, ALIGN4K(size), &virAddr, TRUE);	// write cache ON needs Flush when r/w Pa directly
++
++	surface = SDL_CreateRGBSurfaceFrom(virAddr,width,height,depth,pitch,Rmask,Gmask,Bmask,Amask);
++	if (surface) {
++		miyoomini_surface_set_phys(surface, phyAddr);
++		memset(surface->pixels, 0, size);
++	}
++	return surface;
++}
++
++//
++//	Free GFX Surface / in place of SDL_FreeSurface
++//
++void	GFX_FreeSurface(SDL_Surface *surface) {
++	if (surface) {
++		MI_PHY		phyAddr = miyoomini_surface_get_phys(surface);
++		void*		virAddr = surface->pixels;
++		uint32_t	size = surface->pitch * surface->h;
++
++		// stop flip thread when sHWsurface is freed
++		if (surface == sHWsurface) {
++			pthread_cancel(flip_pt);
++			pthread_join(flip_pt, NULL);
++			sHWsurface = NULL;
++		}
++
++		miyoomini_surface_clear_extra(surface);
++		SDL_FreeSurface(surface);
++		if (phyAddr) {
++			MI_SYS_Munmap(virAddr, ALIGN4K(size));
++			MI_SYS_MMA_Free(phyAddr);
++#ifndef	FREEMMA
++			for (uint32_t i=0; i<MMADBMAX; i++) {
++				if (mma_db[i] == phyAddr) {
++					mma_db[i] = 0; break;
++				}
++			}
++#endif
++		}
++	}
++}
++
++//
++//	Clear entire FrameBuffer
++//
++void	GFX_ClearFrameBuffer(void) { memset(fb_addr, 0, finfo.smem_len); }
++
++//
++//	GFX Init / Prepare for HW Blit to FB, call after SDL_Init
++//
++void	GFX_Init(void) {
++	if (!fd_fb) {
++		MI_SYS_Init();
++		MI_GFX_Open();
++		fd_fb = open("/dev/fb0", O_RDWR);
++
++		if (fd_fb < 0) {
++			MI_GFX_Close();
++			MI_SYS_Exit();
++			return;
++		}
++
++		FILE *file = fopen("/tmp/screen_resolution", "r");
++		res_x = 640;
++		res_y = 480;
++		if (file) {
++			int tmp_x, tmp_y;
++			if (fscanf(file, "%dx%d", &tmp_x, &tmp_y) == 2) {
++				res_x = tmp_x;
++				res_y = tmp_y;
++			}
++			fclose(file);
++		}
++		// screen init
++		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
++		vinfo.yres_virtual = res_y * 3; vinfo.yoffset = 0;
++		/* vinfo.xres = vinfo.xres_virtual = 640; vinfo.yres = 480;
++		vinfo.xoffset = vinfo.yoffset = vinfo.red.msb_right = vinfo.green.msb_right = 
++		vinfo.blue.msb_right = vinfo.transp.msb_right = vinfo.blue.offset = 0;
++		vinfo.red.length = vinfo.green.length = vinfo.blue.length = vinfo.transp.length = vinfo.green.offset = 8;
++		vinfo.red.offset = 16; vinfo.transp.offset = 24; vinfo.bits_per_pixel = 32; */
++		ioctl(fd_fb, FBIOPUT_VSCREENINFO, &vinfo);
++
++		// get physical address of FB
++		ioctl(fd_fb, FBIOGET_FSCREENINFO, &finfo);
++
++		// map fb memory
++		fb_addr = mmap(0, finfo.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd_fb, 0);
++
++		// clear entire FB
++		GFX_ClearFrameBuffer();
++#ifdef	FREEMMA
++		freemma();
++#else
++		memset(mma_db, 0, sizeof(mma_db));
++#endif
++		// prepare for Flip
++		stDst.phyAddr = finfo.smem_start;
++		stDst.eColorFmt = E_MI_GFX_FMT_ARGB8888;
++		stDst.u32Width = res_x;
++		stDst.u32Height = res_y;
++		stDst.u32Stride = res_x*4;
++		stDstRect.s32Xpos = 0;
++		stDstRect.s32Ypos = 0;
++		stDstRect.u32Width = res_x;
++		stDstRect.u32Height = res_y;
++#ifdef	HAVE_OVERLAY
++		// prepare for OverlaySurface
++		OvrSrcRect.s32Xpos = 0;
++		OvrSrcRect.s32Ypos = 0;
++		OvrDst = stDst;
++		OvrDstRect = stDstRect;
++#endif
++		memset(&stOpt, 0, sizeof(stOpt));
++		stOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
++		stOpt.eRotate = E_MI_GFX_ROTATE_180;
++
++		flip_mx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
++		flip_req = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
++		flip_start = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
++		now_flipping = shadowPa = shadowsize = flipFence = 0;
++		sHWsurface = videosurface = NULL;
++		flipFlags = DEFAULTFLIPFLAGS;
++		pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
++
++#ifdef HAVE_SDL2
++		if (!g_sdl_window)
++		{
++			g_sdl_window = SDL_CreateWindow(
++				"RetroArch",
++				SDL_WINDOWPOS_CENTERED,
++				SDL_WINDOWPOS_CENTERED,
++				stDst.u32Width,
++				stDst.u32Height,
++				SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN);
++			if (g_sdl_window)
++				GFX_SetBufferCallback(true);
++		}
++#endif
++
++	}
++}
++
++//
++//	GFX Quit / call before SDL_Quit
++//
++void	GFX_Quit(void) {
++	if (fd_fb) {
++		pthread_cancel(flip_pt);
++		pthread_join(flip_pt, NULL);
++
++		MI_GFX_WaitAllDone(TRUE, 0);
++		if (sHWsurface) { SDL_Surface* sHWpush = sHWsurface; sHWsurface = NULL; GFX_FreeSurface(sHWpush); }
++		if (videosurface) { GFX_FreeSurface(videosurface); videosurface = NULL; }
++		if (shadowPa) { MI_SYS_MMA_Free(shadowPa); shadowPa = 0; }
++#ifdef	FREEMMA
++		freemma();
++#else
++		for (uint32_t i=0; i<MMADBMAX; i++) {
++			if (mma_db[i]) {
++				if (!MI_SYS_MMA_Free(mma_db[i])) {
++					fprintf(stderr, "MMA_Released offset : %08X\n", mma_db[i]);
++					mma_db[i] = 0;
++				}
++			}
++		}
++#endif
++#ifdef CLEARFBATQUIT
++		// clear entire FB
++		GFX_ClearFrameBuffer();
++#else
++		// copy current frame to initial frame
++		ioctl(fd_fb, FBIOGET_VSCREENINFO, &vinfo);
++		if (vinfo.yoffset) MI_SYS_MemcpyPa(finfo.smem_start, finfo.smem_start + (res_x*vinfo.yoffset*4), res_x*res_y*4);
++#endif
++		// reset yoffset
++		vinfo.yoffset = 0;
++		ioctl(fd_fb, FBIOPUT_VSCREENINFO, &vinfo);
++
++		// unmap fb memory
++		munmap(fb_addr, finfo.smem_len);
++
++		close(fd_fb);
++		fd_fb = 0;
++
++#ifdef HAVE_SDL2
++		GFX_SetBufferCallback(false);
++		if (g_sdl_window)
++		{
++			SDL_DestroyWindow(g_sdl_window);
++			g_sdl_window = NULL;
++		}
++#endif
++
++		MI_GFX_Close();
++		MI_SYS_Exit();
++	}
++}
++
++//
++//	SetVideomode / in place of SDL_SetVideoMode
++//		if flags == SDL_HWSURFACE & non SDL_DOUBLEBUF, change to direct draw mode
++//		 otherwise, same as GFX_CreateRGBSurface
++//
++SDL_Surface*	GFX_SetVideoMode(int width, int height, int bpp, uint32_t flags) {
++	if (!fd_fb) GFX_Init();
++	if (!width) width = res_x;
++	if (!height) height = res_y;
++	if (bpp != 16) bpp = 32;
++
++	// reinit Flip thread
++	pthread_cancel(flip_pt);
++	pthread_join(flip_pt, NULL);
++	MI_GFX_WaitAllDone(TRUE, 0);
++	if (sHWsurface) { SDL_Surface* sHWpush = sHWsurface; sHWsurface = NULL; GFX_FreeSurface(sHWpush); }
++	if (videosurface) { GFX_FreeSurface(videosurface); videosurface = NULL; }
++	if (shadowPa) { MI_SYS_MMA_Free(shadowPa); shadowPa = shadowsize = 0; }
++	flip_mx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
++	flip_req = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
++	flip_start = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
++	now_flipping = flipFence = vinfo.yoffset = 0;
++	GFX_ClearFrameBuffer();
++	ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
++
++	stDst.u32Width = width;
++	stDst.u32Height = height;
++	stDst.u32Stride = width * (uint32_t)(bpp / 8);
++	stDstRect.u32Width = width;
++	stDstRect.u32Height = height;
++
++	if ((flags&SDL_HWSURFACE)&&(!(flags&SDL_DOUBLEBUF))) {
++		// single HW surface, direct draw mode
++		sHWsurface = GFX_CreateRGBSurface(flags, width, height, bpp, 0,0,0,0);
++		if (sHWsurface) {
++			sHW.phyAddr = miyoomini_surface_get_phys(sHWsurface);
++			sHW.u32Width = sHWsurface->w;
++			sHW.u32Height = sHWsurface->h;
++			sHW.u32Stride = sHWsurface->pitch;
++			sHW.eColorFmt = GFX_ColorFmt(sHWsurface);
++			sHWRect.s32Xpos = 0;
++			sHWRect.s32Ypos = 0;
++			sHWRect.u32Width = sHW.u32Width;
++			sHWRect.u32Height = sHW.u32Height;
++			memset(&sHWOpt, 0, sizeof(sHWOpt));
++			sHWOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
++			pthread_create(&flip_pt, NULL, GFX_FlipThreadSingleHW, NULL);
++		} else pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
++#ifdef HAVE_SDL2
++		if (g_sdl_window)
++		{
++			SDL_SetWindowSize(g_sdl_window, width, height);
++			SDL_SetWindowFullscreen(g_sdl_window, SDL_WINDOW_FULLSCREEN);
++			GFX_SetBufferCallback(true);
++		}
++#endif
++		return sHWsurface;
++	} else {
++		// others
++		pthread_create(&flip_pt, NULL, GFX_FlipThread, NULL);
++		videosurface = GFX_CreateRGBSurface(flags, width, height, bpp, 0,0,0,0);
++#ifdef HAVE_SDL2
++		if (g_sdl_window)
++		{
++			SDL_SetWindowSize(g_sdl_window, width, height);
++			SDL_SetWindowFullscreen(g_sdl_window, SDL_WINDOW_FULLSCREEN);
++			GFX_SetBufferCallback(true);
++		}
++#endif
++		return videosurface;
++	}
++}
++
++//
++//	Clear GFX/SDL Surface (entire)
++//
++void	GFX_ClearSurface(SDL_Surface *surface) {
++	if (surface) {
++		uint32_t size = surface->pitch * surface->h;
++		memset(surface->pixels, 0, size);
++	}
++}
++
++//
++//	Copy GFX/SDL Surface (entire)
++//		src/dst surfaces must be the same size
++//
++void	GFX_CopySurface(SDL_Surface *src, SDL_Surface *dst) {
++	if ((src)&&(dst)) {
++		uint32_t size = src->pitch * src->h;
++		if (size == (uint32_t)(dst->pitch * dst->h)) {
++			if ((miyoomini_surface_get_phys(src))&&(miyoomini_surface_get_phys(dst))) {
++				MI_SYS_FlushInvCache(src->pixels, ALIGN4K(size));
++				MI_SYS_FlushInvCache(dst->pixels, ALIGN4K(size));
++				MI_SYS_MemcpyPa(miyoomini_surface_get_phys(dst), miyoomini_surface_get_phys(src), size);
++			} else {
++				memcpy(dst->pixels, src->pixels, size);
++			}
++		}
++	}
++}
++
++//
++//	Rotate 640x480x32bpp surface NEON / for duplicate FB
++//
++void	RotateSurfaceNEON(void* src) {
++	asm volatile (
++	"	add r1,%0,#(640*240*4)	;"
++	"	mov r2,r1		;"
++	"	mov r3,r1		;"
++	"1:	vldmia r1,{q0-q7}	;"
++	"	vrev64.32 d31,d0	;"
++	"	vrev64.32 d30,d1	;"
++	"	vrev64.32 d29,d2	;"
++	"	vrev64.32 d28,d3	;"
++	"	vrev64.32 d27,d4	;"
++	"	vrev64.32 d26,d5	;"
++	"	vrev64.32 d25,d6	;"
++	"	vrev64.32 d24,d7	;"
++	"	vrev64.32 d23,d8	;"
++	"	vrev64.32 d22,d9	;"
++	"	vrev64.32 d21,d10	;"
++	"	vrev64.32 d20,d11	;"
++	"	vrev64.32 d19,d12	;"
++	"	vrev64.32 d18,d13	;"
++	"	vrev64.32 d17,d14	;"
++	"	vrev64.32 d16,d15	;"
++	"	vldmdb r3!,{q0-q7}	;"
++	"	vstmdb r2!,{q8-q15}	;"
++	"	vrev64.32 d31,d0	;"
++	"	vrev64.32 d30,d1	;"
++	"	vrev64.32 d29,d2	;"
++	"	vrev64.32 d28,d3	;"
++	"	vrev64.32 d27,d4	;"
++	"	vrev64.32 d26,d5	;"
++	"	vrev64.32 d25,d6	;"
++	"	vrev64.32 d24,d7	;"
++	"	vrev64.32 d23,d8	;"
++	"	vrev64.32 d22,d9	;"
++	"	vrev64.32 d21,d10	;"
++	"	vrev64.32 d20,d11	;"
++	"	vrev64.32 d19,d12	;"
++	"	vrev64.32 d18,d13	;"
++	"	vrev64.32 d17,d14	;"
++	"	vrev64.32 d16,d15	;"
++	"	vstmia r1!,{q8-q15}	;"
++	"	cmp %0,r2		;"
++	"	bne 1b			"
++	:: "r"(src)
++	: "r1","r2","r3","q0","q1","q2","q3","q4","q5","q6","q7",
++	    "q8","q9","q10","q11","q12","q13","q14","q15","memory","cc"
++	);
++}
++
++void RotateSurface(SDL_Surface *surface)
++{
++    if (!surface || surface->format->BytesPerPixel != 4)
++        return;
++
++    int width = surface->w;
++    int height = surface->h;
++    uint32_t *pixels = (uint32_t *)surface->pixels;
++
++    for (int y = 0; y < height / 2; y++) {
++        for (int x = 0; x < width; x++) {
++            uint32_t topPixel = pixels[y * width + x];
++            uint32_t bottomPixel = pixels[(height - y - 1) * width + (width - x - 1)];
++            pixels[y * width + x] = bottomPixel;
++            pixels[(height - y - 1) * width + (width - x - 1)] = topPixel;
++        }
++    }
++}
++
++//
++//	Duplicate GFX Surface from SDL_Surface or FB
++//		if src is NULL, duplicate from FB currently displayed
++//
++SDL_Surface*	GFX_DuplicateSurface(SDL_Surface *src) {
++	SDL_Surface	*dst;
++	if (src) {
++		dst = GFX_CreateRGBSurface(0, src->w, src->h, src->format->BitsPerPixel,
++			src->format->Rmask, src->format->Gmask, src->format->Bmask, src->format->Amask);
++		if (dst) GFX_CopySurface(src, dst);
++	} else {
++		dst = GFX_CreateRGBSurface(0, res_x, res_y, 32, 0,0,0,0);
++		if (dst) {
++			MI_GFX_WaitAllDone(TRUE, 0);
++			MI_SYS_MemcpyPa(miyoomini_surface_get_phys(dst), finfo.smem_start + res_x*vinfo.yoffset*4, res_x*res_y*4);
++			if(res_x == 640 && res_y == 480)
++				RotateSurfaceNEON(dst);
++			else
++				RotateSurface(dst);
++		}
++	}
++	return dst;
++}
++
++//
++//	GFX UpdateRect / in place of SDL_UpdateRect
++//		Flip after setting the update area
++//		*Note* blit from entire screen(or clip_rect if specified) to framebuffer(or sHWsurface) rect
++//
++void	GFX_UpdateRectExec(SDL_Surface *screen, int x, int y, int w, int h, uint32_t flags) {
++	if ((fd_fb)&&(screen)&&(miyoomini_surface_get_phys(screen))) {
++		if (x|y|w|h) {
++			if (!sHWsurface) {
++				MI_GFX_Rect_t DstRectPush = stDstRect;
++				// for rotate180
++				stDstRect.s32Xpos = res_x-(x+w);
++				stDstRect.s32Ypos = res_y-(y+h);
++				// for RetroArch rotate function
++				stDstRect.u32Width = (stOpt.eRotate&1) ? h : w;
++				stDstRect.u32Height = (stOpt.eRotate&1) ? w : h;
++				GFX_FlipExec(screen, flags);
++				stDstRect = DstRectPush;
++			} else if (screen != sHWsurface) {
++				// direct draw mode, dest = sHWsurface
++				MI_GFX_Rect_t DstRectPush = sHWRect;
++				sHWRect.s32Xpos = x;
++				sHWRect.s32Ypos = y;
++				sHWRect.u32Width = w;
++				sHWRect.u32Height = h;
++				GFX_FlipExec(screen, flags);
++				sHWRect = DstRectPush;
++			}
++		} else {
++			GFX_FlipExec(screen, flags);
++		}
++	}
++}
++void	GFX_UpdateRect(SDL_Surface *screen, int x, int y, int w, int h) {
++	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags); }
++void	GFX_UpdateRectNoWait(SDL_Surface *screen, int x, int y, int w, int h) {
++	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags & ~GFX_FLIPWAIT); }
++void	GFX_UpdateRectWait(SDL_Surface *screen, int x, int y, int w, int h) {
++	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags | GFX_FLIPWAIT); }
++void	GFX_UpdateRectForce(SDL_Surface *screen, int x, int y, int w, int h) {
++	GFX_UpdateRectExec(screen, x, y, w, h, flipFlags | GFX_BLOCKING); }
++
++//
++//	Check Rect Overflow for FillRect/BlitSurfaceSYS
++//
++SDL_Rect* CheckRect(SDL_Surface* dst, SDL_Rect* dstrect) {
++	if ((!dst)||(!dstrect)) return NULL;
++
++	int w = dstrect->w; int h = dstrect->h;
++	if (dst->clip_rect.w|dst->clip_rect.h) {
++		if (dst->clip_rect.x > dstrect->x) {
++			w -= (dst->clip_rect.x - dstrect->x); dstrect->x = dst->clip_rect.x;
++		}
++		if ((dst->clip_rect.x + dst->clip_rect.w) < (dstrect->x + w)) {
++			w = dst->clip_rect.w - (dstrect->x - dst->clip_rect.x);
++		}
++		if (dst->clip_rect.y > dstrect->y) {
++			h -= (dst->clip_rect.y - dstrect->y); dstrect->y = dst->clip_rect.y;
++		}
++		if ((dst->clip_rect.y + dst->clip_rect.h) < (dstrect->y + h)) {
++			h = dst->clip_rect.h - (dstrect->y - dst->clip_rect.y);
++		}
++	}
++	if (dstrect->x < 0) { w += dstrect->x; dstrect->x = 0; }
++	if (dstrect->y < 0) { h += dstrect->y; dstrect->y = 0; }
++	if ((dstrect->x + w) > dst->w) { w = dst->w - dstrect->x; }
++	if ((dstrect->y + h) > dst->h) { h = dst->h - dstrect->y; }
++	if ((w <= 0)||(h <= 0)||(dstrect->x >= dst->w)||(dstrect->y >= dst->h)) return NULL;
++	dstrect->w = w; dstrect->h = h;
++	return dstrect;
++}
++
++//
++//	GFX FillRect (MI_SYS ver) / in place of SDL_FillRect
++//		*Note* color : in case of RGB565 : 2 pixel color values used alternately
++//
++void	GFX_FillRectSYS(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
++	if ((dst)&&(miyoomini_surface_get_phys(dst))) {
++		SDL_Rect dstrect_tmp;
++		if (!dstrect) {
++			dstrect_tmp.x = 0;
++			dstrect_tmp.y = 0;
++			dstrect_tmp.w = dst->w;
++			dstrect_tmp.h = dst->h;
++		} else 	memcpy(&dstrect_tmp, dstrect, sizeof(dstrect_tmp));
++		if (!(CheckRect(dst, &dstrect_tmp))) return;
++
++		MI_SYS_FrameData_t Buf;
++		MI_SYS_WindowRect_t Rect;
++
++		Buf.phyAddr[0] = miyoomini_surface_get_phys(dst);
++		Buf.u16Width = dst->w;
++		Buf.u16Height = dst->h;
++		Buf.u32Stride[0] = dst->pitch;
++		Buf.ePixelFormat = SYS_PixelFormat(dst);
++		Rect.u16X = dstrect_tmp.x;
++		Rect.u16Y = dstrect_tmp.y;
++		Rect.u16Width = dstrect_tmp.w;
++		Rect.u16Height = dstrect_tmp.h;
++
++		FlushCacheNeeded(dst->pixels, dst->pitch, Rect.u16Y, Rect.u16Height);
++		MI_SYS_BufFillPa(&Buf, color, &Rect);
++	} else 	SDL_FillRect(dst, dstrect, color);
++}
++
++//
++//	GFX FillRect (MI_GFX ver) / in place of SDL_FillRect
++//		*Note* color : in case of RGB565 : ARGB8888 color value
++//		nowait : 0 = wait until done / 1 = no wait
++//
++void	GFX_FillRectExec(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color, uint32_t nowait) {
++	if ((dst)&&(miyoomini_surface_get_phys(dst))) {
++		SDL_Rect dstrect_tmp;
++		if (!dstrect) {
++			dstrect_tmp.x = 0;
++			dstrect_tmp.y = 0;
++			dstrect_tmp.w = dst->w;
++			dstrect_tmp.h = dst->h;
++		} else 	memcpy(&dstrect_tmp, dstrect, sizeof(dstrect_tmp));
++		if (!(CheckRect(dst, &dstrect_tmp))) return;
++
++		MI_GFX_Surface_t Dst;
++		MI_GFX_Rect_t DstRect;
++		MI_U16 Fence;
++
++		Dst.phyAddr = miyoomini_surface_get_phys(dst);
++		Dst.eColorFmt = GFX_ColorFmt(dst);
++		Dst.u32Width = dst->w;
++		Dst.u32Height = dst->h;
++		Dst.u32Stride = dst->pitch;
++		DstRect.s32Xpos = dstrect_tmp.x;
++		DstRect.s32Ypos = dstrect_tmp.y;
++		DstRect.u32Width = dstrect_tmp.w;
++		DstRect.u32Height = dstrect_tmp.h;
++
++		FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Height);
++		MI_GFX_QuickFill(&Dst, &DstRect, color, &Fence);
++		if (!nowait) MI_GFX_WaitAllDone(FALSE, Fence);
++	} else SDL_FillRect(dst, dstrect, color);
++}
++void	GFX_FillRect(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
++	GFX_FillRectExec(dst, dstrect, color, 0);
++}
++void	GFX_FillRectNoWait(SDL_Surface* dst, SDL_Rect* dstrect, uint32_t color) {
++	GFX_FillRectExec(dst, dstrect, color, 1);
++}
++
++//
++//	GFX_WaitAllDone / wait all done for No Wait functions
++//
++void	GFX_WaitAllDone(void) {
++	MI_GFX_WaitAllDone(TRUE, 0);
++}
++
++//
++//	GFX BlitSurface (MI_SYS ver) / in place of SDL_BlitSurface
++//		*Note* Just a copy (no convert scale/bpp)
++//
++void GFX_BlitSurfaceSYS(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
++	if ((src)&&(dst)&&(miyoomini_surface_get_phys(src))&&(miyoomini_surface_get_phys(dst))) {
++		MI_SYS_FrameData_t SrcBuf;
++		MI_SYS_FrameData_t DstBuf;
++		MI_SYS_WindowRect_t SrcRect;
++		MI_SYS_WindowRect_t DstRect;
++
++		SDL_Rect srcrect_tmp, dstrect_tmp;
++		if (!srcrect) {
++			srcrect_tmp.x = 0; srcrect_tmp.y = 0;
++			srcrect_tmp.w = src->w; srcrect_tmp.h = src->h;
++		} else 	memcpy(&srcrect_tmp, srcrect, sizeof(srcrect_tmp));
++		if (!dstrect) {
++			dstrect_tmp.x = 0; dstrect_tmp.y = 0;
++			dstrect_tmp.w = dst->w; dstrect_tmp.h = dst->h;
++		} else {
++			if (dstrect->w|dstrect->h) memcpy(&dstrect_tmp, dstrect, sizeof(dstrect_tmp));
++			else {	dstrect_tmp.x = dstrect->x; dstrect_tmp.y = dstrect->y;
++				dstrect_tmp.w = src->w - dstrect->x; dstrect_tmp.h = src->h - dstrect->y;
++			}
++		}
++		// adjust rects from dst surface size and clip_rect
++		if (!(CheckRect(dst, &srcrect_tmp))) return;
++		if (!(CheckRect(dst, &dstrect_tmp))) return;
++
++		memset(&SrcBuf, 0, sizeof(SrcBuf));
++		SrcBuf.phyAddr[0] = miyoomini_surface_get_phys(src);
++		SrcBuf.u16Width = src->w;
++		SrcBuf.u16Height = src->h;
++		SrcBuf.u32Stride[0] = src->pitch;
++		SrcBuf.ePixelFormat = SYS_PixelFormat(src);
++		SrcRect.u16X = srcrect_tmp.x;
++		SrcRect.u16Y = srcrect_tmp.y;
++		SrcRect.u16Width = srcrect_tmp.w;
++		SrcRect.u16Height = srcrect_tmp.h;
++
++		memset(&DstBuf, 0, sizeof(DstBuf));
++		DstBuf.phyAddr[0] = miyoomini_surface_get_phys(dst);
++		DstBuf.u16Width = dst->w;
++		// **HACK** rect.h is not working properly for some reason, so adjust dst height
++		DstBuf.u16Height = dstrect_tmp.y + dstrect_tmp.h; // dst->h;
++		DstBuf.u32Stride[0] = dst->pitch;
++		DstBuf.ePixelFormat = SYS_PixelFormat(dst);
++		DstRect.u16X = dstrect_tmp.x;
++		DstRect.u16Y = dstrect_tmp.y;
++		DstRect.u16Width = dstrect_tmp.w;
++		DstRect.u16Height = dstrect_tmp.h;
++
++		FlushCacheNeeded(src->pixels, src->pitch, SrcRect.u16Y, SrcRect.u16Height);
++		FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.u16Y, DstRect.u16Height);
++		MI_SYS_BufBlitPa(&DstBuf, &DstRect, &SrcBuf, &SrcRect);
++	} else SDL_BlitSurface(src, srcrect, dst, dstrect);
++}
++
++//
++//	GFX BlitSurface (MI_GFX ver) / in place of SDL_BlitSurface
++//		with scale/bpp convert and rotate/mirror
++//		rotate : 1 = 90 / 2 = 180 / 3 = 270
++//		mirror : 1 = Horizontal / 2 = Vertical / 3 = Both
++//		nowait : 0 = wait until done / 1 = no wait
++//
++static inline void GFX_BlitSurfaceExec(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect,
++			 uint32_t rotate, uint32_t mirror, uint32_t nowait) {
++	if ((src)&&(dst)&&(miyoomini_surface_get_phys(src))&&(miyoomini_surface_get_phys(dst))) {
++		MI_GFX_Surface_t Src;
++		MI_GFX_Surface_t Dst;
++		MI_GFX_Rect_t SrcRect;
++		MI_GFX_Rect_t DstRect;
++		MI_GFX_Opt_t Opt;
++		MI_U16 Fence;
++
++		Src.phyAddr = miyoomini_surface_get_phys(src);
++		Src.u32Width = src->w;
++		Src.u32Height = src->h;
++		Src.u32Stride = src->pitch;
++		Src.eColorFmt = GFX_ColorFmt(src);
++		if (srcrect) {
++			SrcRect.s32Xpos = srcrect->x;
++			SrcRect.s32Ypos = srcrect->y;
++			SrcRect.u32Width = srcrect->w;
++			SrcRect.u32Height = srcrect->h;
++		} else {
++			SrcRect.s32Xpos = 0;
++			SrcRect.s32Ypos = 0;
++			SrcRect.u32Width = Src.u32Width;
++			SrcRect.u32Height = Src.u32Height;
++		}
++
++		Dst.phyAddr = miyoomini_surface_get_phys(dst);
++		Dst.u32Width = dst->w;
++		Dst.u32Height = dst->h;
++		Dst.u32Stride = dst->pitch;
++		Dst.eColorFmt = GFX_ColorFmt(dst);
++		if (dstrect) {
++			DstRect.s32Xpos = dstrect->x;
++			DstRect.s32Ypos = dstrect->y;
++			if (dstrect->w|dstrect->h) {
++				DstRect.u32Width = dstrect->w;
++				DstRect.u32Height = dstrect->h;
++			} else {
++				DstRect.u32Width = SrcRect.u32Width;
++				DstRect.u32Height = SrcRect.u32Height;
++			}
++		} else {
++			DstRect.s32Xpos = 0;
++			DstRect.s32Ypos = 0;
++			DstRect.u32Width = Dst.u32Width;
++			DstRect.u32Height = Dst.u32Height;
++		}
++
++		memset(&Opt, 0, sizeof(Opt));
++		{
++			Uint8 alpha_mod = SDL_ALPHA_OPAQUE;
++			if (miyoomini_surface_get_alpha(src, &alpha_mod)) {
++				if (alpha_mod == SDL_ALPHA_TRANSPARENT)
++					return;
++				Opt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
++				Opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
++				if (alpha_mod != SDL_ALPHA_OPAQUE) {
++					Opt.u32GlobalSrcConstColor =
++						((uint32_t)alpha_mod << (src->format->Ashift - src->format->Aloss)) &
++						src->format->Amask;
++					Opt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
++						(E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA |
++						 E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
++				}
++			}
++		}
++		{
++			Uint32 color_key = 0;
++			if (miyoomini_surface_has_colorkey(src, &color_key)) {
++				Opt.stSrcColorKeyInfo.bEnColorKey = TRUE;
++				Opt.stSrcColorKeyInfo.eCKeyFmt = Src.eColorFmt;
++				Opt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
++				Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart = color_key;
++				Opt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = color_key;
++			}
++		}
++		Opt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
++		Opt.eRotate = (MI_GFX_Rotate_e)rotate;
++		Opt.eMirror = (MI_GFX_Mirror_e)mirror;
++		Opt.stClipRect.s32Xpos = dst->clip_rect.x;
++		Opt.stClipRect.s32Ypos = dst->clip_rect.y;
++		Opt.stClipRect.u32Width = dst->clip_rect.w;
++		Opt.stClipRect.u32Height = dst->clip_rect.h;
++
++		FlushCacheNeeded(src->pixels, src->pitch, SrcRect.s32Ypos, SrcRect.u32Height);
++		if (rotate & 1) FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Width);
++		else FlushCacheNeeded(dst->pixels, dst->pitch, DstRect.s32Ypos, DstRect.u32Height);
++
++		MI_GFX_BitBlit(&Src, &SrcRect, &Dst, &DstRect, &Opt, &Fence);
++		if (!nowait) MI_GFX_WaitAllDone(FALSE, Fence);
++	} else SDL_BlitSurface(src, srcrect, dst, dstrect);
++}
++void GFX_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
++	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, 0, 0);
++}
++void GFX_BlitSurfaceNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
++	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, 0, 1);
++}
++void GFX_BlitSurfaceRotate(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t rotate) {
++	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, rotate, 0, 0);
++}
++void GFX_BlitSurfaceRotateNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t rotate) {
++	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, rotate, 0, 1);
++}
++void GFX_BlitSurfaceMirror(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t mirror) {
++	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, mirror, 0);
++}
++void GFX_BlitSurfaceMirrorNoWait(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect, uint32_t mirror) {
++	GFX_BlitSurfaceExec(src, srcrect, dst, dstrect, 0, mirror, 1);
++}
++#ifdef	HAVE_OVERLAY
++//
++//	GFX SetupOverlaySurface / Setup Overlay Surface (mainly for retroarch)
++//
++void GFX_SetupOverlaySurface(SDL_Surface *src) {
++	if ((!src)||(!miyoomini_surface_get_phys(src))) { ovrsurface = NULL; return; }
++
++	OvrSrc.phyAddr = miyoomini_surface_get_phys(src);
++	OvrSrc.u32Width = src->w;
++	OvrSrc.u32Height = src->h;
++	OvrSrc.u32Stride = src->pitch;
++	OvrSrc.eColorFmt = GFX_ColorFmt(src);
++	OvrSrcRect.u32Width = OvrSrc.u32Width;
++	OvrSrcRect.u32Height = OvrSrc.u32Height;
++
++	memset(&OvrOpt, 0, sizeof(OvrOpt));
++	{
++		Uint8 alpha_mod = SDL_ALPHA_OPAQUE;
++		if (miyoomini_surface_get_alpha(src, &alpha_mod)) {
++			if (alpha_mod == SDL_ALPHA_TRANSPARENT) { ovrsurface = NULL; return; }
++			OvrOpt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
++			OvrOpt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
++			if (alpha_mod != SDL_ALPHA_OPAQUE) {
++				OvrOpt.u32GlobalSrcConstColor =
++					((uint32_t)alpha_mod << (src->format->Ashift - src->format->Aloss)) & src->format->Amask;
++				OvrOpt.eDFBBlendFlag = (MI_Gfx_DfbBlendFlags_e)
++					(E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY | E_MI_GFX_DFB_BLEND_COLORALPHA | E_MI_GFX_DFB_BLEND_ALPHACHANNEL);
++			}
++		}
++	}
++	{
++		Uint32 color_key = 0;
++		if (miyoomini_surface_has_colorkey(src, &color_key)) {
++			OvrOpt.stSrcColorKeyInfo.bEnColorKey = TRUE;
++			OvrOpt.stSrcColorKeyInfo.eCKeyFmt = OvrSrc.eColorFmt;
++			OvrOpt.stSrcColorKeyInfo.eCKeyOp = E_MI_GFX_RGB_OP_EQUAL;
++			OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorStart = color_key;
++			OvrOpt.stSrcColorKeyInfo.stCKeyVal.u32ColorEnd = color_key;
++		}
++	}
++	OvrOpt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
++
++	ovrsurface = src;
++	return;
++}
+ #endif
+\ No newline at end of file
+diff --git a/gfx/drivers/miyoomini/miyoomini_sdl2_compat.h b/gfx/drivers/miyoomini/miyoomini_sdl2_compat.h
+new file mode 100644
+index 000000000..c2b365d8c
+--- /dev/null
++++ b/gfx/drivers/miyoomini/miyoomini_sdl2_compat.h
+@@ -0,0 +1,146 @@
++#ifndef MIYOOMINI_SDL2_COMPAT_H
++#define MIYOOMINI_SDL2_COMPAT_H
++
++#include <stdbool.h>
++#include <stdlib.h>
++#include <SDL2/SDL.h>
++#include <mi_sys.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* Compatibility defines for legacy SDL 1.2 flags used by the Miyoo code */
++#ifndef SDL_HWSURFACE
++#define SDL_HWSURFACE 0x00000001
++#endif
++
++#ifndef SDL_DOUBLEBUF
++#define SDL_DOUBLEBUF 0x40000000
++#endif
++
++#ifndef SDL_SRCCOLORKEY
++#define SDL_SRCCOLORKEY 0x00001000
++#endif
++
++#ifndef SDL_SRCALPHA
++#define SDL_SRCALPHA 0x00010000
++#endif
++
++/* Simple wrapper used to track the physical framebuffer address associated
++ * with an SDL surface. SDL 2.0 removed the unused fields that the legacy
++ * code repurposed, so we stash the information in the surface userdata. */
++typedef struct miyoomini_surface_extra
++{
++   MI_PHY phys_addr;
++} miyoomini_surface_extra_t;
++
++static inline miyoomini_surface_extra_t *miyoomini_surface_extra(SDL_Surface *surface,
++      bool create)
++{
++   miyoomini_surface_extra_t *extra;
++
++   if (!surface)
++      return NULL;
++
++   extra = (miyoomini_surface_extra_t*)surface->userdata;
++   if (!extra && create)
++   {
++      extra = (miyoomini_surface_extra_t*)calloc(1, sizeof(*extra));
++      if (!extra)
++         return NULL;
++      surface->userdata = extra;
++   }
++
++   return extra;
++}
++
++static inline MI_PHY miyoomini_surface_get_phys(SDL_Surface *surface)
++{
++   miyoomini_surface_extra_t *extra = miyoomini_surface_extra(surface, false);
++   return extra ? extra->phys_addr : 0;
++}
++
++static inline void miyoomini_surface_set_phys(SDL_Surface *surface, MI_PHY phys)
++{
++   miyoomini_surface_extra_t *extra = miyoomini_surface_extra(surface, true);
++   if (extra)
++      extra->phys_addr = phys;
++}
++
++static inline void miyoomini_surface_clear_extra(SDL_Surface *surface)
++{
++   miyoomini_surface_extra_t *extra = miyoomini_surface_extra(surface, false);
++   if (extra)
++   {
++      free(extra);
++      surface->userdata = NULL;
++   }
++}
++
++static inline bool miyoomini_surface_has_colorkey(SDL_Surface *surface,
++      Uint32 *color_key)
++{
++   Uint32 key = 0;
++
++   if (!surface)
++      return false;
++
++   if (SDL_GetColorKey(surface, &key) == 0)
++   {
++      if (color_key)
++         *color_key = key;
++      return true;
++   }
++
++   return false;
++}
++
++static inline bool miyoomini_surface_get_alpha(SDL_Surface *surface,
++      Uint8 *alpha_mod)
++{
++   Uint8 alpha = SDL_ALPHA_OPAQUE;
++
++   if (!surface)
++      return false;
++
++   if (SDL_GetSurfaceAlphaMod(surface, &alpha) == 0)
++   {
++      if (alpha_mod)
++         *alpha_mod = alpha;
++      if (alpha != SDL_ALPHA_OPAQUE)
++         return true;
++   }
++
++   if (alpha_mod)
++      *alpha_mod = alpha;
++
++   /* Treat per-pixel alpha or any active blend mode as SRCALPHA. */
++   if (surface->format && surface->format->Amask != 0)
++      return true;
++
++   {
++      SDL_BlendMode blend_mode = SDL_BLENDMODE_NONE;
++      if (SDL_GetSurfaceBlendMode(surface, &blend_mode) == 0 &&
++            blend_mode != SDL_BLENDMODE_NONE)
++         return true;
++   }
++
++   return false;
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++/* External GLES helper hooks provided by the Miyoo-specific SDL driver. */
++#ifdef __cplusplus
++extern "C" {
++#endif
++int glUpdateBufferSettings(void *cb);
++void glSetMiniRotation(int rotate);
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* MIYOOMINI_SDL2_COMPAT_H */
+diff --git a/gfx/drivers/miyoomini/sdl_miyoomini_gfx.c b/gfx/drivers/miyoomini/sdl_miyoomini_gfx.c
+index f011a66e3..fdfae82f8 100644
+--- a/gfx/drivers/miyoomini/sdl_miyoomini_gfx.c
++++ b/gfx/drivers/miyoomini/sdl_miyoomini_gfx.c
+@@ -21,8 +21,9 @@
+ #include <string.h>
+ #include <stdint.h>
+ 
+-#include <SDL/SDL.h>
+-#include <SDL/SDL_video.h>
++#include <SDL2/SDL.h>
++#include <SDL2/SDL_video.h>
++#include <SDL2/SDL_version.h>
+ 
+ #include <gfx/video_frame.h>
+ #include <string/stdstring.h>
+@@ -71,6 +72,10 @@ struct sdl_miyoomini_video
+ {
+    SDL_Surface *screens[2];
+    SDL_Surface *screen;
++   SDL_Window *window;
++   SDL_Renderer *renderer;
++   SDL_Texture *frame_tex;
++   SDL_Texture *menu_tex;
+    uint16_t screen_fence[2];
+    unsigned screen_index;
+    void (*scale_func)(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp);
+@@ -105,6 +110,82 @@ struct sdl_miyoomini_video
+    char msg_tmp[OSD_TEXT_LEN_MAX];
+ };
+ 
++static void sdl_miyoomini_destroy_textures(sdl_miyoomini_video_t *vid)
++{
++   if (!vid)
++      return;
++
++   if (vid->frame_tex)
++   {
++      SDL_DestroyTexture(vid->frame_tex);
++      vid->frame_tex = NULL;
++   }
++
++   if (vid->menu_tex)
++   {
++      SDL_DestroyTexture(vid->menu_tex);
++      vid->menu_tex = NULL;
++   }
++}
++
++static bool sdl_miyoomini_ensure_texture(sdl_miyoomini_video_t *vid,
++      SDL_Texture **tex, unsigned width, unsigned height, bool rgb32)
++{
++   Uint32 format;
++
++   if (!vid || !tex || !vid->renderer || !width || !height)
++      return false;
++
++   format = rgb32 ? SDL_PIXELFORMAT_ARGB8888 : SDL_PIXELFORMAT_RGB565;
++
++   if (*tex)
++   {
++      Uint32 existing_format = 0;
++      int tex_w = 0, tex_h = 0;
++
++      if (SDL_QueryTexture(*tex, &existing_format, NULL, &tex_w, &tex_h) == 0 &&
++            existing_format == format &&
++            tex_w == (int)width && tex_h == (int)height)
++         return true;
++
++      SDL_DestroyTexture(*tex);
++      *tex = NULL;
++   }
++
++   *tex = SDL_CreateTexture(vid->renderer, format,
++         SDL_TEXTUREACCESS_STREAMING, width, height);
++
++   if (!*tex)
++   {
++      RARCH_ERR("[SDL2]: Failed to create Miyoo texture (%ux%u): %s\n",
++            width, height, SDL_GetError());
++      return false;
++   }
++
++   SDL_SetTextureBlendMode(*tex, SDL_BLENDMODE_NONE);
++   return true;
++}
++
++static bool sdl_miyoomini_present_texture(sdl_miyoomini_video_t *vid,
++      SDL_Texture *tex, const SDL_Rect *dst_rect)
++{
++   if (!vid || !vid->renderer || !tex)
++      return false;
++
++   SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
++   SDL_RenderClear(vid->renderer);
++
++   if (SDL_RenderCopy(vid->renderer, tex, NULL, dst_rect) < 0)
++   {
++      RARCH_ERR("[SDL2]: Failed to render Miyoo texture: %s\n",
++            SDL_GetError());
++      return false;
++   }
++
++   SDL_RenderPresent(vid->renderer);
++   return true;
++}
++
+ /* Clear OSD text area, without video_rect, rotate180 */
+ static void sdl_miyoomini_clear_msgarea(void* buf, unsigned x, unsigned y, unsigned w, unsigned h, unsigned lines) {
+    if ( ( x == 0 ) && ( w == SDL_MIYOOMINI_WIDTH  ) && ( y == 0 ) && ( h == SDL_MIYOOMINI_HEIGHT ) ) return;
+@@ -656,6 +737,7 @@ static void sdl_miyoomini_gfx_free(void *data) {
+       GFX_SetFlipCallback(NULL, NULL); usleep(0x2000); /* wait for finish callback */
+    }
+    GFX_WaitAllDone();
++   sdl_miyoomini_destroy_textures(vid);
+    for (unsigned i = 0; i < 2; i++) {
+       if (vid->screen_fence[i]) {
+          MI_GFX_WaitAllDone(FALSE, vid->screen_fence[i]);
+@@ -672,6 +754,12 @@ static void sdl_miyoomini_gfx_free(void *data) {
+ #ifdef HAVE_OVERLAY
+    if (vid->overlay_surface) { GFX_SetupOverlaySurface(NULL); GFX_FreeSurface(vid->overlay_surface); }
+ #endif
++   if (vid->renderer)
++   {
++      SDL_DestroyRenderer(vid->renderer);
++      vid->renderer = NULL;
++   }
++   vid->window = NULL;
+    GFX_Quit();
+ 
+    if (vid->osd_font) bitmapfont_free_lut(vid->osd_font);
+@@ -873,6 +961,17 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
+       vid->screen       = vid->screens[vid->screen_index];
+    }
+ 
++   if (vid->renderer)
++   {
++      if (!sdl_miyoomini_ensure_texture(vid, &vid->frame_tex,
++               vid->frame_width, vid->frame_height, rgb32))
++      {
++         RARCH_ERR("[SDL2]: Failed to initialise Miyoo frame texture\n");
++         vid->screen = NULL;
++         return;
++      }
++   }
++
+    if (!vid->menu_active && (viewport_changed || surface_size_changed || surface_format_changed))
+       sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+ 
+@@ -889,6 +988,10 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
+ 
+    sdl_miyoomini_set_cpugovernor(PERFORMANCE);
+ 
++#ifdef HAVE_SDL2
++   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "Miyoo Mini");
++#endif
++
+    /* Initialise graphics subsystem, if required */
+    if (sdl_subsystem_flags == 0) {
+       if (SDL_Init(SDL_INIT_VIDEO) < 0) return NULL;
+@@ -900,6 +1003,36 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
+    if (!vid) return NULL;
+ 
+    GFX_Init();
++   glSetMiniRotation(stOpt.eRotate);
++
++   vid->window = GFX_GetWindow();
++   if (!vid->window)
++   {
++      RARCH_ERR("[SDL2]: Failed to acquire Miyoo window handle\n");
++      goto error;
++   }
++
++   vid->renderer = SDL_GetRenderer(vid->window);
++   if (!vid->renderer)
++   {
++      unsigned renderer_flags = SDL_RENDERER_ACCELERATED;
++
++      if (video->vsync)
++         renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
++
++      vid->renderer = SDL_CreateRenderer(vid->window, -1, renderer_flags);
++      if (!vid->renderer)
++      {
++         RARCH_ERR("[SDL2]: Failed to create Miyoo renderer: %s\n",
++               SDL_GetError());
++         goto error;
++      }
++   }
++
++#if SDL_VERSION_ATLEAST(2,0,18)
++   SDL_RenderSetVSync(vid->renderer, video->vsync ? 1 : 0);
++#endif
++   SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
+ 
+    vid->menuscreen = GFX_CreateRGBSurface(
+          0, SDL_MIYOOMINI_WIDTH, SDL_MIYOOMINI_HEIGHT, 16, 0, 0, 0, 0);
+@@ -925,6 +1058,11 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
+ 
+    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
+ 
++   if (vid->renderer &&
++         !sdl_miyoomini_ensure_texture(vid, &vid->menu_tex,
++               SDL_MIYOOMINI_WIDTH, SDL_MIYOOMINI_HEIGHT, false))
++      goto error;
++
+    GFX_SetFlipFlags(vid->vsync ? GFX_BLOCKING : 0);
+ 
+    sdl_miyoomini_input_driver_init(input_drv_name,
+@@ -1022,14 +1160,46 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
+          return false;
+       /* SW Blit frame to GFX surface with scaling */
+       vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
+-      /* HW Blit GFX surface to Framebuffer and Flip */
+-      GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+-      vid->screen_fence[vid->screen_index] = flipFence;
++      /* Upload to SDL texture and present via Miyoo renderer */
++      if (!sdl_miyoomini_ensure_texture(vid, &vid->frame_tex,
++               vid->frame_width, vid->frame_height, vid->rgb32))
++         return false;
++
++      if (SDL_UpdateTexture(vid->frame_tex, NULL,
++               vid->screen->pixels, vid->screen->pitch) < 0)
++      {
++         RARCH_ERR("[SDL2]: Failed to update Miyoo frame texture: %s\n",
++               SDL_GetError());
++         return false;
++      }
++
++      SDL_Rect dst_rect = {
++         (int)vid->video_x,
++         (int)vid->video_y,
++         (int)vid->video_w,
++         (int)vid->video_h
++      };
++
++      if (!sdl_miyoomini_present_texture(vid, vid->frame_tex, &dst_rect))
++         return false;
++
++      vid->screen_fence[vid->screen_index] = 0;
+    } else {
+       scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels, RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0,0);
+-      stOpt.eRotate = E_MI_GFX_ROTATE_180;
+-      GFX_Flip(vid->menuscreen);
+-      stOpt.eRotate = vid->rotate;
++      if (!sdl_miyoomini_ensure_texture(vid, &vid->menu_tex,
++               SDL_MIYOOMINI_WIDTH, SDL_MIYOOMINI_HEIGHT, false))
++         return false;
++
++      if (SDL_UpdateTexture(vid->menu_tex, NULL,
++               vid->menuscreen->pixels, vid->menuscreen->pitch) < 0)
++      {
++         RARCH_ERR("[SDL2]: Failed to update Miyoo menu texture: %s\n",
++               SDL_GetError());
++         return false;
++      }
++
++      if (!sdl_miyoomini_present_texture(vid, vid->menu_tex, NULL))
++         return false;
+    }
+    return true;
+ }
+@@ -1074,6 +1244,10 @@ static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
+    {
+       vid->vsync              = vsync;
+       GFX_SetFlipFlags(vsync ? GFX_BLOCKING : 0);
++#if SDL_VERSION_ATLEAST(2,0,18)
++      if (vid->renderer)
++         SDL_RenderSetVSync(vid->renderer, vsync ? 1 : 0);
++#endif
+    }
+ }
+ 
+@@ -1081,7 +1255,7 @@ static void sdl_miyoomini_gfx_check_window(sdl_miyoomini_video_t *vid) {
+    SDL_Event event;
+ 
+    SDL_PumpEvents();
+-   while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_QUITMASK))
++   while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT))
+    {
+       if (event.type != SDL_QUIT)
+          continue;
+@@ -1119,6 +1293,7 @@ static void sdl_miyoomini_gfx_set_rotation(void *data, unsigned rotation) {
+    }
+    if (vid->rotate != stOpt.eRotate) {
+       vid->rotate = stOpt.eRotate;
++      glSetMiniRotation(stOpt.eRotate);
+       sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
+    }
+ }
+diff --git a/gfx/drivers/miyoomini/sdl_mmiyoov4_gfx.c b/gfx/drivers/miyoomini/sdl_mmiyoov4_gfx.c
+index f255f0d58..de040f553 100644
+--- a/gfx/drivers/miyoomini/sdl_mmiyoov4_gfx.c
++++ b/gfx/drivers/miyoomini/sdl_mmiyoov4_gfx.c
+@@ -22,8 +22,9 @@
+ #include <unistd.h>
+ #include <stdint.h>
+ 
+-#include <SDL/SDL.h>
+-#include <SDL/SDL_video.h>
++#include <SDL2/SDL.h>
++#include <SDL2/SDL_video.h>
++#include <SDL2/SDL_version.h>
+ 
+ #include <gfx/video_frame.h>
+ #include <string/stdstring.h>
+@@ -77,6 +78,10 @@ struct sdl_miyoomini_video
+ {
+    SDL_Surface *screens[2];
+    SDL_Surface *screen;
++   SDL_Window *window;
++   SDL_Renderer *renderer;
++   SDL_Texture *frame_tex;
++   SDL_Texture *menu_tex;
+    uint16_t screen_fence[2];
+    unsigned screen_index;
+    void (*scale_func)(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp);
+@@ -111,6 +116,82 @@ struct sdl_miyoomini_video
+    char msg_tmp[OSD_TEXT_LEN_MAX];
+ };
+ 
++static void sdl_miyoomini_destroy_textures(sdl_miyoomini_video_t *vid)
++{
++   if (!vid)
++      return;
++
++   if (vid->frame_tex)
++   {
++      SDL_DestroyTexture(vid->frame_tex);
++      vid->frame_tex = NULL;
++   }
++
++   if (vid->menu_tex)
++   {
++      SDL_DestroyTexture(vid->menu_tex);
++      vid->menu_tex = NULL;
++   }
++}
++
++static bool sdl_miyoomini_ensure_texture(sdl_miyoomini_video_t *vid,
++      SDL_Texture **tex, unsigned width, unsigned height, bool rgb32)
++{
++   Uint32 format;
++
++   if (!vid || !tex || !vid->renderer || !width || !height)
++      return false;
++
++   format = rgb32 ? SDL_PIXELFORMAT_ARGB8888 : SDL_PIXELFORMAT_RGB565;
++
++   if (*tex)
++   {
++      Uint32 existing_format = 0;
++      int tex_w = 0, tex_h = 0;
++
++      if (SDL_QueryTexture(*tex, &existing_format, NULL, &tex_w, &tex_h) == 0 &&
++            existing_format == format &&
++            tex_w == (int)width && tex_h == (int)height)
++         return true;
++
++      SDL_DestroyTexture(*tex);
++      *tex = NULL;
++   }
++
++   *tex = SDL_CreateTexture(vid->renderer, format,
++         SDL_TEXTUREACCESS_STREAMING, width, height);
++
++   if (!*tex)
++   {
++      RARCH_ERR("[SDL2]: Failed to create Miyoo texture (%ux%u): %s\n",
++            width, height, SDL_GetError());
++      return false;
++   }
++
++   SDL_SetTextureBlendMode(*tex, SDL_BLENDMODE_NONE);
++   return true;
++}
++
++static bool sdl_miyoomini_present_texture(sdl_miyoomini_video_t *vid,
++      SDL_Texture *tex, const SDL_Rect *dst_rect)
++{
++   if (!vid || !vid->renderer || !tex)
++      return false;
++
++   SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
++   SDL_RenderClear(vid->renderer);
++
++   if (SDL_RenderCopy(vid->renderer, tex, NULL, dst_rect) < 0)
++   {
++      RARCH_ERR("[SDL2]: Failed to render Miyoo texture: %s\n",
++            SDL_GetError());
++      return false;
++   }
++
++   SDL_RenderPresent(vid->renderer);
++   return true;
++}
++
+ /* Clear OSD text area, without video_rect, rotate180 */
+ static void sdl_miyoomini_clear_msgarea(void* buf, unsigned x, unsigned y, unsigned w, unsigned h, unsigned lines) {
+    if ( ( x == 0 ) && ( w == res_x  ) && ( y == 0 ) && ( h == res_y ) ) return;
+@@ -662,6 +743,7 @@ static void sdl_miyoomini_gfx_free(void *data) {
+       GFX_SetFlipCallback(NULL, NULL); usleep(0x2000); /* wait for finish callback */
+    }
+    GFX_WaitAllDone();
++   sdl_miyoomini_destroy_textures(vid);
+    for (unsigned i = 0; i < 2; i++) {
+       if (vid->screen_fence[i]) {
+          MI_GFX_WaitAllDone(FALSE, vid->screen_fence[i]);
+@@ -678,6 +760,12 @@ static void sdl_miyoomini_gfx_free(void *data) {
+ #ifdef HAVE_OVERLAY
+    if (vid->overlay_surface) { GFX_SetupOverlaySurface(NULL); GFX_FreeSurface(vid->overlay_surface); }
+ #endif
++   if (vid->renderer)
++   {
++      SDL_DestroyRenderer(vid->renderer);
++      vid->renderer = NULL;
++   }
++   vid->window = NULL;
+    GFX_Quit();
+ 
+    if (vid->osd_font) bitmapfont_free_lut(vid->osd_font);
+@@ -929,6 +1017,17 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
+       vid->screen       = vid->screens[vid->screen_index];
+    }
+ 
++   if (vid->renderer)
++   {
++      if (!sdl_miyoomini_ensure_texture(vid, &vid->frame_tex,
++               vid->frame_width, vid->frame_height, rgb32))
++      {
++         RARCH_ERR("[SDL2]: Failed to initialise Miyoo frame texture\n");
++         vid->screen = NULL;
++         return;
++      }
++   }
++
+    if (!vid->menu_active && (viewport_changed || surface_size_changed || surface_format_changed))
+       sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+ 
+@@ -963,6 +1062,36 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
+    if (!vid) return NULL;
+ 
+    GFX_Init();
++   glSetMiniRotation(stOpt.eRotate);
++
++   vid->window = GFX_GetWindow();
++   if (!vid->window)
++   {
++      RARCH_ERR("[SDL2]: Failed to acquire Miyoo window handle\n");
++      goto error;
++   }
++
++   vid->renderer = SDL_GetRenderer(vid->window);
++   if (!vid->renderer)
++   {
++      unsigned renderer_flags = SDL_RENDERER_ACCELERATED;
++
++      if (video->vsync)
++         renderer_flags |= SDL_RENDERER_PRESENTVSYNC;
++
++      vid->renderer = SDL_CreateRenderer(vid->window, -1, renderer_flags);
++      if (!vid->renderer)
++      {
++         RARCH_ERR("[SDL2]: Failed to create Miyoo renderer: %s\n",
++               SDL_GetError());
++         goto error;
++      }
++   }
++
++#if SDL_VERSION_ATLEAST(2,0,18)
++   SDL_RenderSetVSync(vid->renderer, video->vsync ? 1 : 0);
++#endif
++   SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
+ 
+    vid->menuscreen = GFX_CreateRGBSurface(
+          0, res_x, res_y, 16, 0, 0, 0, 0);
+@@ -988,6 +1117,11 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
+ 
+    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
+ 
++   if (vid->renderer &&
++         !sdl_miyoomini_ensure_texture(vid, &vid->menu_tex,
++               res_x, res_y, false))
++      goto error;
++
+    GFX_SetFlipFlags(vid->vsync ? GFX_BLOCKING : 0);
+ 
+    sdl_miyoomini_input_driver_init(input_drv_name,
+@@ -1085,9 +1219,29 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
+          return false;
+       /* SW Blit frame to GFX surface with scaling */
+       vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
+-      /* HW Blit GFX surface to Framebuffer and Flip */
+-      GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+-      vid->screen_fence[vid->screen_index] = flipFence;
++      if (!sdl_miyoomini_ensure_texture(vid, &vid->frame_tex,
++               vid->frame_width, vid->frame_height, vid->rgb32))
++         return false;
++
++      if (SDL_UpdateTexture(vid->frame_tex, NULL,
++               vid->screen->pixels, vid->screen->pitch) < 0)
++      {
++         RARCH_ERR("[SDL2]: Failed to update Miyoo frame texture: %s\n",
++               SDL_GetError());
++         return false;
++      }
++
++      SDL_Rect dst_rect = {
++         (int)vid->video_x,
++         (int)vid->video_y,
++         (int)vid->video_w,
++         (int)vid->video_h
++      };
++
++      if (!sdl_miyoomini_present_texture(vid, vid->frame_tex, &dst_rect))
++         return false;
++
++      vid->screen_fence[vid->screen_index] = 0;
+    } else {
+       settings_t *settings       = config_get_ptr();
+       if (unlikely(!settings))
+@@ -1100,9 +1254,20 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
+          }
+          SDL_SoftStretch(vid->menuscreen_rgui, NULL, vid->menuscreen, settings->bools.menu_rgui_fullscreen_stretch ? NULL : &rgui_menu_dest_rect);
+       }
+-      stOpt.eRotate = E_MI_GFX_ROTATE_180;
+-      GFX_Flip(vid->menuscreen);
+-      stOpt.eRotate = vid->rotate;
++      if (!sdl_miyoomini_ensure_texture(vid, &vid->menu_tex,
++               res_x, res_y, false))
++         return false;
++
++      if (SDL_UpdateTexture(vid->menu_tex, NULL,
++               vid->menuscreen->pixels, vid->menuscreen->pitch) < 0)
++      {
++         RARCH_ERR("[SDL2]: Failed to update Miyoo menu texture: %s\n",
++               SDL_GetError());
++         return false;
++      }
++
++      if (!sdl_miyoomini_present_texture(vid, vid->menu_tex, NULL))
++         return false;
+    }
+    return true;
+ }
+@@ -1147,6 +1312,10 @@ static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
+    {
+       vid->vsync              = vsync;
+       GFX_SetFlipFlags(vsync ? GFX_BLOCKING : 0);
++#if SDL_VERSION_ATLEAST(2,0,18)
++      if (vid->renderer)
++         SDL_RenderSetVSync(vid->renderer, vsync ? 1 : 0);
++#endif
+    }
+ }
+ 
+@@ -1192,6 +1361,7 @@ static void sdl_miyoomini_gfx_set_rotation(void *data, unsigned rotation) {
+    }
+    if (vid->rotate != stOpt.eRotate) {
+       vid->rotate = stOpt.eRotate;
++      glSetMiniRotation(stOpt.eRotate);
+       sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
+    }
+ }
+diff --git a/input/drivers_joypad/sdl_dingux_joypad.c b/input/drivers_joypad/sdl_dingux_joypad.c
+index 10ccb0993..d3459f56f 100644
+--- a/input/drivers_joypad/sdl_dingux_joypad.c
++++ b/input/drivers_joypad/sdl_dingux_joypad.c
+@@ -20,7 +20,11 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ 
++#ifdef HAVE_SDL2
++#include <SDL2/SDL.h>
++#else
+ #include <SDL/SDL.h>
++#endif
+ 
+ #include <libretro.h>
+ 
+diff --git a/input/drivers_joypad/sdl_miyoomini_joypad.c b/input/drivers_joypad/sdl_miyoomini_joypad.c
+index 2e9bc3068..233db7bc6 100644
+--- a/input/drivers_joypad/sdl_miyoomini_joypad.c
++++ b/input/drivers_joypad/sdl_miyoomini_joypad.c
+@@ -17,7 +17,7 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ 
+-#include <SDL/SDL.h>
++#include <SDL2/SDL.h>
+ 
+ #include <libretro.h>
+ 
+@@ -81,6 +81,17 @@ static miyoomini_joypad_t miyoomini_joypad;
+ extern uint64_t lifecycle_state;
+ #endif
+ 
++static SDL_TimerID sdl_miyoomini_rumble_timer = 0;
++
++static Uint32 sdl_miyoomini_rumble_finish_cb(Uint32 interval, void *param)
++{
++   (void)interval;
++   (void)param;
++   sdl_miyoomini_rumble_timer = 0;
++   miyoomini_rumble(0);
++   return 0;
++}
++
+ void miyoomini_rumble(uint16_t strength) {
+    static char lastvalue = 0;
+    const char str_export[2] = "48";
+@@ -100,11 +111,6 @@ void miyoomini_rumble(uint16_t strength) {
+    }
+ }
+ 
+-uint32_t miyoomini_rumble_finish(uint32_t interval) {
+-   miyoomini_rumble(0);
+-   return 0;
+-}
+-
+ static bool sdl_miyoomini_joypad_set_rumble(unsigned pad,
+       enum retro_rumble_effect effect, uint16_t strength) {
+    if (pad) return false;
+@@ -112,7 +118,15 @@ static bool sdl_miyoomini_joypad_set_rumble(unsigned pad,
+    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
+    if ( (joypad->rumble_time)&&(strength) ) {
+       miyoomini_rumble(strength);
+-      SDL_SetTimer(joypad->rumble_time, miyoomini_rumble_finish);
++      if (sdl_miyoomini_rumble_timer)
++      {
++         SDL_RemoveTimer(sdl_miyoomini_rumble_timer);
++         sdl_miyoomini_rumble_timer = 0;
++      }
++      sdl_miyoomini_rumble_timer = SDL_AddTimer(
++            joypad->rumble_time,
++            sdl_miyoomini_rumble_finish_cb,
++            NULL);
+    }
+    return true;
+ }
+@@ -164,7 +178,11 @@ static void sdl_miyoomini_joypad_destroy(void) {
+    sdl_miyoomini_joypad_disconnect();
+ 
+    /* Stop rumble */
+-   SDL_SetTimer(0, NULL);
++   if (sdl_miyoomini_rumble_timer)
++   {
++      SDL_RemoveTimer(sdl_miyoomini_rumble_timer);
++      sdl_miyoomini_rumble_timer = 0;
++   }
+    miyoomini_rumble(0);
+ 
+    /* Flush out all pending events */
+@@ -179,6 +197,7 @@ static void *sdl_miyoomini_joypad_init(void *data) {
+    miyoomini_joypad_t *joypad      = (miyoomini_joypad_t*)&miyoomini_joypad;
+ 
+    memset(joypad, 0, sizeof(miyoomini_joypad_t));
++   sdl_miyoomini_rumble_timer = 0;
+ 
+    /* Init for rumble */
+    if (!SDL_WasInit(SDL_INIT_TIMER)) SDL_InitSubSystem(SDL_INIT_TIMER);
