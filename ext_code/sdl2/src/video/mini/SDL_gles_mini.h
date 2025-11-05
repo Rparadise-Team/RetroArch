@@ -25,6 +25,8 @@ int glUpdateBufferSettings(void *cb);
 void glDeleteContext(_THIS, SDL_GLContext context);
 void glUnloadLibrary(_THIS);
 SDL_GLContext glCreateContext(_THIS, SDL_Window *window);
+void glSetMiniRotation(int rotate);
+int glGetMiniRotation(void);
 
 #endif
 

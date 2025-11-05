@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include <libretro.h>
 
@@ -81,6 +81,17 @@ static miyoomini_joypad_t miyoomini_joypad;
 extern uint64_t lifecycle_state;
 #endif
 
+static SDL_TimerID sdl_miyoomini_rumble_timer = 0;
+
+static Uint32 sdl_miyoomini_rumble_finish_cb(Uint32 interval, void *param)
+{
+   (void)interval;
+   (void)param;
+   sdl_miyoomini_rumble_timer = 0;
+   miyoomini_rumble(0);
+   return 0;
+}
+
 void miyoomini_rumble(uint16_t strength) {
    static char lastvalue = 0;
    const char str_export[2] = "48";
@@ -100,11 +111,6 @@ void miyoomini_rumble(uint16_t strength) {
    }
 }
 
-uint32_t miyoomini_rumble_finish(uint32_t interval) {
-   miyoomini_rumble(0);
-   return 0;
-}
-
 static bool sdl_miyoomini_joypad_set_rumble(unsigned pad,
       enum retro_rumble_effect effect, uint16_t strength) {
    if (pad) return false;
@@ -112,7 +118,15 @@ static bool sdl_miyoomini_joypad_set_rumble(unsigned pad,
    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
    if ( (joypad->rumble_time)&&(strength) ) {
       miyoomini_rumble(strength);
-      SDL_SetTimer(joypad->rumble_time, miyoomini_rumble_finish);
+      if (sdl_miyoomini_rumble_timer)
+      {
+         SDL_RemoveTimer(sdl_miyoomini_rumble_timer);
+         sdl_miyoomini_rumble_timer = 0;
+      }
+      sdl_miyoomini_rumble_timer = SDL_AddTimer(
+            joypad->rumble_time,
+            sdl_miyoomini_rumble_finish_cb,
+            NULL);
    }
    return true;
 }
@@ -164,7 +178,11 @@ static void sdl_miyoomini_joypad_destroy(void) {
    sdl_miyoomini_joypad_disconnect();
 
    /* Stop rumble */
-   SDL_SetTimer(0, NULL);
+   if (sdl_miyoomini_rumble_timer)
+   {
+      SDL_RemoveTimer(sdl_miyoomini_rumble_timer);
+      sdl_miyoomini_rumble_timer = 0;
+   }
    miyoomini_rumble(0);
 
    /* Flush out all pending events */
@@ -179,6 +197,7 @@ static void *sdl_miyoomini_joypad_init(void *data) {
    miyoomini_joypad_t *joypad      = (miyoomini_joypad_t*)&miyoomini_joypad;
 
    memset(joypad, 0, sizeof(miyoomini_joypad_t));
+   sdl_miyoomini_rumble_timer = 0;
 
    /* Init for rumble */
    if (!SDL_WasInit(SDL_INIT_TIMER)) SDL_InitSubSystem(SDL_INIT_TIMER);

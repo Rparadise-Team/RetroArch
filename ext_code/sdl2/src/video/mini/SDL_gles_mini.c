@@ -13,6 +13,27 @@ static EGLContext context = 0;
 static EGLSurface surface = 0;
 static EGLConfig config = 0;
 static void *fb_cb = NULL;
+static int g_mini_rotation = E_MI_GFX_ROTATE_180;
+
+void glSetMiniRotation(int rotate)
+{
+    switch (rotate) {
+    case E_MI_GFX_ROTATE_0:
+    case E_MI_GFX_ROTATE_90:
+    case E_MI_GFX_ROTATE_180:
+    case E_MI_GFX_ROTATE_270:
+        g_mini_rotation = rotate;
+        break;
+    default:
+        g_mini_rotation = E_MI_GFX_ROTATE_180;
+        break;
+    }
+}
+
+int glGetMiniRotation(void)
+{
+    return g_mini_rotation;
+}
 
 EGLBoolean eglUpdateBufferSettings(EGLDisplay display, EGLSurface surface, void *cb, void *p0, void *p1);
 
