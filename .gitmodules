@@ -1,0 +1,3 @@
+[submodule "ext_codes"]
+	path = ext_codes
+	url = https://github.com/Rparadise-Team/sdl2_miyoo_new
