@@ -12,6 +12,8 @@
 #include "../SDL_sysrender.h"
 #include "../../video/mini/SDL_video_mini.h"
 #include "../../video/mini/SDL_gles_mini.h"
+#include "SDL_blendmode.h"
+#include "SDL_pixels.h"
 
 typedef struct Mini_TextureData {
     void *data;
@@ -183,27 +185,103 @@ static int Mini_QueueCopy(SDL_Renderer *renderer, SDL_RenderCommand *cmd, SDL_Te
     const void *pixels = get_pixels(texture);
     SDL_Rect dst = { 0 };
     SDL_Rect src = {srcrect->x, srcrect->y, srcrect->w, srcrect->h};
+    Mini_TextureData *tdata = (Mini_TextureData *)texture->driverdata;
+    SDL_BlendMode blend_mode = SDL_BLENDMODE_NONE;
+    Uint8 alpha_mod = SDL_ALPHA_OPAQUE;
+    bool enable_alpha = false;
+    bool per_pixel_alpha = false;
+    float scale_x = 1.0f;
+    float scale_y = 1.0f;
+    float scale = 1.0f;
+    float offset_x = 0.0f;
+    float offset_y = 0.0f;
+    float src_x = dstrect->x;
+    float src_y = dstrect->y;
+    float src_w = dstrect->w;
+    float src_h = dstrect->h;
+    int rotation = glGetMiniRotation();
 
-    int c0 = FB_W / vid_win->w;
-    int c1 = FB_H / vid_win->h;
-    float scale = c0 > c1 ? c1 : c0;
+    if (!vid_win || vid_win->w == 0 || vid_win->h == 0)
+        return 0;
 
-    dst.w = dstrect->w * scale;
-    dst.h = dstrect->h * scale;
-    dst.x = (vid_win->w - (dstrect->x + dstrect->w)) * scale;
-    dst.y = dstrect->y * scale;
-    dst.x += ((FB_W - (vid_win->w * scale)) / 2);
-    dst.y += ((FB_H - (vid_win->h * scale)) / 2);
+    if (!pixels && tdata)
+        pixels = tdata->data;
 
-    pitch = get_pitch(texture);
-    if ((pitch == 0) || (pixels == NULL)) {
-        debug("%s, failed to get pitch or pixels (%d, %p)\n", __func__, pitch, pixels);
+    if (!pixels)
+    {
+        debug("%s, missing texture pixels for %p\n", __func__, texture);
         return 0;
     }
 
-    debug("%s, texture=%p, src:%d,%d,%d,%d, dst:%d,%d,%d,%d, scale=%.2f, pitch=%d, pixels=%p\n", 
+    scale_x = (vid_win->w > 0) ? ((float)FB_W / (float)vid_win->w) : 1.0f;
+    scale_y = (vid_win->h > 0) ? ((float)FB_H / (float)vid_win->h) : 1.0f;
+    scale = (scale_x < scale_y) ? scale_x : scale_y;
+    if (scale <= 0.0f)
+        scale = 1.0f;
+
+    offset_x = ((float)FB_W - ((float)vid_win->w * scale)) * 0.5f;
+    offset_y = ((float)FB_H - ((float)vid_win->h * scale)) * 0.5f;
+
+    dst.w = (int)((rotation & 1)
+          ? (src_h * scale + 0.5f)
+          : (src_w * scale + 0.5f));
+    dst.h = (int)((rotation & 1)
+          ? (src_w * scale + 0.5f)
+          : (src_h * scale + 0.5f));
+
+    if (dst.w <= 0)
+        dst.w = 1;
+    if (dst.h <= 0)
+        dst.h = 1;
+
+    switch (rotation)
+    {
+        case E_MI_GFX_ROTATE_0:
+            dst.x = (int)(offset_x + src_x * scale + 0.5f);
+            dst.y = (int)(offset_y + src_y * scale + 0.5f);
+            break;
+        case E_MI_GFX_ROTATE_180:
+            dst.x = (int)(offset_x + ((float)vid_win->w - (src_x + src_w)) * scale + 0.5f);
+            dst.y = (int)(offset_y + ((float)vid_win->h - (src_y + src_h)) * scale + 0.5f);
+            break;
+        case E_MI_GFX_ROTATE_90:
+            dst.x = (int)(offset_x + ((float)vid_win->h - (src_y + src_h)) * scale + 0.5f);
+            dst.y = (int)(offset_y + src_x * scale + 0.5f);
+            break;
+        case E_MI_GFX_ROTATE_270:
+            dst.x = (int)(offset_x + src_y * scale + 0.5f);
+            dst.y = (int)(offset_y + ((float)vid_win->w - (src_x + src_w)) * scale + 0.5f);
+            break;
+        default:
+            dst.x = (int)(offset_x + src_x * scale + 0.5f);
+            dst.y = (int)(offset_y + src_y * scale + 0.5f);
+            break;
+    }
+
+    pitch = get_pitch(texture);
+    if (pitch <= 0 && tdata)
+        pitch = tdata->pitch;
+
+    if (pitch <= 0)
+    {
+        debug("%s, invalid pitch %d for %p\n", __func__, pitch, texture);
+        return 0;
+    }
+
+    if (SDL_GetTextureBlendMode(texture, &blend_mode) == 0 &&
+        blend_mode == SDL_BLENDMODE_BLEND)
+    {
+        enable_alpha = true;
+        if (SDL_GetTextureAlphaMod(texture, &alpha_mod) != 0)
+            alpha_mod = SDL_ALPHA_OPAQUE;
+        if (tdata && SDL_ISPIXELFORMAT_ALPHA(tdata->fmt))
+            per_pixel_alpha = true;
+    }
+
+    debug("%s, texture=%p, src:%d,%d,%d,%d, dst:%d,%d,%d,%d, scale=%.2f, pitch=%d, pixels=%p\n",
         __func__, texture, src.x, src.y, src.w, src.h, dst.x, dst.y, dst.w, dst.h, scale, pitch, pixels);
-    GFX_Copy(pixels, src, dst, pitch, 0, glGetMiniRotation());
+    GFX_Copy(pixels, src, dst, pitch, enable_alpha, alpha_mod,
+             per_pixel_alpha, rotation);
     return 0;
 }
 
