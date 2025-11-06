@@ -50,7 +50,9 @@ typedef struct _GFX {
 
 void GFX_Clear(void);
 void GFX_Flip(void);
-int GFX_Copy(const void *pixels, SDL_Rect srcrect, SDL_Rect dstrect, int pitch, int alpha, int rotate);
+int GFX_Copy(const void *pixels, SDL_Rect srcrect, SDL_Rect dstrect,
+             int pitch, bool enable_alpha, uint8_t alpha_mod,
+             bool per_pixel_alpha, int rotate);
 
 #endif
 

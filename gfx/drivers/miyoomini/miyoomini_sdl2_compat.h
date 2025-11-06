@@ -139,6 +139,7 @@ extern "C" {
 #endif
 int glUpdateBufferSettings(void *cb);
 void glSetMiniRotation(int rotate);
+int glGetMiniRotation(void);
 #ifdef __cplusplus
 }
 #endif

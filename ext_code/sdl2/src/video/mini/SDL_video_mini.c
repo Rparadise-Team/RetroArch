@@ -24,6 +24,7 @@
 #include "../SDL_sysvideo.h"
 #include "../SDL_sysvideo.h"
 #include "../SDL_pixels_c.h"
+#include "SDL_blendmode.h"
 
 #include "SDL_image.h"
 #include "SDL_version.h"
@@ -114,7 +115,9 @@ void GFX_Clear(void)
     MI_SYS_MemsetPa(gfx.tmp.phyAddr, 0, TMP_SIZE);
 }
 
-int GFX_Copy(const void *pixels, SDL_Rect src_rt, SDL_Rect dst_rt, int pitch, int alpha, int rotate)
+int GFX_Copy(const void *pixels, SDL_Rect src_rt, SDL_Rect dst_rt, int pitch,
+             bool enable_alpha, uint8_t alpha_mod, bool per_pixel_alpha,
+             int rotate)
 {
     MI_U16 u16Fence = 0;
     int is_rgb565 = (pitch / src_rt.w) == 2 ? 1 : 0;
@@ -127,6 +130,23 @@ int GFX_Copy(const void *pixels, SDL_Rect src_rt, SDL_Rect dst_rt, int pitch, in
     gfx.hw.opt.eSrcDfbBldOp = E_MI_GFX_DFB_BLD_ONE;
     gfx.hw.opt.eDstDfbBldOp = 0;
     gfx.hw.opt.eDFBBlendFlag = 0;
+
+    if (enable_alpha) {
+        if (alpha_mod == SDL_ALPHA_TRANSPARENT)
+            return 0;
+
+        gfx.hw.opt.eDstDfbBldOp = E_MI_GFX_DFB_BLD_INVSRCALPHA;
+        gfx.hw.opt.eDFBBlendFlag = E_MI_GFX_DFB_BLEND_SRC_PREMULTIPLY;
+
+        if (per_pixel_alpha)
+            gfx.hw.opt.eDFBBlendFlag |= E_MI_GFX_DFB_BLEND_ALPHACHANNEL;
+
+        if (alpha_mod != SDL_ALPHA_OPAQUE) {
+            gfx.hw.opt.eDFBBlendFlag |= E_MI_GFX_DFB_BLEND_COLORALPHA;
+            gfx.hw.opt.u32GlobalSrcConstColor =
+                ((uint32_t)alpha_mod << 24) & 0xFF000000;
+        }
+    }
 
     gfx.hw.src.rt.s32Xpos = src_rt.x;
     gfx.hw.src.rt.s32Ypos = src_rt.y;
@@ -167,7 +187,8 @@ void* GFX_CB(void)
     SDL_Rect drt = {0, 0, FB_W, FB_H};
 
     debug("%s\n", __func__);
-    GFX_Copy(gfx.tmp.virAddr, srt, drt, FB_W * FB_BPP, 0, E_MI_GFX_ROTATE_180);
+    GFX_Copy(gfx.tmp.virAddr, srt, drt, FB_W * FB_BPP,
+             false, SDL_ALPHA_OPAQUE, false, E_MI_GFX_ROTATE_180);
     GFX_Flip();
     return gfx.tmp.virAddr;
 }
