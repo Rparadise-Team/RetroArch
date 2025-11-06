@@ -97,11 +97,6 @@ static void *oss_init(const char *device,
       else if (rate > 8000) new_rate = 16000;
       else new_rate = 8000;
       
-      int volumeMM = setVolumeMM();
-      char command[100];
-      sprintf(command, "tinymix set 6 %d", volumeMM);
-      system(command);
-      
       RARCH_LOG("[OSS]: Without audioserver\n");
    }
 
@@ -154,6 +149,16 @@ static void *oss_init(const char *device,
 
    RARCH_LOG("[OSS]: Initialized at %d Hz (direct mode, %d fragments)\n", 
              new_rate, frags);
+	
+   if (!ossaudio->audioserver) {
+	   int target_vol = getVolumeMM();
+       set_snd_level(target_vol);
+   } else {
+	  int volumeMM = setVolumeMM();
+      char command[100];
+      sprintf(command, "tinymix set 6 %d", volumeMM);
+      system(command);
+   }
 
    return ossaudio;
 
@@ -222,40 +227,37 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
    return written;
 }
 
- static bool oss_stop(void *data)
- {
-	oss_audio_t *ossaudio = (oss_audio_t*)data;
-	 
-	if (ossaudio->is_paused) {
-		return true;
-	}
-	RARCH_LOG("[OSS audio]: Pausing.\n");
-	if (!ossaudio->is_paused) {
-		ossaudio->is_paused = true;
-	}
-	return true;
- }
- 
- static bool oss_start(void *data, bool is_shutdown)
- {
-	oss_audio_t *ossaudio = (oss_audio_t*)data;
+static bool oss_stop(void *data)
+{
+   oss_audio_t *ossaudio = (oss_audio_t*)data;
+   if (ossaudio->is_paused) {
+      return true;
+   }
+   RARCH_LOG("[OSS audio]: Pausing.\n");
+   if (!ossaudio->is_paused) {
+      ossaudio->is_paused = true;
+   }
+   return true;
+}
 
-	if (!ossaudio)
-		return false;
-	 
-	if (is_shutdown)
-		return true;
+static bool oss_start(void *data, bool is_shutdown)
+{
+   oss_audio_t *ossaudio = (oss_audio_t*)data;
+   
+   if (!ossaudio)
+      return false;
 
-	if (ossaudio->is_paused) {
-		RARCH_LOG("[OSS audio]: Resuming\n");
-	}
-	
-	if (!apply_miyoomini_volume(ossaudio->audioserver))
-		RARCH_WARN("[OSS]: Failed to apply Miyoo Mini volume settings.\n");
+   if (is_shutdown)
+      return true;
 
-	ossaudio->is_paused = false;
-	return true;
- }
+   if (ossaudio->is_paused) {
+      RARCH_LOG("[OSS audio]: Resuming\n");
+   }
+
+   ossaudio->is_paused = false;
+   return true;
+}
+
 static bool oss_alive(void *data)
 {
    oss_audio_t *ossaudio = (oss_audio_t*)data;
@@ -283,18 +285,16 @@ static void oss_set_nonblock_state(void *data, bool state)
    ossaudio->nonblock = state;
 }
 
- static void oss_free(void *data)
- {
-	oss_audio_t *ossaudio = (oss_audio_t*)data;
- 
-	if (!ossaudio)
-		return;
- 
-	RARCH_LOG("[OSS]: Closing (wrote %zu bytes total)\n", ossaudio->written_bytes);
- 
-	close(ossaudio->fd);
-	free(ossaudio);
- }
+static void oss_free(void *data)
+{
+   oss_audio_t *ossaudio = (oss_audio_t*)data;
+
+   if (!ossaudio)
+      return;
+
+   close(ossaudio->fd);
+   free(ossaudio);
+}
 
 static size_t oss_write_avail(void *data)
 {

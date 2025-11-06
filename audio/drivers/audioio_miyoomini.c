@@ -83,10 +83,17 @@ static void *miao_init(const char *device,
          free(miaoaudio);
          return NULL;
       }
-      
-      /* Set initial volume using set_snd_level */
-      int target_vol = getVolumeMM();
-      set_snd_level(target_vol);
+   }
+	
+   /* Set initial volume using set_snd_level */
+   if (!miaoaudio->audioserver_mode) {
+	   int target_vol = getVolumeMM();
+       set_snd_level(target_vol);
+   } else {
+	  int volumeMM = setVolumeMM();
+      char command[100];
+      sprintf(command, "tinymix set 6 %d", volumeMM);
+      system(command);
    }
 
    /* Continue with normal initialization */
