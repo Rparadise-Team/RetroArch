@@ -43,8 +43,7 @@
 #include "volume/volume.h"
 #include "retro_assert.h"
 
-/* Increased from 256 to reduce underruns */
-#define SDL_AUDIO_SAMPLES 512
+#define SDL_AUDIO_SAMPLES 256
 
 typedef struct sdl_audio
 {
@@ -144,7 +143,7 @@ static void *sdl_audio_init(const char *device,
    spec.freq     = rate;
    spec.format   = AUDIO_S16SYS;
    spec.channels = 2;
-   spec.samples  = SDL_AUDIO_SAMPLES; /* Now 512 instead of 256 */
+   spec.samples  = SDL_AUDIO_SAMPLES;
    spec.callback = sdl_audio_playback_cb;
    spec.userdata = sdl;
 
