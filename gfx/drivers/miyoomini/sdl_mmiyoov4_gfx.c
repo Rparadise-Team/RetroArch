@@ -138,6 +138,8 @@ static bool sdl_miyoomini_ensure_texture(sdl_miyoomini_video_t *vid,
       SDL_Texture **tex, unsigned width, unsigned height, bool rgb32)
 {
    Uint32 format;
+   if (width > 640) width = 640;
+   if (height > 480) height = 480;
 
    if (!vid || !tex || !vid->renderer || !width || !height)
       return false;
@@ -1323,7 +1325,7 @@ static void sdl_miyoomini_gfx_check_window(sdl_miyoomini_video_t *vid) {
    SDL_Event event;
 
    SDL_PumpEvents();
-   while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_QUITMASK))
+   while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT))
    {
       if (event.type != SDL_QUIT)
          continue;
