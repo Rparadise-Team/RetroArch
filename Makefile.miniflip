@@ -59,6 +59,8 @@ HAVE_FREETYPE = 0
 HAVE_GDI = 1
 HAVE_GETOPT_LONG = 1
 HAVE_GLSL = 1
+HAVE_GLSLANG = 1
+HAVE_BUILTINGLSLANG = 1
 HAVE_HID = 0
 HAVE_IBXM = 1
 HAVE_IMAGEVIEWER = 0
@@ -178,7 +180,9 @@ include Makefile.common
 ifeq ($(HAVE_SDL2), 1)
    OBJ += gfx/drivers/sdl_dingux_gfx.o \
           input/drivers/sdl_dingux_input.o \
-          input/drivers_joypad/sdl_dingux_joypad.o
+          input/drivers_joypad/sdl_dingux_joypad.o \
+          ext_code/sdl2/src/video/mini/SDL_gles_mini.o \
+          ext_code/sdl2/src/render/mini/SDL_render_mini.o
 endif
 
 DEF_FLAGS += $(INCLUDE_DIRS)

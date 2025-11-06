@@ -81,6 +81,8 @@ static miyoomini_joypad_t miyoomini_joypad;
 extern uint64_t lifecycle_state;
 #endif
 
+static void miyoomini_rumble(uint16_t strength);
+
 static SDL_TimerID sdl_miyoomini_rumble_timer = 0;
 
 static Uint32 sdl_miyoomini_rumble_finish_cb(Uint32 interval, void *param)
@@ -92,7 +94,7 @@ static Uint32 sdl_miyoomini_rumble_finish_cb(Uint32 interval, void *param)
    return 0;
 }
 
-void miyoomini_rumble(uint16_t strength) {
+static void miyoomini_rumble(uint16_t strength) {
    static char lastvalue = 0;
    const char str_export[2] = "48";
    const char str_direction[3] = "out";
