@@ -155,7 +155,7 @@ DEFINES += -DHAVE_GETOPT_LONG=1 -DHAVE_STRCASESTR=1 -DHAVE_DYNAMIC=1 -DHAVE_SSL 
 DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ARM_NEON_ASM_OPTIMIZATIONS
 DEFINES += -DHAVE_NETWORKING -DHAVE_IFINFO -DHAVE_ONLINE_UPDATER -DHAVE_UPDATE_ASSETS -DHAVE_UPDATE_CORES -DHAVE_NETWORK_CMD -DHAVE_NETPLAYDISCOVERY -DHAVE_UPDATE_CORE_INFO
 DEFINES += -DHAVE_EGL -DHAVE_OPENGLES -DMESA_EGL_NO_X11_HEADERS -DHAVE_GLSL -DHAVE_GLSLANG -DHAVE_BUILTINGLSLANG
-DEFINES += -DHAVE_SDL -DHAVE_SDL_DINGUX
+DEFINES += -DHAVE_SDL -DHAVE_SDL_DINGUX -DSDL_VIDEO_DRIVER_MINI=1 -DSDL_VIDEO_RENDER_MINI=1
 
 SDL2_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
 SDL2_LIBS := $(shell $(SDL2_CONFIG) --libs)
@@ -181,7 +181,10 @@ ifeq ($(HAVE_SDL2), 1)
    OBJ += gfx/drivers/sdl_dingux_gfx.o \
           input/drivers/sdl_dingux_input.o \
           input/drivers_joypad/sdl_dingux_joypad.o \
+          ext_code/sdl2/src/video/mini/SDL_event_mini.o \
+          ext_code/sdl2/src/video/mini/SDL_fb_mini.o \
           ext_code/sdl2/src/video/mini/SDL_gles_mini.o \
+          ext_code/sdl2/src/video/mini/SDL_video_mini.o \
           ext_code/sdl2/src/render/mini/SDL_render_mini.o
 endif
 
