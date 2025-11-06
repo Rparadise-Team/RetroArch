@@ -290,7 +290,7 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
 		pthread_mutex_unlock(&flip_mx);
 	}
 }
-void	GFX_Flip(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags); }
+void	GFX_Flip(void) { GFX_FlipExec(videosurface, flipFlags); }
 void	GFX_FlipNoWait(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags & ~GFX_FLIPWAIT); }
 void	GFX_FlipWait(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX_FLIPWAIT); }
 void	GFX_FlipForce(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags | GFX_BLOCKING); }
