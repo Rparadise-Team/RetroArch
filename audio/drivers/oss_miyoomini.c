@@ -150,15 +150,8 @@ static void *oss_init(const char *device,
    RARCH_LOG("[OSS]: Initialized at %d Hz (direct mode, %d fragments)\n", 
              new_rate, frags);
 	
-   if (!ossaudio->audioserver) {
-	   int target_vol = getVolumeMM();
-       set_snd_level(target_vol);
-   } else {
-	  int volumeMM = setVolumeMM();
-      char command[100];
-      sprintf(command, "tinymix set 6 %d", volumeMM);
-      system(command);
-   }
+   int target_vol = getVolumeMM();
+   set_snd_level(target_vol);
 
    return ossaudio;
 

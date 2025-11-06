@@ -14,6 +14,10 @@
 #include "cJSON.h"
 #include "volume.h"
 
+#define MI_AO_SETVOLUME	0x4008690b
+#define MI_AO_GETVOLUME	0xc008690c
+#define MI_AO_SETMUTE	0x4008690d
+
 char* load_configMM(char const* path) {
     char* buffer = 0;
     long length = 0;
@@ -82,22 +86,11 @@ int getValueMM(char const *key)
     return result;
 }
 
-int setVolumeMM()
-{
-  // set volumen lever save from last sesion
-    int volume = getValueMM("vol");
-    int set = 0;
-    set = ((volume*3)+40); //tinymix work in 100-40 // 0-(-60)
-	return set;
-}
-
 int getVolumeMM()
 {
   // set volumen lever save from last sesion
     int volume = getValueMM("vol");
-    int set = 0;
-    set = ((volume*3)-60);
-	return set;
+	return volume;
 }
 
 int setBrightnessMM()
@@ -111,41 +104,60 @@ int setBrightnessMM()
 
 void set_snd_level(int target_vol) {
     int current_vol;
-    time_t start_time;
-    double elapsed_time;
+    int fd = open("/dev/mi_ao", O_RDWR);
+    int vol = getValueMM("vol");
+    int mute = getValueMM("mute");
+    int audiofix = getValueMM("audiofix");
 
-    start_time = time(NULL);
-    while (1) {
-        FILE *file = fopen("/proc/mi_modules/mi_ao/mi_ao0", "w");
-        if (file) {
-			char command[150];
-            snprintf(command, sizeof(command), "echo \"set_ao_volume 0 %d\" > /proc/mi_modules/mi_ao/mi_ao0 && echo \"set_ao_volume 1 %d\" > /proc/mi_modules/mi_ao/mi_ao0", target_vol, target_vol);
-			system(command);
-            fclose(file);
-            break;
+    if (mute == 0) {
+        if (audiofix == 1) {
+            if (fd >= 0) {
+                int buf2[] = {0, 0};
+                uint64_t buf1[] = {sizeof(buf2), (uintptr_t)buf2};
+                ioctl(fd, MI_AO_GETVOLUME, buf1);
+                current_vol = ((vol * 3) - 60);
+                buf2[1] = current_vol;
+                ioctl(fd, MI_AO_SETVOLUME, buf1);
+                close(fd);
+            }
+        } else if (audiofix == 0) {
+            if (fd >= 0) {
+                int buf2[] = {0, 0};
+                uint64_t buf1[] = {sizeof(buf2), (uintptr_t)buf2};
+                ioctl(fd, MI_AO_GETVOLUME, buf1);
+                current_vol = ((vol * 3) - 60);
+                buf2[1] = current_vol;
+                ioctl(fd, MI_AO_SETVOLUME, buf1);
+                close(fd);
+            }
+
+            char command[100];
+            int tiny;
+            tiny = (vol * 3) + 40;
+            sprintf(command, "tinymix set 6 %d", tiny);
+            system(command);
         }
-        usleep(100000);
-        elapsed_time = difftime(time(NULL), start_time);
-        if (elapsed_time >= 5) {
-            printf("Timed out waiting for /proc/mi_modules/mi_ao/mi_ao0\n");
-            return;
+
+        if (vol > 0) {
+            if (fd >= 0) {
+                int buf2[] = {0, 0};
+                uint64_t buf1[] = {sizeof(buf2), (uintptr_t)buf2};
+                ioctl(fd, MI_AO_SETMUTE, buf1);
+                close(fd);
+            }
+        }
+    } else if (mute == 1) {
+        if (fd >= 0) {
+            int buf2[] = {0, 1};
+            uint64_t buf1[] = {sizeof(buf2), (uintptr_t)buf2};
+            ioctl(fd, MI_AO_SETMUTE, buf1);
+            close(fd);
         }
     }
+	
+	current_vol = getVolumeMM();
 
-    start_time = time(NULL);
-    while (1) {
-        current_vol = getVolumeMM();
-
-        if (current_vol == target_vol) {
-            printf("Volume set to %ddB\n", current_vol);
-            return;
-        }
-
-        usleep(100000);
-        elapsed_time = difftime(time(NULL), start_time);
-        if (elapsed_time >= 5) {
-            printf("Timed out trying to set volume\n");
-            return;
-        }
+    if (current_vol == target_vol) {
+        printf("Volume set to %ddB\n", current_vol);
     }
 }

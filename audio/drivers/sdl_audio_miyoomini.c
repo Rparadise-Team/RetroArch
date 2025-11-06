@@ -183,29 +183,16 @@ static void *sdl_audio_init(const char *device,
    }
 
    int audiofix = getValueMM("audiofix");
+   int target_vol = getVolumeMM();
+   set_snd_level(target_vol);
+   int brightnessMM = setBrightnessMM();
+   char command2[100];
+   sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
+   system(command2);
+	
    if (audiofix == 0) {
-      int target_vol = getVolumeMM();
-      int volumeMM = setVolumeMM();
-      char command[100];
-      sprintf(command, "tinymix set 6 %d", volumeMM);
-      system(command); //set volume without audiofix
-      
-      set_snd_level(target_vol);
-      
-      int brightnessMM = setBrightnessMM();
-      char command2[100];
-      sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
-      system(command2);
-
       RARCH_LOG("[SDL audio]: without audioserver\n");
    } else {
-      int target_vol = getVolumeMM();
-      set_snd_level(target_vol);
-      int brightnessMM = setBrightnessMM();
-      char command2[100];
-      sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
-      system(command2);
-
       RARCH_LOG("[SDL audio]: with audioserver\n");
    }
 
