@@ -1481,12 +1481,15 @@ static bool sdl_miyoomini_overlay_load(void *data, const void *image_data, unsig
 	GFX_BlitSurfaceRotate(ostmp2, NULL, vid->overlay_surface, NULL, 2);
 	GFX_FreeSurface(ostmp2);
 
-	settings_t *settings = config_get_ptr();
-	vid->overlay_surface->flags |= SDL_SRCALPHA;
-	vid->overlay_surface->format->alpha = (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255;
-	GFX_SetupOverlaySurface(vid->overlay_surface);
+        settings_t *settings = config_get_ptr();
+        Uint8 alpha = (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255;
 
-	return true;
+        vid->overlay_surface->flags |= SDL_SRCALPHA;
+        SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+        SDL_SetSurfaceAlphaMod(vid->overlay_surface, alpha);
+        GFX_SetupOverlaySurface(vid->overlay_surface);
+
+        return true;
 }
 
 static void sdl_miyoomini_overlay_tex_geom(void *data, unsigned idx, float x, float y, float w, float h) { }
@@ -1496,13 +1499,19 @@ static void sdl_miyoomini_overlay_full_screen(void *data, bool enable) { }
 static void sdl_miyoomini_overlay_set_alpha(void *data, unsigned idx, float mod) {
 	sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
 	if ((!idx)&&(vid)&&(vid->overlay_surface)) {
-		uint8_t value = mod * 0xFF;
-		if (!(vid->overlay_surface->flags & SDL_SRCALPHA)||(vid->overlay_surface->format->alpha != value)) {
-			vid->overlay_surface->format->alpha = value;
-			GFX_SetupOverlaySurface(vid->overlay_surface);
-		}
-	}
-	return;
+                uint8_t current_alpha = SDL_ALPHA_OPAQUE;
+                uint8_t value = mod * 0xFF;
+
+                SDL_GetSurfaceAlphaMod(vid->overlay_surface, &current_alpha);
+
+                if (!(vid->overlay_surface->flags & SDL_SRCALPHA) || (current_alpha != value)) {
+                        vid->overlay_surface->flags |= SDL_SRCALPHA;
+                        SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+                        SDL_SetSurfaceAlphaMod(vid->overlay_surface, value);
+                        GFX_SetupOverlaySurface(vid->overlay_surface);
+                }
+        }
+        return;
 }
 
 static const video_overlay_interface_t sdl_miyoomini_overlay = {
