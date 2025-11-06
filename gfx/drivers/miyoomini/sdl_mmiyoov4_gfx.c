@@ -111,6 +111,9 @@ struct sdl_miyoomini_video
    SDL_Surface *menuscreen_rgui;
 #ifdef HAVE_OVERLAY
    SDL_Surface *overlay_surface;
+   SDL_Texture *overlay_tex;
+   SDL_Rect overlay_rect;
+   bool overlay_enabled;
 #endif
    unsigned msg_count;
    char msg_tmp[OSD_TEXT_LEN_MAX];
@@ -132,6 +135,14 @@ static void sdl_miyoomini_destroy_textures(sdl_miyoomini_video_t *vid)
       SDL_DestroyTexture(vid->menu_tex);
       vid->menu_tex = NULL;
    }
+
+#ifdef HAVE_OVERLAY
+   if (vid->overlay_tex)
+   {
+      SDL_DestroyTexture(vid->overlay_tex);
+      vid->overlay_tex = NULL;
+   }
+#endif
 }
 
 static bool sdl_miyoomini_ensure_texture(sdl_miyoomini_video_t *vid,
@@ -187,6 +198,19 @@ static bool sdl_miyoomini_present_texture(sdl_miyoomini_video_t *vid,
             SDL_GetError());
       return false;
    }
+
+#ifdef HAVE_OVERLAY
+   if (vid->overlay_enabled && vid->overlay_tex)
+   {
+      if (SDL_RenderCopy(vid->renderer, vid->overlay_tex,
+               NULL, &vid->overlay_rect) < 0)
+      {
+         RARCH_ERR("[SDL2]: Failed to render Miyoo overlay texture: %s\n",
+               SDL_GetError());
+         return false;
+      }
+   }
+#endif
 
    SDL_RenderPresent(vid->renderer);
    return true;
@@ -759,6 +783,8 @@ static void sdl_miyoomini_gfx_free(void *data) {
    if (vid->menuscreen_rgui) GFX_FreeSurface(vid->menuscreen_rgui);
 #ifdef HAVE_OVERLAY
    if (vid->overlay_surface) { GFX_SetupOverlaySurface(NULL); GFX_FreeSurface(vid->overlay_surface); }
+   vid->overlay_surface = NULL;
+   vid->overlay_enabled = false;
 #endif
    if (vid->renderer)
    {
@@ -1093,6 +1119,10 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 #endif
    SDL_SetRenderDrawColor(vid->renderer, 0, 0, 0, 255);
 
+   if (SDL_RenderSetLogicalSize(vid->renderer, res_x, res_y) < 0)
+      RARCH_WARN("[SDL2]: Failed to set Miyoo logical size: %s\n",
+            SDL_GetError());
+
    vid->menuscreen = GFX_CreateRGBSurface(
          0, res_x, res_y, 16, 0, 0, 0, 0);
    vid->menuscreen_rgui = GFX_CreateRGBSurface(
@@ -1114,6 +1144,12 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->was_in_menu       = false;
    vid->quitting          = false;
    vid->ff_frame_time_min = 16667;
+#ifdef HAVE_OVERLAY
+   vid->overlay_rect.x    = 0;
+   vid->overlay_rect.y    = 0;
+   vid->overlay_rect.w    = res_x;
+   vid->overlay_rect.h    = res_y;
+#endif
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
 
@@ -1453,40 +1489,217 @@ static bool sdl_miyoomini_gfx_set_shader(void *data,
 
 #ifdef HAVE_OVERLAY
 
-static void sdl_miyoomini_overlay_enable(void *data, bool state) {
-	sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
-	if (!vid) return;
+static int sdl_miyoomini_rotate_to_surface(SDL_Surface *dst,
+      SDL_Surface *src, int rotate)
+{
+   unsigned x, y;
+   const unsigned src_w = (unsigned)src->w;
+   const unsigned src_h = (unsigned)src->h;
+   const unsigned dst_w = (unsigned)dst->w;
+   const unsigned dst_h = (unsigned)dst->h;
+   const int src_pitch = src->pitch;
+   const int dst_pitch = dst->pitch;
+   const Uint8 *src_base = (const Uint8*)src->pixels;
+   Uint8 *dst_base = (Uint8*)dst->pixels;
 
-	if ((state)&&(vid->overlay_surface)) GFX_SetupOverlaySurface(vid->overlay_surface);
-	else GFX_SetupOverlaySurface(NULL);
+   if (!src_base || !dst_base)
+      return -1;
+
+   switch (rotate)
+   {
+      case E_MI_GFX_ROTATE_0:
+      {
+         if (dst_w != src_w || dst_h != src_h)
+            return -1;
+
+         for (y = 0; y < src_h; y++)
+            memcpy(dst_base + y * dst_pitch,
+                  src_base + y * src_pitch,
+                  (size_t)src_w * sizeof(uint32_t));
+         break;
+      }
+      case E_MI_GFX_ROTATE_180:
+      {
+         if (dst_w != src_w || dst_h != src_h)
+            return -1;
+
+         for (y = 0; y < src_h; y++)
+         {
+            const uint32_t *src_row = (const uint32_t*)(src_base + y * src_pitch);
+            uint32_t *dst_row = (uint32_t*)(dst_base + (dst_h - 1 - y) * dst_pitch);
+
+            for (x = 0; x < src_w; x++)
+               dst_row[dst_w - 1 - x] = src_row[x];
+         }
+         break;
+      }
+      case E_MI_GFX_ROTATE_90:
+      {
+         if (dst_w != src_h || dst_h != src_w)
+            return -1;
+
+         for (y = 0; y < src_h; y++)
+         {
+            const uint32_t *src_row = (const uint32_t*)(src_base + y * src_pitch);
+
+            for (x = 0; x < src_w; x++)
+            {
+               uint32_t *dst_pixel = (uint32_t*)(dst_base + x * dst_pitch);
+               dst_pixel[dst_w - 1 - y] = src_row[x];
+            }
+         }
+         break;
+      }
+      case E_MI_GFX_ROTATE_270:
+      {
+         if (dst_w != src_h || dst_h != src_w)
+            return -1;
+
+         for (y = 0; y < src_h; y++)
+         {
+            const uint32_t *src_row = (const uint32_t*)(src_base + y * src_pitch);
+
+            for (x = 0; x < src_w; x++)
+            {
+               uint32_t *dst_pixel = (uint32_t*)(dst_base + (dst_h - 1 - x) * dst_pitch);
+               dst_pixel[y] = src_row[x];
+            }
+         }
+         break;
+      }
+      default:
+         return -1;
+   }
+
+   return 0;
+}
+
+static bool sdl_miyoomini_upload_overlay_texture(sdl_miyoomini_video_t *vid,
+      SDL_Surface *surface)
+{
+   Uint8 alpha_mod = SDL_ALPHA_OPAQUE;
+
+   if (!vid || !surface)
+      return false;
+
+   if (vid->overlay_tex)
+   {
+      SDL_DestroyTexture(vid->overlay_tex);
+      vid->overlay_tex = NULL;
+   }
+
+   if (!vid->renderer)
+      return false;
+
+   if (SDL_GetSurfaceAlphaMod(surface, &alpha_mod) < 0)
+      alpha_mod = SDL_ALPHA_OPAQUE;
+
+   vid->overlay_tex = SDL_CreateTextureFromSurface(vid->renderer, surface);
+
+   if (!vid->overlay_tex)
+   {
+      RARCH_ERR("[SDL2]: Failed to upload Miyoo overlay texture: %s\n",
+            SDL_GetError());
+      return false;
+   }
+
+   SDL_SetTextureBlendMode(vid->overlay_tex, SDL_BLENDMODE_BLEND);
+   SDL_SetTextureAlphaMod(vid->overlay_tex, alpha_mod);
+   return true;
+}
+
+static void sdl_miyoomini_overlay_enable(void *data, bool state) {
+        sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
+        if (!vid) return;
+
+        vid->overlay_enabled = state;
+
+        if ((state)&&(vid->overlay_surface)) GFX_SetupOverlaySurface(vid->overlay_surface);
+        else GFX_SetupOverlaySurface(NULL);
 }
 
 static bool sdl_miyoomini_overlay_load(void *data, const void *image_data, unsigned num_images) {
 	sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
 	if (!vid) return false;
 
-	struct texture_image *images = (struct texture_image *)image_data;
-	void* pixels = images[0].pixels;
-	uint32_t width = images[0].width;
-	uint32_t height = images[0].height;
+        struct texture_image *images = (struct texture_image *)image_data;
+        const uint32_t *pixels = images[0].pixels;
+        uint32_t width = images[0].width;
+        uint32_t height = images[0].height;
+        SDL_Surface *cpu_surface = NULL;
 
-	if (vid->overlay_surface) GFX_FreeSurface(vid->overlay_surface);
-	SDL_Surface *ostmp = SDL_CreateRGBSurfaceFrom(pixels, width, height, 32, width*4,
-				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-	SDL_Surface *ostmp2 = GFX_DuplicateSurface(ostmp);
-	SDL_FreeSurface(ostmp);
-	vid->overlay_surface = GFX_CreateRGBSurface(0, res_x, res_y, 32,
-				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-	ostmp2->flags &= ~SDL_SRCALPHA;
-	GFX_BlitSurfaceRotate(ostmp2, NULL, vid->overlay_surface, NULL, 2);
-	GFX_FreeSurface(ostmp2);
+        if (vid->overlay_surface)
+           GFX_FreeSurface(vid->overlay_surface);
 
-	settings_t *settings = config_get_ptr();
-	vid->overlay_surface->flags |= SDL_SRCALPHA;
-	vid->overlay_surface->format->alpha = (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255;
-	GFX_SetupOverlaySurface(vid->overlay_surface);
+        cpu_surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32,
+                                SDL_PIXELFORMAT_ARGB8888);
+        if (!cpu_surface)
+           return false;
 
-	return true;
+        SDL_LockSurface(cpu_surface);
+        for (uint32_t row = 0; row < height; row++)
+        {
+           memcpy((uint8_t*)cpu_surface->pixels + row * cpu_surface->pitch,
+                 pixels + (row * width),
+                 (size_t)width * sizeof(uint32_t));
+        }
+        SDL_UnlockSurface(cpu_surface);
+
+        vid->overlay_surface = GFX_CreateRGBSurface(0, res_x, res_y, 32,
+                                0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+        if (!vid->overlay_surface)
+        {
+           SDL_FreeSurface(cpu_surface);
+           return false;
+        }
+
+        {
+           int rotate = glGetMiniRotation();
+
+           if (sdl_miyoomini_rotate_to_surface(vid->overlay_surface,
+                    cpu_surface, rotate) < 0)
+           {
+              SDL_Surface *hw_src = GFX_DuplicateSurface(cpu_surface);
+
+              if (!hw_src)
+              {
+                 SDL_FreeSurface(cpu_surface);
+                 return false;
+              }
+
+              GFX_BlitSurfaceRotate(hw_src, NULL, vid->overlay_surface, NULL, rotate);
+              GFX_FreeSurface(hw_src);
+           }
+
+           MI_SYS_FlushInvCache(vid->overlay_surface->pixels,
+                 vid->overlay_surface->pitch * vid->overlay_surface->h);
+        }
+
+        settings_t *settings = config_get_ptr();
+        Uint8 alpha = (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255;
+
+        vid->overlay_surface->flags |= SDL_SRCALPHA;
+        SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+        SDL_SetSurfaceAlphaMod(vid->overlay_surface, alpha);
+        GFX_SetupOverlaySurface(vid->overlay_surface);
+        vid->overlay_rect.x = 0;
+        vid->overlay_rect.y = 0;
+        vid->overlay_rect.w = res_x;
+        vid->overlay_rect.h = res_y;
+
+        if (!sdl_miyoomini_upload_overlay_texture(vid, cpu_surface)) {
+           vid->overlay_enabled = false;
+           SDL_FreeSurface(cpu_surface);
+           return false;
+        }
+
+        SDL_FreeSurface(cpu_surface);
+
+        if (vid->overlay_enabled)
+           SDL_SetTextureAlphaMod(vid->overlay_tex, alpha);
+
+        return true;
 }
 
 static void sdl_miyoomini_overlay_tex_geom(void *data, unsigned idx, float x, float y, float w, float h) { }
@@ -1496,13 +1709,21 @@ static void sdl_miyoomini_overlay_full_screen(void *data, bool enable) { }
 static void sdl_miyoomini_overlay_set_alpha(void *data, unsigned idx, float mod) {
 	sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
 	if ((!idx)&&(vid)&&(vid->overlay_surface)) {
-		uint8_t value = mod * 0xFF;
-		if (!(vid->overlay_surface->flags & SDL_SRCALPHA)||(vid->overlay_surface->format->alpha != value)) {
-			vid->overlay_surface->format->alpha = value;
-			GFX_SetupOverlaySurface(vid->overlay_surface);
-		}
-	}
-	return;
+                uint8_t current_alpha = SDL_ALPHA_OPAQUE;
+                uint8_t value = mod * 0xFF;
+
+                SDL_GetSurfaceAlphaMod(vid->overlay_surface, &current_alpha);
+
+                if (!(vid->overlay_surface->flags & SDL_SRCALPHA) || (current_alpha != value)) {
+                        vid->overlay_surface->flags |= SDL_SRCALPHA;
+                        SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+                        SDL_SetSurfaceAlphaMod(vid->overlay_surface, value);
+                        GFX_SetupOverlaySurface(vid->overlay_surface);
+                        if (vid->overlay_tex)
+                                SDL_SetTextureAlphaMod(vid->overlay_tex, value);
+                }
+        }
+        return;
 }
 
 static const video_overlay_interface_t sdl_miyoomini_overlay = {
