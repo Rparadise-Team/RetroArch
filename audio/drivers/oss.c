@@ -16,7 +16,6 @@
 #if defined(MIYOOMINI)
 #include "oss_miyoomini.c"
 #else
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -75,7 +74,7 @@ static void *oss_init(const char *device,
    frag  = (frags << 16) | 10;
 
    if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFRAGMENT, &frag) < 0)
-      RARCH_WARN("Cannot set fragment sizes. Latency might not be as expected ...\n");
+      RARCH_WARN("[OSS] Could not set fragment sizes. Latency might not be as expected.\n");
 
    channels = 2;
    format   = is_little_endian() ? AFMT_S16_LE : AFMT_S16_BE;
@@ -93,7 +92,7 @@ static void *oss_init(const char *device,
 
    if (new_rate != (int)rate)
    {
-      RARCH_WARN("Requested sample rate not supported. Adjusting output rate to %d Hz.\n", new_rate);
+      RARCH_WARN("[OSS] Requested sample rate not supported. Adjusting output rate to %d Hz.\n", new_rate);
       *new_out_rate = new_rate;
    }
 
@@ -109,21 +108,17 @@ error:
 
 static ssize_t oss_write(void *data, const void *s, size_t len)
 {
-   ssize_t ret;
+   ssize_t _len;
    oss_audio_t *ossaudio  = (oss_audio_t*)data;
-
    if (len == 0)
       return 0;
-
-   if ((ret = write(ossaudio->fd, s, len)) < 0)
+   if ((_len = write(ossaudio->fd, s, len)) < 0)
    {
       if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
          return 0;
-
       return -1;
    }
-
-   return ret;
+   return _len;
 }
 
 static bool oss_stop(void *data)
@@ -166,7 +161,7 @@ static void oss_set_nonblock_state(void *data, bool state)
       rc =  fcntl(ossaudio->fd, F_SETFL,
             fcntl(ossaudio->fd, F_GETFL) & (~O_NONBLOCK));
    if (rc != 0)
-      RARCH_WARN("Could not set nonblocking on OSS file descriptor. Will not be able to fast-forward.\n");
+      RARCH_WARN("[OSS] Could not set nonblocking on OSS file descriptor. Will not be able to fast-forward.\n");
 }
 
 static void oss_free(void *data)
@@ -190,7 +185,7 @@ static size_t oss_write_avail(void *data)
 
    if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
    {
-      RARCH_ERR("[OSS]: SNDCTL_DSP_GETOSPACE failed ...\n");
+      RARCH_ERR("[OSS] SNDCTL_DSP_GETOSPACE failed.\n");
       return 0;
    }
 
@@ -204,7 +199,7 @@ static size_t oss_buffer_size(void *data)
 
    if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
    {
-      RARCH_ERR("[OSS]: SNDCTL_DSP_GETOSPACE failed ...\n");
+      RARCH_ERR("[OSS] SNDCTL_DSP_GETOSPACE failed.\n");
       return 1; /* Return something non-zero to avoid SIGFPE. */
    }
 

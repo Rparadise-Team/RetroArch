@@ -15,13 +15,8 @@
  */
 
 /*
-      SDL audio driver for miyoomini - IMPROVED VERSION
-      
-      Improvements over original:
-      - Increased buffer size (256 -> 512) to reduce underruns
-      - Better underrun handling with gradual fade instead of hard zeros
-      - Larger prefill (50% -> 66%) for better initial buffering
-      - Last sample caching to avoid pops during underruns
+      SDL audio driver for miyoomini customSDL
+      Can be used with standard SDL as well
 */
 
 #include <stdint.h>
@@ -41,7 +36,7 @@
 #include "../audio_driver.h"
 #include "../../verbosity.h"
 #include "volume/volume.h"
-#include "retro_assert.h"
+#include <mi_ao.h>
 
 #define SDL_AUDIO_SAMPLES 256
 
@@ -55,59 +50,22 @@ typedef struct sdl_audio
    bool nonblock;
    bool is_paused;
    size_t bufsize;
-   
-   /* NEW: For better underrun handling */
-   int16_t last_samples[2]; /* Cache last stereo sample to avoid pops */
-   Uint8 silence_value;     /* SDL's silence value for this format */
 } sdl_audio_t;
 
-static void sdl_audio_playback_cb(void *data, Uint8 *stream, int len)
+static void sdl_audio_cb(void *data, Uint8 *stream, int len)
 {
    sdl_audio_t  *sdl = (sdl_audio_t*)data;
    size_t      avail = FIFO_READ_AVAIL(sdl->buffer);
-   size_t       _len = (len > (int)avail) ? avail : (size_t)len;
-   
-   fifo_read(sdl->buffer, stream, _len);
-   
+   size_t write_size = len > (int)avail ? avail : len;
+
+   fifo_read(sdl->buffer, stream, write_size);
 #ifdef HAVE_THREADS
    scond_signal(sdl->cond);
 #endif
-
-   /* IMPROVED: Handle underrun with better technique */
-   if (_len < len) {
-      size_t remaining = len - _len;
-      Uint8 *fill_start = stream + _len;
-      
-      /* If we have cached samples, repeat them to avoid pop */
-      if (_len >= 4) { /* At least one stereo sample was written */
-         int16_t *last_pos = (int16_t*)(stream + _len - 4);
-         sdl->last_samples[0] = last_pos[0];
-         sdl->last_samples[1] = last_pos[1];
-         
-         /* Repeat last sample instead of silence */
-         int16_t *fill_ptr = (int16_t*)fill_start;
-         size_t samples_to_fill = remaining / 4;
-         for (size_t i = 0; i < samples_to_fill; i++) {
-            fill_ptr[i * 2] = sdl->last_samples[0];
-            fill_ptr[i * 2 + 1] = sdl->last_samples[1];
-         }
-      } else {
-         /* No data at all, use silence */
-         memset(fill_start, sdl->silence_value, remaining);
-      }
-   } else if (_len >= 4) {
-      /* Cache last sample for next potential underrun */
-      int16_t *last_pos = (int16_t*)(stream + _len - 4);
-      sdl->last_samples[0] = last_pos[0];
-      sdl->last_samples[1] = last_pos[1];
-   }
-}
-
-static INLINE int find_num_frames(int rate, int latency)
-{
-   int frames = (rate * latency) / 1000;
-   /* SDL only likes 2^n sized buffers. */
-   return next_pow2(frames);
+#ifdef HAVE_SDL2
+   /* If underrun, fill rest with silence. */
+   if (len > (int)avail) memset(stream + write_size, 0, len - write_size);
+#endif
 }
 
 static void *sdl_audio_init(const char *device,
@@ -144,7 +102,7 @@ static void *sdl_audio_init(const char *device,
    spec.format   = AUDIO_S16SYS;
    spec.channels = 2;
    spec.samples  = SDL_AUDIO_SAMPLES;
-   spec.callback = sdl_audio_playback_cb;
+   spec.callback = sdl_audio_cb;
    spec.userdata = sdl;
 
    if (SDL_OpenAudio(&spec, &out) < 0)
@@ -169,19 +127,13 @@ static void *sdl_audio_init(const char *device,
    sdl->bufsize = out.samples * out.channels * sizeof(int16_t) * frames * 2;
    sdl->buffer  = fifo_new(sdl->bufsize);
 
-   /* IMPROVED: Cache SDL's silence value */
-   sdl->silence_value = out.silence;
-   sdl->last_samples[0] = 0;
-   sdl->last_samples[1] = 0;
+   /* Allocate the null-buffer and prefill */
+   tmp = calloc(1, (sdl->bufsize / 2));
+   if (tmp) { fifo_write(sdl->buffer, tmp, (sdl->bufsize / 2)); free(tmp); }
 
-   /* IMPROVED: Increase prefill from 50% to 66% for better initial buffering */
-   size_t prefill_size = (sdl->bufsize * 2) / 3;
-   tmp = calloc(1, prefill_size);
-   if (tmp) {
-      fifo_write(sdl->buffer, tmp, prefill_size);
-      free(tmp);
-   }
-
+   SDL_PauseAudio(0);
+   
+   /*set volumen */
    int audiofix = getValueMM("audiofix");
    int target_vol = getVolumeMM();
    set_snd_level(target_vol);
@@ -195,8 +147,6 @@ static void *sdl_audio_init(const char *device,
    } else {
       RARCH_LOG("[SDL audio]: with audioserver\n");
    }
-
-   SDL_PauseAudio(0);
 
    return sdl;
 
@@ -215,11 +165,11 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
       size_t avail, write_amt;
 
       SDL_LockAudio();
-      avail     = FIFO_WRITE_AVAIL(sdl->buffer);
-      write_amt = (avail > size) ? size : avail;
+      avail = FIFO_WRITE_AVAIL(sdl->buffer);
+      write_amt = avail > size ? size : avail;
       fifo_write(sdl->buffer, buf, write_amt);
       SDL_UnlockAudio();
-      ret       = write_amt;
+      ret = write_amt;
    }
    else
    {
@@ -232,7 +182,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
          SDL_LockAudio();
          avail = FIFO_WRITE_AVAIL(sdl->buffer);
 
-         if (avail == 0)
+         if (avail < (sdl->bufsize/2))
          {
             SDL_UnlockAudio();
 #ifdef HAVE_THREADS
@@ -258,75 +208,42 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
 static bool sdl_audio_stop(void *data)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
-   if (sdl->is_paused)
-      return true;
-
-   RARCH_LOG("[SDL audio]: Pausing\n");
-
-   if (!sdl->is_paused) {
-      sdl->is_paused = true;
-      slock_lock(sdl->lock);
-
-#ifdef HAVE_THREADS
-      scond_broadcast(sdl->cond);
-#endif
-      slock_unlock(sdl->lock);
-
-      SDL_PauseAudio(1);
-      fifo_clear(sdl->buffer);
-   }
-
+   SDL_PauseAudio(1);
+   sdl->is_paused = true;
    return true;
 }
 
 static bool sdl_audio_alive(void *data)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
-
-   if (!sdl)
-      return false;
    return !sdl->is_paused;
 }
 
 static bool sdl_audio_start(void *data, bool is_shutdown)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
-   if (!sdl) return false;
-
-   /* Prevents restarting audio when the menu is toggled off on shutdown */
-   if (is_shutdown)
-      return true;
-
-   sdl->is_paused = false;
    SDL_PauseAudio(0);
+   sdl->is_paused = false;
    return true;
 }
 
 static void sdl_audio_set_nonblock_state(void *data, bool state)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
-   if (sdl)
-      sdl->nonblock = state;
+   sdl->nonblock = state;
 }
 
 static void sdl_audio_free(void *data)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
 
-   if (sdl)
-   {
-      SDL_CloseAudio();
+   SDL_CloseAudio();
 
-      if (sdl->buffer)
-         fifo_free(sdl->buffer);
-
+   fifo_free(sdl->buffer);
 #ifdef HAVE_THREADS
-      slock_free(sdl->lock);
-      scond_free(sdl->cond);
+   slock_free(sdl->lock);
+   scond_free(sdl->cond);
 #endif
-
-      SDL_QuitSubSystem(SDL_INIT_AUDIO);
-   }
    free(sdl);
 }
 
