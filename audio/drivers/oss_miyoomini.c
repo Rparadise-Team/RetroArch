@@ -53,6 +53,8 @@ typedef struct oss_audio
    bool is_paused;
    bool nonblock;
    bool audioserver;
+   bool need_volume_apply;
+   int pending_volume;
 } oss_audio_t;
 
 static void *oss_init(const char *device,
@@ -122,9 +124,9 @@ static void *oss_init(const char *device,
       attr.u32PtNumPerFrm = 256;
       MI_AO_SetPubAttr(0, &attr);
    }
-	
-   int target_vol = getVolumeMM();
-   set_snd_level(target_vol);
+
+   ossaudio->pending_volume    = getVolumeMM();
+   ossaudio->need_volume_apply = true;
 
    return ossaudio;
 
@@ -151,6 +153,12 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
          return 0;
 
       return -1;
+   }
+
+   if (ossaudio->need_volume_apply)
+   {
+      set_snd_level(ossaudio->pending_volume);
+      ossaudio->need_volume_apply = false;
    }
 
    return ret;

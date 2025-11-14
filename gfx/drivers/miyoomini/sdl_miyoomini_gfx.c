@@ -925,7 +925,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
 
-   GFX_SetFlipFlags(vid->vsync ? GFX_BLOCKING : 0);
+   GFX_SetFlipFlags(vid->vsync ? (GFX_BLOCKING | GFX_FLIPWAIT) : 0);
 
    sdl_miyoomini_input_driver_init(input_drv_name,
          joypad_drv_name, input, input_data);
@@ -1073,7 +1073,7 @@ static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
    if (vid->vsync != vsync)
    {
       vid->vsync              = vsync;
-      GFX_SetFlipFlags(vsync ? GFX_BLOCKING : 0);
+      GFX_SetFlipFlags(vsync ? (GFX_BLOCKING | GFX_FLIPWAIT) : 0);
    }
 }
 
