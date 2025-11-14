@@ -69,6 +69,9 @@ enum event_command
    CMD_EVENT_PLAY_REPLAY,
    CMD_EVENT_RECORD_REPLAY,
    CMD_EVENT_HALT_REPLAY,
+   CMD_EVENT_SAVE_REPLAY_CHECKPOINT,
+   CMD_EVENT_PREV_REPLAY_CHECKPOINT,
+   CMD_EVENT_NEXT_REPLAY_CHECKPOINT,
    CMD_EVENT_REPLAY_DECREMENT,
    CMD_EVENT_REPLAY_INCREMENT,
    /* Save state actions. */
@@ -168,6 +171,8 @@ enum event_command
    /* Configuration saving. */
    CMD_EVENT_MENU_RESET_TO_DEFAULT_CONFIG,
    CMD_EVENT_MENU_SAVE_CONFIG,
+   CMD_EVENT_MENU_SAVE_AS_CONFIG,
+   CMD_EVENT_MENU_SAVE_MAIN_CONFIG,
    CMD_EVENT_MENU_SAVE_CURRENT_CONFIG,
    CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_CORE,
    CMD_EVENT_MENU_SAVE_CURRENT_CONFIG_OVERRIDE_CONTENT_DIR,
@@ -258,6 +263,7 @@ enum event_command
    CMD_EVENT_AI_SERVICE_CALL,
    /* Misc. */
    CMD_EVENT_SAVE_FILES,
+   CMD_EVENT_LOAD_FILES,
    CMD_EVENT_CONTROLLER_INIT,
    CMD_EVENT_DISCORD_INIT,
    CMD_EVENT_PRESENCE_UPDATE,
@@ -272,8 +278,6 @@ enum event_command
    /* Reinitializes microphone driver. */
    CMD_EVENT_MICROPHONE_REINIT,
 #endif
-   /* Deprecated */
-   CMD_EVENT_SEND_DEBUG_INFO,
    /* Add a playlist entry to another playlist. */
    CMD_EVENT_ADD_TO_PLAYLIST
 };
@@ -379,7 +383,7 @@ void command_event_init_controllers(rarch_system_info_t *info,
 
 bool command_event_load_entry_state(settings_t *settings);
 
-void command_event_load_auto_state(void);
+bool command_event_load_auto_state(void);
 
 void command_event_set_savestate_auto_index(
       settings_t *settings);
@@ -420,12 +424,16 @@ bool command_get_config_param(command_t *cmd, const char* arg);
 bool command_show_osd_msg(command_t *cmd, const char* arg);
 bool command_load_state_slot(command_t *cmd, const char* arg);
 bool command_play_replay_slot(command_t *cmd, const char* arg);
+bool command_seek_replay(command_t *cmd, const char *arg);
+bool command_save_savefiles(command_t *cmd, const char* arg);
+bool command_load_savefiles(command_t *cmd, const char* arg);
 #ifdef HAVE_CHEEVOS
 bool command_read_ram(command_t *cmd, const char *arg);
 bool command_write_ram(command_t *cmd, const char *arg);
 #endif
 bool command_read_memory(command_t *cmd, const char *arg);
 bool command_write_memory(command_t *cmd, const char *arg);
+bool command_load_core(command_t *cmd, const char* arg);
 
 static const struct cmd_action_map action_map[] = {
 #if defined(HAVE_CG) || defined(HAVE_GLSL) || defined(HAVE_SLANG) || defined(HAVE_HLSL)
@@ -446,6 +454,12 @@ static const struct cmd_action_map action_map[] = {
 
    { "LOAD_STATE_SLOT",command_load_state_slot, "<slot number>"},
    { "PLAY_REPLAY_SLOT",command_play_replay_slot, "<slot number>"},
+   { "SEEK_REPLAY",command_seek_replay, "<frame number>"},
+
+   { "SAVE_FILES", command_save_savefiles, "No argument"},
+   { "LOAD_FILES", command_load_savefiles, "No argument"},
+
+   { "LOAD_CORE", command_load_core, "<core path>"},
 };
 
 static const struct cmd_map map[] = {
@@ -474,6 +488,9 @@ static const struct cmd_map map[] = {
    { "PLAY_REPLAY",            RARCH_PLAY_REPLAY_KEY },
    { "RECORD_REPLAY",          RARCH_RECORD_REPLAY_KEY },
    { "HALT_REPLAY",            RARCH_HALT_REPLAY_KEY },
+   { "SAVE_REPLAY_CHECKPOINT", RARCH_SAVE_REPLAY_CHECKPOINT_KEY },
+   { "PREV_REPLAY_CHECKPOINT", RARCH_PREV_REPLAY_CHECKPOINT_KEY },
+   { "NEXT_REPLAY_CHECKPOINT", RARCH_NEXT_REPLAY_CHECKPOINT_KEY },
    { "REPLAY_SLOT_PLUS",       RARCH_REPLAY_SLOT_PLUS },
    { "REPLAY_SLOT_MINUS",      RARCH_REPLAY_SLOT_MINUS },
 
@@ -482,6 +499,7 @@ static const struct cmd_map map[] = {
    { "DISK_PREV",              RARCH_DISK_PREV },
 
    { "SHADER_TOGGLE",          RARCH_SHADER_TOGGLE },
+   { "SHADER_HOLD",            RARCH_SHADER_HOLD },
    { "SHADER_NEXT",            RARCH_SHADER_NEXT },
    { "SHADER_PREV",            RARCH_SHADER_PREV },
 

@@ -245,10 +245,10 @@ gfx_display_ctx_driver_t gfx_display_ctx_metal = {
                                                 length:(NSUInteger)(_stride * _atlas->height)
                                                options:PLATFORM_METAL_RESOURCE_STORAGE_MODE];
 
-         // Even though newBufferWithBytes will copy the initial contents
-         // from our atlas, it doesn't seem to invalidate the buffer when
-         // doing so, causing corrupted text rendering if we hit this code
-         // path. To work around it we manually invalidate the buffer.
+         /* Even though newBufferWithBytes will copy the initial contents
+          * from our atlas, it doesn't seem to invalidate the buffer when
+          * doing so, causing corrupted text rendering if we hit this code
+          * path. To work around it we manually invalidate the buffer. */
 #if !defined(HAVE_COCOATOUCH)
          [_buffer didModifyRange:NSMakeRange(0, _buffer.length)];
 #endif
@@ -884,7 +884,7 @@ font_renderer_t metal_raster_font = {
       _t_pipelineState = [_device newRenderPipelineStateWithDescriptor:psd error:&err];
       if (err != nil)
       {
-         RARCH_ERR("[Metal]: error creating pipeline state %s\n", err.localizedDescription.UTF8String);
+         RARCH_ERR("[Metal] Error creating pipeline state %s.\n", err.localizedDescription.UTF8String);
          return NO;
       }
 
@@ -893,7 +893,7 @@ font_renderer_t metal_raster_font = {
       _t_pipelineStateNoAlpha = [_device newRenderPipelineStateWithDescriptor:psd error:&err];
       if (err != nil)
       {
-         RARCH_ERR("[Metal]: error creating pipeline state (no alpha) %s\n", err.localizedDescription.UTF8String);
+         RARCH_ERR("[Metal] Error creating pipeline state (no alpha) %s.\n", err.localizedDescription.UTF8String);
          return NO;
       }
    }
@@ -1907,11 +1907,11 @@ typedef struct MTLALIGN(16)
                if (lib == nil)
                {
                   save_msl = true;
-                  RARCH_ERR("[Metal]: unable to compile vertex shader: %s\n", err.localizedDescription.UTF8String);
+                  RARCH_ERR("[Metal] Unable to compile vertex shader: %s.\n", err.localizedDescription.UTF8String);
                   return NO;
                }
 #if DEBUG
-               RARCH_WARN("[Metal]: warnings compiling vertex shader: %s\n", err.localizedDescription.UTF8String);
+               RARCH_WARN("[Metal] Warnings compiling vertex shader: %s.\n", err.localizedDescription.UTF8String);
 #endif
             }
 
@@ -1923,11 +1923,11 @@ typedef struct MTLALIGN(16)
                if (lib == nil)
                {
                   save_msl = true;
-                  RARCH_ERR("[Metal]: unable to compile fragment shader: %s\n", err.localizedDescription.UTF8String);
+                  RARCH_ERR("[Metal] Unable to compile fragment shader: %s.\n", err.localizedDescription.UTF8String);
                   return NO;
                }
 #if DEBUG
-               RARCH_WARN("[Metal]: warnings compiling fragment shader: %s\n", err.localizedDescription.UTF8String);
+               RARCH_WARN("[Metal] Warnings compiling fragment shader: %s.\n", err.localizedDescription.UTF8String);
 #endif
             }
             psd.fragmentFunction = [lib newFunctionWithName:@"main0"];
@@ -1937,7 +1937,7 @@ typedef struct MTLALIGN(16)
             if (err != nil)
             {
                save_msl = true;
-               RARCH_ERR("[Metal]: error creating pipeline state for pass %d: %s\n", i,
+               RARCH_ERR("[Metal] Error creating pipeline state for pass %d: %s.\n", i,
                          err.localizedDescription.UTF8String);
                return NO;
             }
@@ -1966,7 +1966,7 @@ typedef struct MTLALIGN(16)
                              error:&err];
                if (err != nil)
                {
-                  RARCH_ERR("[Metal]: unable to save vertex shader source: %s\n", err.localizedDescription.UTF8String);
+                  RARCH_ERR("[Metal] Unable to save vertex shader source: %s.\n", err.localizedDescription.UTF8String);
                }
 
                err = nil;
@@ -1976,7 +1976,7 @@ typedef struct MTLALIGN(16)
                              error:&err];
                if (err != nil)
                {
-                  RARCH_ERR("[Metal]: unable to save fragment shader source: %s\n",
+                  RARCH_ERR("[Metal] Unable to save fragment shader source: %s.\n",
                             err.localizedDescription.UTF8String);
                }
             }
@@ -2446,7 +2446,7 @@ static void metal_set_video_mode(void *data,
                                  unsigned width, unsigned height,
                                  bool fullscreen)
 {
-   RARCH_LOG("[Metal]: set_video_mode res=%dx%d fullscreen=%s\n",
+   RARCH_DBG("[Metal] set_video_mode res=%dx%d fullscreen=%s\n",
              width, height,
              fullscreen ? "YES" : "NO");
 }
@@ -2531,6 +2531,43 @@ static uint32_t metal_get_flags(void *data)
    return flags;
 }
 
+static void metal_get_video_output_size(void *data,
+      unsigned *width, unsigned *height, char *desc, size_t desc_len)
+{
+#if TARGET_OS_IPHONE
+   /* iOS/tvOS: Return physical screen resolution, not window size */
+   UIScreen *screen = [UIScreen mainScreen];
+   CGRect nativeBounds = screen.nativeBounds;
+   *width  = (unsigned)nativeBounds.size.width;
+   *height = (unsigned)nativeBounds.size.height;
+
+   if (desc && desc_len > 0)
+   {
+      float scale = cocoa_screen_get_native_scale();
+      if (scale >= 3.0f)
+         strlcpy(desc, "Super Retina", desc_len);
+      else if (scale >= 2.0f)
+         strlcpy(desc, "Retina", desc_len);
+      else
+         strlcpy(desc, "Standard", desc_len);
+   }
+#else
+   /* macOS: Return display resolution */
+   CGDirectDisplayID display = CGMainDisplayID();
+   *width  = (unsigned)CGDisplayPixelsWide(display);
+   *height = (unsigned)CGDisplayPixelsHigh(display);
+
+   if (desc && desc_len > 0)
+   {
+      float scale = cocoa_screen_get_backing_scale_factor();
+      if (scale >= 2.0f)
+         strlcpy(desc, "Retina", desc_len);
+      else
+         strlcpy(desc, "Standard", desc_len);
+   }
+#endif
+}
+
 static const video_poke_interface_t metal_poke_interface = {
    metal_get_flags,
    metal_load_texture,
@@ -2538,7 +2575,7 @@ static const video_poke_interface_t metal_poke_interface = {
    metal_set_video_mode,
    metal_get_refresh_rate,
    metal_set_filtering,
-   NULL, /* get_video_output_size */
+   metal_get_video_output_size,
    NULL, /* get_video_output_prev */
    NULL, /* get_video_output_next */
    NULL, /* get_current_framebuffer */

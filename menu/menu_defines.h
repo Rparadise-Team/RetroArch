@@ -49,7 +49,9 @@ enum menu_state_flags
     * - Is screensaver currently active? */
    MENU_ST_FLAG_SCREENSAVER_SUPPORTED       = (1 << 10),
    MENU_ST_FLAG_SCREENSAVER_ACTIVE          = (1 << 11),
-   MENU_ST_FLAG_PENDING_RELOAD_CORE         = (1 << 12)
+   MENU_ST_FLAG_PENDING_RELOAD_CORE         = (1 << 12),
+   MENU_ST_FLAG_PENDING_STARTUP_PAGE        = (1 << 13),
+   MENU_ST_FLAG_BLOCK_ALL_INPUT             = (1 << 14)
 };
 
 enum menu_scroll_mode
@@ -73,6 +75,19 @@ enum action_iterate_type
    ITERATE_TYPE_BIND
 };
 
+enum menu_startup_page_type
+{
+   MENU_STARTUP_PAGE_MAIN_MENU = 0,
+   MENU_STARTUP_PAGE_HISTORY,
+   MENU_STARTUP_PAGE_FAVORITES,
+   MENU_STARTUP_PAGE_CONTENTLESS_CORES,
+   MENU_STARTUP_PAGE_EXPLORE,
+   MENU_STARTUP_PAGE_PLAYLISTS,
+   MENU_STARTUP_PAGE_LOAD_CONTENT,
+   MENU_STARTUP_PAGE_START_DIRECTORY,
+   MENU_STARTUP_PAGE_DOWNLOADS,
+   MENU_STARTUP_PAGE_LAST
+};
 
 enum menu_image_type
 {
@@ -166,9 +181,7 @@ enum menu_timedate_date_separator_type
    MENU_TIMEDATE_DATE_SEPARATOR_LAST
 };
 
-/* Specifies location of the 'Scan Content' menu
- * entry when using menu drivers without a
- * dedicated 'Import Content' (horizontal) tab */
+/* Specifies location of the 'Import Content' menu */
 enum menu_add_content_entry_display_type
 {
    MENU_ADD_CONTENT_ENTRY_DISPLAY_HIDDEN = 0,
@@ -441,6 +454,22 @@ enum ozone_color_theme
    OZONE_COLOR_THEME_LAST
 };
 
+enum ozone_header_separator
+{
+   OZONE_HEADER_SEPARATOR_NONE = 0,
+   OZONE_HEADER_SEPARATOR_NORMAL,
+   OZONE_HEADER_SEPARATOR_MAXIMUM,
+   OZONE_HEADER_SEPARATOR_LAST
+};
+
+enum ozone_font_scale
+{
+   OZONE_FONT_SCALE_NONE = 0,
+   OZONE_FONT_SCALE_GLOBAL,
+   OZONE_FONT_SCALE_SEPARATE,
+   OZONE_FONT_SCALE_LAST
+};
+
 enum menu_action
 {
    MENU_ACTION_NOOP = 0,
@@ -459,6 +488,8 @@ enum menu_action
    MENU_ACTION_SCROLL_UP,
    MENU_ACTION_SCROLL_HOME,
    MENU_ACTION_SCROLL_END,
+   MENU_ACTION_CYCLE_THUMBNAIL_PRIMARY,
+   MENU_ACTION_CYCLE_THUMBNAIL_SECONDARY,
    MENU_ACTION_TOGGLE,
    MENU_ACTION_RESUME,
    MENU_ACTION_POINTER_MOVED,

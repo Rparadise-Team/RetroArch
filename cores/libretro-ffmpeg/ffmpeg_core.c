@@ -97,8 +97,13 @@ static unsigned sw_sws_threads;
 static video_buffer_t *video_buffer;
 static tpool_t *tpool;
 
-#define FFMPEG3 ((LIBAVUTIL_VERSION_INT < (56, 6, 100)) || \
+#ifndef FFMPEG3
+#define FFMPEG3 ((LIBAVUTIL_VERSION_INT < AV_VERSION_INT(56, 6, 100)) || \
       (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 10, 100)))
+#endif
+#ifndef FFMPEG8
+#define FFMPEG8 (LIBAVCODEC_VERSION_MAJOR >= 62)
+#endif
 
 #if ENABLE_HW_ACCEL
 static enum AVHWDeviceType hw_decoder;
@@ -988,12 +993,15 @@ static enum AVPixelFormat init_hw_decoder(struct AVCodecContext *ctx,
                                     const enum AVHWDeviceType type,
                                     const enum AVPixelFormat *pix_fmts)
 {
+#if !FFMPEG3
+   int i;
+#endif
    int ret = 0;
    enum AVPixelFormat decoder_pix_fmt = AV_PIX_FMT_NONE;
    const AVCodec *codec = avcodec_find_decoder(fctx->streams[video_stream_index]->codecpar->codec_id);
 
 #if !FFMPEG3
-   for (int i = 0;; i++)
+   for (i = 0;; i++)
    {
       const AVCodecHWConfig *config = avcodec_get_hw_config(codec, i);
       if (!config)
@@ -1330,7 +1338,7 @@ static bool init_media_info(void)
          media.duration.hours   = 0;
          media.duration.minutes = 0;
          media.duration.seconds = 0;
-         log_cb(RETRO_LOG_ERROR, "[FFMPEG] Could not determine media duration\n");
+         log_cb(RETRO_LOG_ERROR, "[FFMPEG] Could not determine media duration.\n");
       }
    }
 
@@ -2088,17 +2096,28 @@ void CORE_PREFIX(retro_unload_game)(void)
 
    for (i = 0; i < MAX_STREAMS; i++)
    {
+#if FFMPEG8
+      if (sctx[i])
+         avcodec_free_context(&sctx[i]);
+      if (actx[i])
+         avcodec_free_context(&actx[i]);
+#else
       if (sctx[i])
          avcodec_close(sctx[i]);
       if (actx[i])
          avcodec_close(actx[i]);
+#endif
       sctx[i] = NULL;
       actx[i] = NULL;
    }
 
    if (vctx)
    {
+#if FFMPEG8
+      avcodec_free_context(&vctx);
+#else
       avcodec_close(vctx);
+#endif
       vctx = NULL;
    }
 
@@ -2161,7 +2180,7 @@ bool CORE_PREFIX(retro_load_game)(const struct retro_game_info *info)
 
    if (!CORE_PREFIX(environ_cb)(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
    {
-      log_cb(RETRO_LOG_ERROR, "[FFMPEG] Cannot set pixel format.");
+      log_cb(RETRO_LOG_ERROR, "[FFMPEG] Cannot set pixel format.\n");
       goto error;
    }
 
@@ -2192,13 +2211,13 @@ bool CORE_PREFIX(retro_load_game)(const struct retro_game_info *info)
 
    if (!open_codecs())
    {
-      log_cb(RETRO_LOG_ERROR, "[FFMPEG] Failed to find codec.");
+      log_cb(RETRO_LOG_ERROR, "[FFMPEG] Failed to find codec.\n");
       goto error;
    }
 
    if (!init_media_info())
    {
-      log_cb(RETRO_LOG_ERROR, "[FFMPEG] Failed to init media info.");
+      log_cb(RETRO_LOG_ERROR, "[FFMPEG] Failed to init media info.\n");
       goto error;
    }
 

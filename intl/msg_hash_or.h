@@ -449,7 +449,6 @@ MSG_HASH(
 
 
 
-
 /* Settings > Input > Port # Controls */
 
 
@@ -738,13 +737,6 @@ MSG_HASH(
 
 /* Quick Menu > Shaders */
 
-
-/* Quick Menu > Shaders > Save */
-
-
-
-
-/* Quick Menu > Shaders > Remove */
 
 
 /* Quick Menu > Shaders > Shader Parameters */

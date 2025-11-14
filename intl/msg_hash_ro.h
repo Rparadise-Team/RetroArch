@@ -153,7 +153,6 @@
 
 
 
-
 /* Settings > Input > Port # Controls */
 
 
@@ -374,13 +373,6 @@
 
 /* Quick Menu > Shaders */
 
-
-/* Quick Menu > Shaders > Save */
-
-
-
-
-/* Quick Menu > Shaders > Remove */
 
 
 /* Quick Menu > Shaders > Shader Parameters */

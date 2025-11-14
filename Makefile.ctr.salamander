@@ -83,11 +83,7 @@ LIBDIRS := -L. -L$(CTRULIB)/lib
 
 ARCH     := -march=armv6k -mtune=mpcore -mfloat-abi=hard -marm -mfpu=vfp -mtp=soft
 
-CFLAGS	+=	-mword-relocations \
-			-fomit-frame-pointer \
-			$(ARCH)
-
-#CFLAGS	+= -Wall
+CFLAGS	+=	-mword-relocations -fomit-frame-pointer $(ARCH)
 CFLAGS	+=	-DARM11 -D_3DS
 
 ifeq ($(strip $(USE_CTRULIB_2)),1)

@@ -1085,7 +1085,6 @@ MSG_HASH(
 
 
 
-
 /* Settings > Input > Port # Controls */
 
 
@@ -1157,6 +1156,8 @@ MSG_HASH(
 
 /* Settings > User Interface */
 
+#ifdef _3DS
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_APPICON_SETTINGS,
    "Ikona aplikacije"
@@ -1165,8 +1166,6 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_APPICON_SETTINGS,
    "Promijenite ikonu aplikacije."
    )
-#ifdef _3DS
-#endif
 
 /* Settings > User Interface > Menu Item Visibility */
 
@@ -1403,13 +1402,6 @@ MSG_HASH(
 /* Quick Menu > Shaders */
 
 
-/* Quick Menu > Shaders > Save */
-
-
-
-
-/* Quick Menu > Shaders > Remove */
-
 
 /* Quick Menu > Shaders > Shader Parameters */
 
@@ -1491,6 +1483,10 @@ MSG_HASH(
 
 /* Ozone: Settings > User Interface > Appearance */
 
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_OZONE_HEADER_SEPARATOR_NONE,
+   "Ništa"
+   )
 
 
 

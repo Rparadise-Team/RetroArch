@@ -1,6 +1,7 @@
 /*  RetroArch - A frontend for libretro.
  *  Copyright (C) 2010-2014 - Hans-Kristian Arntzen
  *  Copyright (C) 2011-2017 - Daniel De Matteis
+ *  Copyright (C) 2023-2025 - Jesse Talavera-Greenberg
  *
  *  RetroArch is free software: you can redistribute it and/or modify it under the terms
  *  of the GNU General Public License as published by the Free Software Found-
@@ -314,6 +315,10 @@ static void sdl_microphone_set_nonblock_state(void *driver_context, bool state)
       sdl->nonblock = state;
 }
 
+static int sdl_microphone_read(void *driver_context, void *mic_context, void *sv, size_t len)
+{
+   int ret    = 0;
+   uint8_t *s = (uint8_t*)sv;
 static int sdl_microphone_read(void *driver_context, void *mic_context, void *s, size_t len)
 {
    int ret = 0;

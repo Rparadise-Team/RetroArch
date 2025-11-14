@@ -43,11 +43,6 @@ static id<CHHapticPatternPlayer> deviceWeakPlayer IPHONE_RUMBLE_AVAIL;
 static id<CHHapticPatternPlayer> deviceStrongPlayer IPHONE_RUMBLE_AVAIL;
 #endif
 
-enum
-{
-    GCCONTROLLER_PLAYER_INDEX_UNSET = -1,
-};
-
 @class MFIRumbleController;
 
 /* TODO/FIXME - static globals */
@@ -55,7 +50,7 @@ static uint32_t mfi_buttons[MAX_USERS];
 static int16_t  mfi_axes[MAX_USERS][MAX_MFI_AXES];
 static uint32_t mfi_controllers[MAX_MFI_CONTROLLERS];
 static MFIRumbleController *mfi_rumblers[MAX_MFI_CONTROLLERS];
-#define MFI_WEAK_RUMBLE 0.3f
+#define MFI_WEAK_RUMBLE 0.5f
 static NSMutableArray *mfiControllers;
 static bool mfi_inited;
 
@@ -188,9 +183,11 @@ static void apple_gamecontroller_joypad_poll_internal(GCController *controller, 
         mfi_axes[slot][5]         = gp.rightTrigger.value * 32767.0f;
 
     }
+#if 0
     else if (controller.microGamepad)
     {
     }
+#endif
 
     /* GCGamepad is deprecated */
 #pragma clang diagnostic push
@@ -220,10 +217,12 @@ static void apple_gamecontroller_joypad_poll(void)
     for (GCController *controller in [GCController controllers])
     {
        /* If we have not assigned a slot to this controller yet, ignore it. */
-       if (  controller &&
-             (controller.playerIndex >= 0) && (controller.playerIndex < MAX_USERS) &&
-             !mfi_controller_is_siri_remote(controller))
-          apple_gamecontroller_joypad_poll_internal(controller, (uint32_t)controller.playerIndex);
+       if (      controller
+             && (controller.playerIndex >= 0)
+             && (controller.playerIndex < MAX_USERS)
+             && !mfi_controller_is_siri_remote(controller))
+          apple_gamecontroller_joypad_poll_internal(controller,
+                (uint32_t)controller.playerIndex);
     }
 }
 
@@ -239,6 +238,20 @@ static void apple_gamecontroller_joypad_register(GCController *controller)
         gp.buttonOptions.preferredSystemGestureState = GCSystemGestureStateDisabled;
         gp.buttonMenu.preferredSystemGestureState    = GCSystemGestureStateDisabled;
         gp.buttonHome.preferredSystemGestureState    = GCSystemGestureStateDisabled;
+
+        GCPhysicalInputProfile *profile = controller.physicalInputProfile;
+        GCControllerButtonInput *homeBtn = (GCControllerButtonInput *)profile.buttons[GCInputButtonHome];
+        if (homeBtn) {
+            homeBtn.preferredSystemGestureState = GCSystemGestureStateDisabled;
+        }
+        GCControllerButtonInput *menuBtn = (GCControllerButtonInput *)profile.buttons[GCInputButtonMenu];
+        if (menuBtn) {
+            menuBtn.preferredSystemGestureState = GCSystemGestureStateDisabled;
+        }
+        GCControllerButtonInput *optionsBtn = (GCControllerButtonInput *)profile.buttons[GCInputButtonOptions];
+        if (optionsBtn) {
+            optionsBtn.preferredSystemGestureState = GCSystemGestureStateDisabled;
+        }
     }
 #endif
 
@@ -272,7 +285,8 @@ static void apple_gamecontroller_joypad_register(GCController *controller)
               mfi_buttons[slot]       &= ~(1 << RETRO_DEVICE_ID_JOYPAD_START);
               mfi_buttons[slot]       &= ~(1 << RETRO_DEVICE_ID_JOYPAD_L);
               mfi_buttons[slot]       |=  (1 << RETRO_DEVICE_ID_JOYPAD_SELECT);
-              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+                    dispatch_get_main_queue(), ^{
                     mfi_buttons[slot] &= ~(1 << RETRO_DEVICE_ID_JOYPAD_SELECT);
                     });
               return;
@@ -283,7 +297,8 @@ static void apple_gamecontroller_joypad_register(GCController *controller)
               mfi_buttons[slot]       &= ~(1 << RETRO_DEVICE_ID_JOYPAD_L2);
               mfi_buttons[slot]       &= ~(1 << RETRO_DEVICE_ID_JOYPAD_START);
               mfi_buttons[slot]       |=  (1 << RETRO_DEVICE_ID_JOYPAD_L3);
-              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+                    dispatch_get_main_queue(), ^{
                     mfi_buttons[slot] &= ~(1 << RETRO_DEVICE_ID_JOYPAD_L3);
                     });
               return;
@@ -294,7 +309,8 @@ static void apple_gamecontroller_joypad_register(GCController *controller)
               mfi_buttons[slot] &= ~(1 << RETRO_DEVICE_ID_JOYPAD_R2);
               mfi_buttons[slot] &= ~(1 << RETRO_DEVICE_ID_JOYPAD_START);
               mfi_buttons[slot] |= (1 << RETRO_DEVICE_ID_JOYPAD_R3);
-              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+                    dispatch_get_main_queue(), ^{
                     mfi_buttons[slot] &= ~(1 << RETRO_DEVICE_ID_JOYPAD_R3);
                     });
               return;
@@ -302,7 +318,8 @@ static void apple_gamecontroller_joypad_register(GCController *controller)
 
            mfi_buttons[slot] |= (1 << RETRO_DEVICE_ID_JOYPAD_START);
 
-           dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+           dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+                 dispatch_get_main_queue(), ^{
                  mfi_buttons[slot] &= ~(1 << RETRO_DEVICE_ID_JOYPAD_START);
                  });
         };
@@ -312,7 +329,7 @@ static void apple_gamecontroller_joypad_register(GCController *controller)
 
 static void mfi_joypad_autodetect_add(unsigned autoconf_pad, const char *display_name)
 {
-    input_autoconfigure_connect("mFi Controller", display_name, mfi_joypad.ident, autoconf_pad, 0, 0);
+    input_autoconfigure_connect("mFi Controller", display_name, NULL, mfi_joypad.ident, autoconf_pad, 0, 0);
 }
 
 #define MFI_RUMBLE_AVAIL API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0))
@@ -356,13 +373,14 @@ static void mfi_joypad_autodetect_add(unsigned autoconf_pad, const char *display
     [self.engines addObject:engine];
 
     __weak MFIRumbleController *weakSelf = self;
-    engine.stoppedHandler = ^(CHHapticEngineStoppedReason stoppedReason)
-    {
+    engine.stoppedHandler = ^(CHHapticEngineStoppedReason reason) {
         MFIRumbleController *strongSelf = weakSelf;
         if (!strongSelf)
             return;
 
-        [strongSelf shutdown];
+        /* Engine stopped (backgrounding/interruption) - clear players but keep engine in set */
+        strongSelf->_strongPlayer = nil;
+        strongSelf->_weakPlayer = nil;
     };
     engine.resetHandler = ^{
         MFIRumbleController *strongSelf = weakSelf;
@@ -377,12 +395,17 @@ static void mfi_joypad_autodetect_add(unsigned autoconf_pad, const char *display
     CHHapticEvent *event;
     CHHapticPattern *pattern;
 
+    CHHapticEventParameter *sharp;
+
     intense = [[CHHapticEventParameter alloc]
                initWithParameterID:CHHapticEventParameterIDHapticIntensity
                value:intensity];
+    sharp   = [[CHHapticEventParameter alloc]
+               initWithParameterID:CHHapticEventParameterIDHapticSharpness
+               value:1.0];
     event   = [[CHHapticEvent alloc]
              initWithEventType:CHHapticEventTypeHapticContinuous
-             parameters:[NSArray arrayWithObjects:intense, nil]
+             parameters:[NSArray arrayWithObjects:intense, sharp, nil]
              relativeTime:0
              duration:GCHapticDurationInfinite];
     pattern = [[CHHapticPattern alloc]
@@ -416,9 +439,19 @@ static void mfi_joypad_autodetect_add(unsigned autoconf_pad, const char *display
 {
     if (@available(iOS 14, tvOS 14, macOS 11, *))
     {
-        _weakPlayer   = nil;
-        _strongPlayer = nil;
+        if (_weakPlayer) [_weakPlayer cancelAndReturnError:nil];
+        if (_strongPlayer) [_strongPlayer cancelAndReturnError:nil];
+
+        for (CHHapticEngine *eng in self.engines)
+        {
+            eng.stoppedHandler = ^(CHHapticEngineStoppedReason reason) {};
+            eng.resetHandler = ^{};
+            [eng stopWithCompletionHandler:nil];
+        }
         [self.engines removeAllObjects];
+
+        _weakPlayer = nil;
+        _strongPlayer = nil;
     }
 }
 
@@ -438,35 +471,35 @@ static void apple_gamecontroller_joypad_connect(GCController *controller)
 
     if (mfi_controller_is_siri_remote(controller))
     {
-        RARCH_WARN("[mfi] ignoring siri remote as a controller\n");
+        RARCH_WARN("[MFI] Ignoring siri remote as a controller.\n");
         return;
     }
 
     /* Prevent same controller getting set twice */
     if ([mfiControllers containsObject:controller])
     {
-        RARCH_DBG("[mfi] got connected notice for controller already connected\n");
+        RARCH_DBG("[MFI] Got connected notice for controller already connected.\n");
         return;
     }
 
     if (@available(macOS 11, iOS 14, tvOS 14, *))
     {
-        RARCH_DBG("[mfi] new controller connected:\n");
-        RARCH_DBG("[mfi]    name: %s\n", [controller.vendorName UTF8String]);
-        RARCH_DBG("[mfi]    category: %s\n", [controller.productCategory UTF8String]);
-        RARCH_DBG("[mfi]    has battery info: %s\n", controller.battery != nil ? "yes" : "no");
-        RARCH_DBG("[mfi]    has haptics: %s\n", controller.haptics != nil ? "yes" : "no");
-        RARCH_DBG("[mfi]    has light: %s\n", controller.light != nil ? "yes" : "no");
-        RARCH_DBG("[mfi]    has motion: %s\n", controller.motion != nil ? "yes" : "no");
-        RARCH_DBG("[mfi]    has microGamepad: %s\n", controller.microGamepad != nil ? "yes" : "no");
-        RARCH_DBG("[mfi]    has extendedGamepad: %s\n", controller.extendedGamepad != nil ? "yes" : "no");
-        RARCH_DBG("[mfi]    input profile:\n");
+        RARCH_DBG("[MFI] New controller connected:\n");
+        RARCH_DBG("[MFI]    name: %s\n", [controller.vendorName UTF8String]);
+        RARCH_DBG("[MFI]    category: %s\n", [controller.productCategory UTF8String]);
+        RARCH_DBG("[MFI]    has battery info: %s\n", controller.battery != nil ? "yes" : "no");
+        RARCH_DBG("[MFI]    has haptics: %s\n", controller.haptics != nil ? "yes" : "no");
+        RARCH_DBG("[MFI]    has light: %s\n", controller.light != nil ? "yes" : "no");
+        RARCH_DBG("[MFI]    has motion: %s\n", controller.motion != nil ? "yes" : "no");
+        RARCH_DBG("[MFI]    has microGamepad: %s\n", controller.microGamepad != nil ? "yes" : "no");
+        RARCH_DBG("[MFI]    has extendedGamepad: %s\n", controller.extendedGamepad != nil ? "yes" : "no");
+        RARCH_DBG("[MFI]    input profile:\n");
         for (NSString *elem in controller.physicalInputProfile.elements.allKeys)
         {
-            RARCH_DBG("[mfi]       %s\n", [elem UTF8String]);
+            RARCH_DBG("[MFI]       %s\n", [elem UTF8String]);
             GCControllerElement *element = controller.physicalInputProfile.elements[elem];
-            RARCH_DBG("[mfi]          analog: %s\n", element.analog ? "yes" : "no");
-            RARCH_DBG("[mfi]          localizedName: %s\n", [element.localizedName UTF8String]);
+            RARCH_DBG("[MFI]          analog: %s\n", element.analog ? "yes" : "no");
+            RARCH_DBG("[MFI]          localizedName: %s\n", [element.localizedName UTF8String]);
         }
     }
 
@@ -475,21 +508,20 @@ static void apple_gamecontroller_joypad_connect(GCController *controller)
         /* Desired slot is unused, take it */
         if (!mfi_controllers[desired_index])
         {
-            RARCH_LOG("[mfi] controller given desired index %d\n", desired_index);
+            RARCH_LOG("[MFI] Controller given desired index %d.\n", desired_index);
             controller.playerIndex = desired_index;
             mfi_controllers[desired_index] = (uint32_t)controller.hash;
         }
         else
         {
             /* Find a new slot for this controller that's unused */
-            unsigned i;
-
+            int i;
             for (i = 0; i < MAX_MFI_CONTROLLERS; ++i)
             {
                 if (mfi_controllers[i])
                     continue;
 
-                RARCH_LOG("[mfi] controller reassigned from desired %d to %d\n", desired_index, i);
+                RARCH_LOG("[MFI] Controller reassigned from desired %d to %d.\n", desired_index, i);
                 mfi_controllers[i]     = (uint32_t)controller.hash;
                 controller.playerIndex = i;
                 break;
@@ -498,7 +530,7 @@ static void apple_gamecontroller_joypad_connect(GCController *controller)
             if (i == MAX_MFI_CONTROLLERS)
             {
                 /* shouldn't ever get here, this is an Apple limit */
-                RARCH_ERR("[mfi] too many connected controllers, ignoring\n");
+                RARCH_ERR("[MFI] Too many connected controllers, ignoring.\n");
                 return;
             }
         }
@@ -506,7 +538,7 @@ static void apple_gamecontroller_joypad_connect(GCController *controller)
 
     [mfiControllers addObject:controller];
 
-    RARCH_LOG("[mfi] controller connected, beginning setup and autodetect\n");
+    RARCH_LOG("[MFI] Controller connected, beginning setup and autodetect...\n");
     apple_gamecontroller_joypad_register(controller);
     apple_gamecontroller_joypad_setup_haptics(controller);
     mfi_joypad_autodetect_add((unsigned)controller.playerIndex, [controller.vendorName cStringUsingEncoding:NSUTF8StringEncoding]);
@@ -514,17 +546,19 @@ static void apple_gamecontroller_joypad_connect(GCController *controller)
 
 static void apple_gamecontroller_joypad_disconnect(GCController* controller)
 {
-    signed pad = (int32_t)controller.playerIndex;
+    NSInteger pad = controller.playerIndex;
 
-    if (pad == GCCONTROLLER_PLAYER_INDEX_UNSET)
+    if (pad < 0 || pad >= MAX_MFI_CONTROLLERS)
         return;
 
+    if (mfi_rumblers[pad])
+        [mfi_rumblers[pad] shutdown];
     mfi_rumblers[pad]    = nil;
     mfi_controllers[pad] = 0;
     if ([mfiControllers containsObject:controller])
     {
         [mfiControllers removeObject:controller];
-        input_autoconfigure_disconnect(pad, mfi_joypad.ident);
+        input_autoconfigure_disconnect((unsigned)pad, mfi_joypad.ident);
     }
 }
 
@@ -548,9 +582,9 @@ static void apple_gamecontroller_device_haptics_setup(void) IPHONE_RUMBLE_AVAIL
 
     deviceHapticEngine.stoppedHandler = ^(CHHapticEngineStoppedReason reason)
     {
+        /* Engine stopped (backgrounding/interruption) - clear players but keep engine */
         deviceWeakPlayer = nil;
         deviceStrongPlayer = nil;
-        deviceHapticEngine = nil;
     };
     deviceHapticEngine.resetHandler = ^{
         if (!deviceHapticEngine)
@@ -568,17 +602,35 @@ static id<CHHapticPatternPlayer> apple_gamecontroller_device_haptics_create_play
     if (!deviceHapticEngine)
         return nil;
 
+    /* Ensure engine is started (may have been stopped by backgrounding) */
+    NSError *error;
+    [deviceHapticEngine startAndReturnError:&error];
+    if (error)
+    {
+        /* Engine couldn't start - recreate it */
+        deviceHapticEngine = nil;
+        deviceWeakPlayer = nil;
+        deviceStrongPlayer = nil;
+        apple_gamecontroller_device_haptics_setup();
+        if (!deviceHapticEngine)
+            return nil;
+    }
+
     CHHapticEventParameter *intense;
     CHHapticEvent *event;
     CHHapticPattern *pattern;
-    NSError *error;
+
+    CHHapticEventParameter *sharp;
 
     intense = [[CHHapticEventParameter alloc]
                initWithParameterID:CHHapticEventParameterIDHapticIntensity
                value:intensity];
+    sharp   = [[CHHapticEventParameter alloc]
+               initWithParameterID:CHHapticEventParameterIDHapticSharpness
+               value:1.0];
     event   = [[CHHapticEvent alloc]
                initWithEventType:CHHapticEventTypeHapticContinuous
-               parameters:[NSArray arrayWithObjects:intense, nil]
+               parameters:[NSArray arrayWithObjects:intense, sharp, nil]
                relativeTime:0
                duration:GCHapticDurationInfinite];
     pattern = [[CHHapticPattern alloc]
@@ -606,7 +658,7 @@ static id<CHHapticPatternPlayer> apple_gamecontroller_device_haptics_strong_play
 static id<CHHapticPatternPlayer> apple_gamecontroller_device_haptics_weak_player(void) IPHONE_RUMBLE_AVAIL
 {
     if (!deviceWeakPlayer)
-        deviceWeakPlayer = apple_gamecontroller_device_haptics_create_player(0.5f);
+        deviceWeakPlayer = apple_gamecontroller_device_haptics_create_player(0.7f);
     return deviceWeakPlayer;
 }
 #endif
@@ -644,7 +696,24 @@ void *apple_gamecontroller_joypad_init(void *data)
    return (void*)-1;
 }
 
-static void apple_gamecontroller_joypad_destroy(void) { }
+static void apple_gamecontroller_joypad_destroy(void)
+{
+#if TARGET_OS_IOS
+   if (@available(iOS 14, *))
+   {
+      if (deviceHapticEngine)
+      {
+         deviceHapticEngine.stoppedHandler = ^(CHHapticEngineStoppedReason reason) {};
+         deviceHapticEngine.resetHandler = ^{};
+         [deviceHapticEngine stopWithCompletionHandler:^(NSError *error) {
+            deviceWeakPlayer = nil;
+            deviceStrongPlayer = nil;
+            deviceHapticEngine = nil;
+         }];
+      }
+   }
+#endif
+}
 
 static int32_t apple_gamecontroller_joypad_button(
       unsigned port, uint16_t joykey)
@@ -690,7 +759,7 @@ static int16_t apple_gamecontroller_joypad_state(
       const struct retro_keybind *binds,
       unsigned port)
 {
-   unsigned i;
+   int i;
    int16_t ret                          = 0;
    uint16_t port_idx                    = joypad_info->joy_idx;
 
@@ -731,9 +800,9 @@ static bool apple_gamecontroller_joypad_set_rumble(unsigned pad,
         if (enable_device_vibration && pad == 0)
         {
             NSError *error;
-            id<CHHapticPatternPlayer> player = (type == RETRO_RUMBLE_STRONG ?
-                                                apple_gamecontroller_device_haptics_strong_player() :
-                                                apple_gamecontroller_device_haptics_weak_player());
+            id<CHHapticPatternPlayer> player = (type == RETRO_RUMBLE_STRONG
+                  ? apple_gamecontroller_device_haptics_strong_player()
+						: apple_gamecontroller_device_haptics_weak_player());
             if (player)
             {
                 if (strength == 0)
@@ -742,9 +811,8 @@ static bool apple_gamecontroller_joypad_set_rumble(unsigned pad,
                 {
                     float str = (float)strength / 65535.0f;
                     CHHapticDynamicParameter *param = [[CHHapticDynamicParameter alloc]
-                                                       initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
-                                                       value:str
-                                                       relativeTime:0];
+                       initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
+                                     value:str relativeTime:0];
                     [player sendParameters:[NSArray arrayWithObject:param] atTime:0 error:&error];
                     if (!error)
                         [player startAtTime:0 error:&error];
@@ -769,9 +837,9 @@ static bool apple_gamecontroller_joypad_set_rumble(unsigned pad,
                    [player stopAtTime:0 error:&error];
                 else
                 {
+                   CHHapticDynamicParameter *param = NULL;
                    float str = (float)strength / 65535.0f;
-                   if (type == RETRO_RUMBLE_WEAK) str *= MFI_WEAK_RUMBLE;
-                   CHHapticDynamicParameter *param = [[CHHapticDynamicParameter alloc]
+                   param = [[CHHapticDynamicParameter alloc]
                       initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
                                     value:str
                              relativeTime:0];

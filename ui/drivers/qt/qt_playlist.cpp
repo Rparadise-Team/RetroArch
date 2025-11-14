@@ -327,12 +327,9 @@ bool MainWindow::addDirectoryFilesToList(QProgressDialog *dialog,
       if (fileInfo.isDir())
       {
          QDir fileInfoDir(path);
-         bool success = addDirectoryFilesToList(
-               dialog, list, fileInfoDir, extensions);
-
-         if (!success)
+         if (!addDirectoryFilesToList(
+               dialog, list, fileInfoDir, extensions))
             return false;
-
          continue;
       }
 
@@ -523,12 +520,9 @@ void MainWindow::addFilesToPlaylist(QStringList files)
       if (fileInfo.isDir())
       {
          QDir dir(path);
-         bool success = addDirectoryFilesToList(
-               dialog.data(), list, dir, selectedExtensions);
-
-         if (!success)
+         if (!addDirectoryFilesToList(
+               dialog.data(), list, dir, selectedExtensions))
             return;
-
          continue;
       }
 
@@ -1517,8 +1511,8 @@ QString MainWindow::getPlaylistDefaultCore(QString plName)
       const char *defaultCorePath = playlist_get_default_core_path(playlist);
 
       /* Get default core path */
-      if (!string_is_empty(defaultCorePath) &&
-          !string_is_equal(defaultCorePath, "DETECT"))
+      if (   !string_is_empty(defaultCorePath)
+          && !string_is_equal(defaultCorePath, "DETECT"))
          corePath = QString::fromUtf8(defaultCorePath);
 
       /* Free playlist, if required */
