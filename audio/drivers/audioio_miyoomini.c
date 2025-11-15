@@ -84,6 +84,71 @@ typedef struct miao_audio
 
 #define MIAO_RING_MULTIPLIER 4
 
+static bool miao_open_audioserver_fifo(miao_audio_t *ctx)
+{
+   if (!ctx)
+      return false;
+
+   if (ctx->audioserver_fd >= 0)
+   {
+      close(ctx->audioserver_fd);
+      ctx->audioserver_fd = -1;
+   }
+
+   ctx->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY);
+   if (ctx->audioserver_fd < 0)
+   {
+      RARCH_ERR("[MIAO]: Cannot open audioserver FIFO (errno=%d).\n", errno);
+      return false;
+   }
+
+   return true;
+}
+
+static bool miao_fifo_write_blocking(miao_audio_t *ctx, const uint8_t *data, size_t size)
+{
+   size_t total = 0;
+
+   if (!ctx || ctx->audioserver_fd < 0)
+      return false;
+
+   while (total < size)
+   {
+      ssize_t written = write(ctx->audioserver_fd, data + total, size - total);
+
+      if (written > 0)
+      {
+         total += (size_t)written;
+         continue;
+      }
+
+      if (written == 0)
+         break;
+
+      if (errno == EINTR)
+         continue;
+
+      if (errno == EAGAIN)
+      {
+         usleep(2000);
+         continue;
+      }
+
+      if (errno == EPIPE || errno == ENXIO)
+      {
+         RARCH_WARN("[MIAO]: Audioserver FIFO closed, attempting to reopen.\n");
+         if (miao_open_audioserver_fifo(ctx))
+            continue;
+         return false;
+      }
+
+      RARCH_ERR("[MIAO]: Audioserver FIFO write failed (errno=%d).\n", errno);
+      return false;
+   }
+
+   return total == size;
+}
+
 static void *miao_worker_thread(void *userdata)
 {
    miao_audio_t *ctx = (miao_audio_t*)userdata;
@@ -116,16 +181,29 @@ static void *miao_worker_thread(void *userdata)
       {
          size_t tail = ctx->ring_size - start;
          size_t chunk = (to_write < tail) ? to_write : tail;
+         uint8_t *chunk_ptr = ctx->ring_buf + start;
 
-         ctx->AoSendFrame.apVirAddr[0] = ctx->ring_buf + start;
-         ctx->AoSendFrame.u32Len       = chunk;
-         MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
+         if (ctx->audioserver_mode)
+         {
+            if (!miao_fifo_write_blocking(ctx, chunk_ptr, chunk))
+            {
+               RARCH_ERR("[MIAO]: Stopping worker thread after FIFO error.\n");
+               goto worker_exit;
+            }
+         }
+         else
+         {
+            ctx->AoSendFrame.apVirAddr[0] = chunk_ptr;
+            ctx->AoSendFrame.u32Len       = chunk;
+            MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
+         }
 
          to_write -= chunk;
          start     = (start + chunk) % ctx->ring_size;
       }
    }
 
+worker_exit:
    return NULL;
 }
 
@@ -170,12 +248,9 @@ static void *miao_init(const char *device,
    miaoaudio->AoSendFrame.u32Len = miaoaudio->bufsize;
 
    if (miaoaudio->audioserver_mode) {
-      miaoaudio->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY);
-      if (miaoaudio->audioserver_fd < 0) {
-         RARCH_ERR("[MIAO]: Cannot open audioserver FIFO.\n");
+      if (!miao_open_audioserver_fifo(miaoaudio))
          goto error;
-      }
-      RARCH_LOG("[MIAO]: Whit audioserver\n");
+      RARCH_LOG("[MIAO]: With audioserver\n");
    }
    else
    {
@@ -194,13 +269,12 @@ static void *miao_init(const char *device,
 
       MI_AO_ClearChnBuf(0,0);
       MI_AO_SendFrame(0, 0, &miaoaudio->AoSendFrame, 0);
-      RARCH_LOG("[MIAO]: Whitout audioserver\n");
+      RARCH_LOG("[MIAO]: Without audioserver\n");
    }
 
    miaoaudio->pending_volume   = getVolumeMM();
    miaoaudio->need_volume_apply = true;
 
-   if (!miaoaudio->audioserver_mode)
    {
       size_t ring_size = miaoaudio->bufsize * MIAO_RING_MULTIPLIER;
       if (ring_size < miaoaudio->bufsize)
@@ -264,17 +338,10 @@ static ssize_t miao_write(void *data, const void *buf, size_t size)
       miaoaudio->need_volume_apply = false;
    }
 
-   if (miaoaudio->audioserver_mode && miaoaudio->audioserver_fd >= 0) {
-      size_t total = 0;
-      while (total < size) {
-         ssize_t w = write(miaoaudio->audioserver_fd, (uint8_t*)buf + total, size - total);
-         if (w > 0) total += w;
-         else if (w < 0 && errno == EAGAIN) {
-            usleep(2000);
-            continue;
-         } else break;
-      }
-      return total;
+   if (miaoaudio->audioserver_mode && (!miaoaudio->use_thread || !miaoaudio->ring_buf)) {
+      if (!miao_fifo_write_blocking(miaoaudio, (const uint8_t*)buf, size))
+         return 0;
+      return (ssize_t)size;
    }
 
    if (miaoaudio->use_thread && miaoaudio->ring_buf)
