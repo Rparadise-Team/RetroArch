@@ -57,6 +57,44 @@ typedef struct oss_audio
    int pending_volume;
 } oss_audio_t;
 
+static ssize_t oss_blocking_write(oss_audio_t *ctx, const uint8_t *buf, size_t size)
+{
+   size_t total = 0;
+
+   if (!ctx)
+      return -1;
+
+   while (total < size)
+   {
+      ssize_t ret = write(ctx->fd, buf + total, size - total);
+
+      if (ret > 0)
+      {
+         total += (size_t)ret;
+         continue;
+      }
+
+      if (ret == 0)
+         break;
+
+      if (errno == EINTR)
+         continue;
+
+      if (errno == EAGAIN)
+      {
+         if (ctx->nonblock)
+            break;
+
+         usleep(2000);
+         continue;
+      }
+
+      return -1;
+   }
+
+   return (ssize_t)total;
+}
+
 static void *oss_init(const char *device,
       unsigned rate, unsigned latency,
       unsigned block_frames,
@@ -65,6 +103,9 @@ static void *oss_init(const char *device,
    int frags, frag, channels, format, new_rate;
    oss_audio_t *ossaudio  = (oss_audio_t*)calloc(1, sizeof(oss_audio_t));
    const char *oss_device = device ? device : DEFAULT_OSS_DEV;
+   int audiofix           = getValueMM("audiofix");
+   bool prefer_audioserver = (audiofix != 0);
+   bool opened = false;
 
    if (!ossaudio)
       return NULL;
@@ -72,22 +113,58 @@ static void *oss_init(const char *device,
    /* Open /dev/dsp with audioserver check */
    /* Use the fact that padsp replaces open, but not __open */
    extern int __open(const char *file, int oflag);
-   if ((ossaudio->fd = __open(oss_device, O_WRONLY)) < 0) {
-      if ((ossaudio->fd = open(oss_device, O_WRONLY)) < 0) {
-         free(ossaudio);
-         perror("open");
-         return NULL;
+   if (prefer_audioserver)
+   {
+      ossaudio->fd = open(oss_device, O_WRONLY);
+      if (ossaudio->fd >= 0)
+      {
+         opened = true;
+         ossaudio->audioserver = true;
+         new_rate = rate;
+         RARCH_LOG("[OSS]: forced audioserver path.\n");
       }
-      ossaudio->audioserver = true;
-      new_rate = rate;
-      RARCH_LOG("[OSS]: whit audioserver.\n");
-   } else {
+      else
+         RARCH_WARN("[OSS]: Cannot open %s via audioserver path, falling back (errno=%d).\n",
+               oss_device, errno);
+   }
+
+   if (!opened)
+   {
+      ossaudio->fd = __open(oss_device, O_WRONLY);
+      if (ossaudio->fd >= 0)
+      {
+         opened = true;
+         ossaudio->audioserver = false;
+         RARCH_LOG("[OSS]: without audioserver.\n");
+      }
+   }
+
+   if (!opened)
+   {
+      ossaudio->fd = open(oss_device, O_WRONLY);
+      if (ossaudio->fd >= 0)
+      {
+         opened = true;
+         ossaudio->audioserver = true;
+         new_rate = rate;
+         RARCH_LOG("[OSS]: with audioserver (fallback).\n");
+      }
+   }
+
+   if (!opened)
+   {
+      free(ossaudio);
+      perror("open");
+      return NULL;
+   }
+
+   if (!ossaudio->audioserver)
+   {
       /* stock oss supports 48k, 32k, 16k, 8k only */
       if ( rate > 32000 ) new_rate = 48000;
       else if ( rate > 16000 ) new_rate = 32000;
       else if ( rate > 8000 ) new_rate = 16000;
       else new_rate = 8000;
-	  RARCH_LOG("[OSS]: whitout audioserver.\n");
    }
 
    frags = (latency * new_rate * 4) / (1000 * (1 << 10));
@@ -147,13 +224,9 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
    if ( (size == 0) || ((!ossaudio->audioserver)&&(ossaudio->nonblock)) )
       return 0;
 
-   if ((ret = write(ossaudio->fd, buf, size)) < 0)
-   {
-      if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
-         return 0;
-
-      return -1;
-   }
+   ret = oss_blocking_write(ossaudio, (const uint8_t*)buf, size);
+   if (ret < 0)
+      return ret;
 
    if (ossaudio->need_volume_apply)
    {

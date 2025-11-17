@@ -49,6 +49,12 @@
 /* MI_AO_SendFrame Max bytes */
 #define MIAO_MAX_BUFSIZE 51200
 
+#define MIAO_STREAM_CHANNELS     2
+#define MIAO_STREAM_BYTES        (MIAO_STREAM_CHANNELS * sizeof(int16_t))
+#define MIAO_SLEEP_MIN_US        500
+#define MIAO_SLEEP_MAX_US        3500
+#define MIAO_TARGET_LATENCY_MS   18
+
 /* FIFO audioserver */
 #define AUDIOSERVER_FIFO "/tmp/audio_fifo_server"
 
@@ -83,6 +89,42 @@ typedef struct miao_audio
 } miao_audio_t;
 
 #define MIAO_RING_MULTIPLIER 4
+
+static inline uint32_t miao_stream_bytes_per_sec(const miao_audio_t *ctx)
+{
+   return ctx->freq ? ctx->freq * (uint32_t)MIAO_STREAM_BYTES : 1;
+}
+
+static void miao_apply_hw_backpressure(const miao_audio_t *ctx, uint32_t busy_bytes)
+{
+   uint64_t bytes_per_sec = miao_stream_bytes_per_sec(ctx);
+   if (!bytes_per_sec)
+      return;
+
+   uint32_t target = (uint32_t)((bytes_per_sec * MIAO_TARGET_LATENCY_MS) / 1000ULL);
+   if (!target)
+      target = ctx->bufsize / 2;
+
+   uint32_t high_water = target + (ctx->bufsize / 4);
+   uint32_t low_water  = target / 3;
+
+   if (busy_bytes > high_water)
+   {
+      uint64_t excess = busy_bytes - target;
+      uint32_t wait_us = (uint32_t)((excess * 1000000ULL) / bytes_per_sec);
+
+      if (wait_us < MIAO_SLEEP_MIN_US)
+         wait_us = MIAO_SLEEP_MIN_US;
+      else if (wait_us > MIAO_SLEEP_MAX_US)
+         wait_us = MIAO_SLEEP_MAX_US;
+
+      usleep(wait_us);
+   }
+   else if (busy_bytes < low_water)
+   {
+      usleep(MIAO_SLEEP_MIN_US);
+   }
+}
 
 static bool miao_open_audioserver_fifo(miao_audio_t *ctx)
 {
@@ -196,6 +238,10 @@ static void *miao_worker_thread(void *userdata)
             ctx->AoSendFrame.apVirAddr[0] = chunk_ptr;
             ctx->AoSendFrame.u32Len       = chunk;
             MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
+
+            MI_AO_ChnState_t status;
+            if (MI_AO_QueryChnStat(0, 0, &status) == MI_SUCCESS)
+               miao_apply_hw_backpressure(ctx, status.u32ChnBusyNum);
          }
 
          to_write -= chunk;
@@ -402,30 +448,28 @@ static ssize_t miao_write(void *data, const void *buf, size_t size)
    }
 
    miaoaudio->AoSendFrame.apVirAddr[0] = (void*)buf;
-   ssize_t write_bytes;
-   uint32_t usleepclock;
    MI_AO_ChnState_t status;
 
-   MI_AO_QueryChnStat(0, 0, &status);
-   int avail = miaoaudio->bufsize - status.u32ChnBusyNum;
+   if (MI_AO_QueryChnStat(0, 0, &status) != MI_SUCCESS)
+      return 0;
 
-   if ((avail < (int)size) && (!miaoaudio->nonblock)) {
-      write_bytes = size;
-      miaoaudio->AoSendFrame.u32Len = write_bytes;
-      MI_AO_SendFrame(0, 0, &miaoaudio->AoSendFrame, 0);
+   int avail = (int)miaoaudio->bufsize - (int)status.u32ChnBusyNum;
+   ssize_t write_bytes;
 
-      MI_AO_QueryChnStat(0, 0, &status);
-      if (status.u32ChnBusyNum > miaoaudio->bufsize) {
-         usleepclock = (uint64_t)(status.u32ChnBusyNum - miaoaudio->bufsize) * 1000000 / (miaoaudio->freq << 2);
-         if (usleepclock) usleep(usleepclock);
-      }
-   } else {
-      write_bytes = (avail > (int)size) ? (int)size : avail;
-      if (write_bytes > 0) {
-         miaoaudio->AoSendFrame.u32Len = write_bytes;
-         MI_AO_SendFrame(0, 0, &miaoaudio->AoSendFrame, 0);
-      } else return 0;
-   }
+   if ((avail < (int)size) && (!miaoaudio->nonblock))
+      write_bytes = (ssize_t)size;
+   else
+      write_bytes = (avail > (int)size) ? (ssize_t)size : (ssize_t)avail;
+
+   if (write_bytes <= 0)
+      return 0;
+
+   miaoaudio->AoSendFrame.u32Len = (uint32_t)write_bytes;
+   MI_AO_SendFrame(0, 0, &miaoaudio->AoSendFrame, 0);
+
+   if (MI_AO_QueryChnStat(0, 0, &status) == MI_SUCCESS)
+      miao_apply_hw_backpressure(miaoaudio, status.u32ChnBusyNum);
+
    return write_bytes;
 }
 

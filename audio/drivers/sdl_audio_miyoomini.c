@@ -50,6 +50,8 @@ typedef struct sdl_audio
    bool nonblock;
    bool is_paused;
    size_t bufsize;
+   size_t wake_threshold;
+   bool audioserver_mode;
 } sdl_audio_t;
 
 static void sdl_audio_cb(void *data, Uint8 *stream, int len)
@@ -79,6 +81,7 @@ static void *sdl_audio_init(const char *device,
    void *tmp                    = NULL;
    sdl_audio_t *sdl             = NULL;
    uint32_t sdl_subsystem_flags = SDL_WasInit(0);
+   bool audioserver_mode        = (getValueMM("audiofix") != 0);
 
    (void)device;
 
@@ -97,6 +100,8 @@ static void *sdl_audio_init(const char *device,
    sdl = (sdl_audio_t*)calloc(1, sizeof(*sdl));
    if (!sdl)
       return NULL;
+
+   sdl->audioserver_mode = audioserver_mode;
 
    spec.freq     = rate;
    spec.format   = AUDIO_S16SYS;
@@ -118,7 +123,11 @@ static void *sdl_audio_init(const char *device,
 
    *new_rate = out.freq;
    frames    = (latency * (out.freq - 1)) / (1000 * out.samples) + 1;
-   if (frames < 2) frames = 2; /* at least 2 frames */
+   if (frames < 2)
+      frames = 2; /* at least 2 frames */
+
+   if (sdl->audioserver_mode && frames < 3)
+      frames = 3;
 
    RARCH_LOG("[SDL audio]: Requested %u ms latency, got %d ms\n",
          latency, (int)(out.samples * frames * 1000 / (*new_rate)));
@@ -126,6 +135,9 @@ static void *sdl_audio_init(const char *device,
    /* Create a buffer twice as big as needed */
    sdl->bufsize = out.samples * out.channels * sizeof(int16_t) * frames * 2;
    sdl->buffer  = fifo_new(sdl->bufsize);
+   sdl->wake_threshold = sdl->bufsize / (sdl->audioserver_mode ? 3 : 2);
+   if (sdl->wake_threshold < out.samples * out.channels * sizeof(int16_t))
+      sdl->wake_threshold = out.samples * out.channels * sizeof(int16_t);
 
    /* Allocate the null-buffer and prefill */
    tmp = calloc(1, (sdl->bufsize / 2));
@@ -134,7 +146,6 @@ static void *sdl_audio_init(const char *device,
    SDL_PauseAudio(0);
    
    /*set volumen */
-   int audiofix = getValueMM("audiofix");
    int target_vol = getVolumeMM();
    set_snd_level(target_vol);
    int brightnessMM = setBrightnessMM();
@@ -142,11 +153,10 @@ static void *sdl_audio_init(const char *device,
    sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
    system(command2);
 	
-   if (audiofix == 0) {
-      RARCH_LOG("[SDL audio]: without audioserver\n");
-   } else {
+   if (sdl->audioserver_mode)
       RARCH_LOG("[SDL audio]: with audioserver\n");
-   }
+   else
+      RARCH_LOG("[SDL audio]: without audioserver\n");
 
    return sdl;
 
@@ -182,7 +192,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
          SDL_LockAudio();
          avail = FIFO_WRITE_AVAIL(sdl->buffer);
 
-         if (avail < (sdl->bufsize/2))
+         if (avail < sdl->wake_threshold)
          {
             SDL_UnlockAudio();
 #ifdef HAVE_THREADS
