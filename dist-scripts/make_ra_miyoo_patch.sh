@@ -3,11 +3,11 @@ set -euo pipefail
 
 # Default configuration (can be overridden via CLI flags)
 UPSTREAM_URL="https://github.com/libretro/RetroArch.git"
-UPSTREAM_REF="v1.22.0"
+UPSTREAM_REF="v1.22.1"
 BASE_URL="$UPSTREAM_URL"
-BASE_REF="v1.21.0"
+BASE_REF="v1.22.0"
 MIYOO_URL="https://github.com/Rparadise-Team/RetroArch.git"
-MIYOO_REF="1.21.0"
+MIYOO_REF="1.22.0"
 OUTPUT_PATCH="RA_MIYOOMINI.patch"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFEST_FILE=""
@@ -32,26 +32,26 @@ usage() {
   cat <<'USAGE'
 Usage: dist-scripts/make_ra_miyoo_patch.sh [options]
 
-Genera un parche que aplica los drivers y funciones Miyoo/Trimui sobre un clon
-limpio de RetroArch v1.22.0.
+Creates a patch that layers the Miyoo/Trimui drivers and features on top of a
+clean RetroArch v1.22.1 checkout.
 
-Opciones principales:
-  --output <archivo>         Ruta donde guardar el parche (por defecto RA_MIYOOMINI.patch)
-  --upstream-dir <ruta>      Clon local de RetroArch v1.22.0 ya existente
-  --miyoo-dir <ruta>         Clon local de RetroArch 1.21.0 (fork Rparadise)
-  --upstream-url <url>       URL alternativa para RetroArch oficial (1.22.0)
-  --base-url <url>           URL para la base común (por defecto RetroArch oficial)
-  --miyoo-url <url>          URL alternativa para el fork Miyoo
-  --upstream-ref <ref>       Ref/tag/branch para RetroArch oficial (por defecto v1.22.0)
-  --base-ref <ref>           Ref/tag/branch que actúa como base común (por defecto v1.21.0)
-  --miyoo-ref <ref>          Ref/tag/branch para el fork (por defecto 1.21.0)
-  --keywords <regex>         Palabras clave extra para detectar archivos relevantes
-  --extra <ruta>             Archivo o carpeta adicional a incluir en el parche (puede repetirse)
-  --manifest <archivo>       Guarda la lista de archivos seleccionados
-  --list-only                Sólo genera la lista (no crea diff)
-  --base-dir <ruta>          Clon local de la base común (opcional)
-  --keep-workdir             Conserva el directorio temporal para depuración
-  -h, --help                 Muestra esta ayuda
+Main options:
+  --output <file>            Path for the generated patch (default RA_MIYOOMINI.patch)
+  --upstream-dir <path>      Existing RetroArch v1.22.1 checkout
+  --miyoo-dir <path>         Checkout of the Rparadise fork (default tag 1.22.0)
+  --upstream-url <url>       Alternate RetroArch upstream URL (default official repo)
+  --base-url <url>           URL for the common ancestor repo (default official repo)
+  --miyoo-url <url>          Alternate URL for the Miyoo fork
+  --upstream-ref <ref>       Ref/tag/branch for RetroArch upstream (default v1.22.1)
+  --base-ref <ref>           Ref/tag/branch for the common ancestor (default v1.22.0)
+  --miyoo-ref <ref>          Ref/tag/branch for the fork (default 1.22.0)
+  --keywords <regex>         Extra keywords to locate relevant files
+  --extra <path>             Additional file or directory to include (repeatable)
+  --manifest <file>          Save the selected file list for inspection
+  --list-only                Only produce the list (no diff is generated)
+  --base-dir <path>          Local clone of the base checkout (optional)
+  --keep-workdir             Preserve the temporary workdir for debugging
+  -h, --help                 Show this help text
 USAGE
 }
 
@@ -278,7 +278,7 @@ emit_manifest() {
 
   mkdir -p "$(dirname "$MANIFEST_FILE")"
   printf '%s\n' "${UNIQUE_FILES[@]}" > "$MANIFEST_FILE"
-  echo "Lista de archivos escrita en $MANIFEST_FILE"
+  echo "File list written to $MANIFEST_FILE"
 }
 
 auto_resolve_conflicts() {
@@ -306,7 +306,7 @@ while i < len(data):
             ours.append(data[i])
             i += 1
         if i >= len(data):
-            print('Conflicto sin delimitador en', path, file=sys.stderr)
+            print('Conflict missing delimiter in', path, file=sys.stderr)
             sys.exit(1)
         i += 1  # skip =======
         theirs = []
@@ -314,7 +314,7 @@ while i < len(data):
             theirs.append(data[i])
             i += 1
         if i >= len(data):
-            print('Conflicto sin cierre en', path, file=sys.stderr)
+            print('Conflict missing closing marker in', path, file=sys.stderr)
             sys.exit(1)
         i += 1  # skip >>>>>>>
         ours_text = ''.join(ours)
@@ -340,7 +340,7 @@ while i < len(data):
 
 resolved = ''.join(result)
 if '<<<<<<< ' in resolved or '>>>>>>>' in resolved:
-    print('No se pudo resolver automáticamente', path, file=sys.stderr)
+    print('Automatic resolution failed for', path, file=sys.stderr)
     sys.exit(1)
 
 with open(path, 'w', encoding='utf-8') as fh:
@@ -348,6 +348,66 @@ with open(path, 'w', encoding='utf-8') as fh:
 
 sys.exit(0 if changed else 1)
 PY
+}
+
+dedupe_msg_hash_entries() {
+  local target_file="$1"
+  python3 - "$target_file" <<'PY'
+import sys
+
+path = sys.argv[1]
+
+with open(path, 'r', encoding='utf-8', errors='ignore') as fh:
+    lines = fh.readlines()
+
+result = []
+seen = set()
+i = 0
+removed = 0
+
+while i < len(lines):
+    line = lines[i]
+    if line.lstrip().startswith('MSG_HASH('):
+        block = [line]
+        i += 1
+        while i < len(lines):
+            block.append(lines[i])
+            if lines[i].strip() == ')':
+                i += 1
+                break
+            i += 1
+        identifier = None
+        for candidate in block[1:]:
+            stripped = candidate.strip()
+            if stripped.startswith('MSG_') and stripped.endswith(','):
+                identifier = stripped[:-1].strip()
+                break
+        if identifier and identifier in seen:
+            removed += 1
+            continue
+        if identifier:
+            seen.add(identifier)
+        result.extend(block)
+    else:
+        result.append(line)
+        i += 1
+
+if removed:
+    with open(path, 'w', encoding='utf-8') as fh:
+        fh.writelines(result)
+    print(f"Removed {removed} duplicate MSG_HASH entries in {path}", file=sys.stderr)
+PY
+}
+
+post_process_merged_file() {
+  local relative_path="$1"
+  local target_file="$2"
+
+  case "$relative_path" in
+    intl/msg_hash_*.h)
+      dedupe_msg_hash_entries "$target_file"
+      ;;
+  esac
 }
 
 merge_file_with_base() {
@@ -372,18 +432,17 @@ merge_file_with_base() {
   if git merge-file -p "$tmp_upstream" "$tmp_base" "$tmp_custom" > "$target_file"; then
     if grep -q '^<<<<<<< ' "$target_file"; then
       if auto_resolve_conflicts "$target_file" "$KEYWORD_PATTERN"; then
-        echo "Conflicto resuelto automáticamente en $target_file" >&2
+        echo "Conflict resolved automatically in $target_file" >&2
       else
-        echo "Conflicto detectado al fusionar $target_file. Revisa manualmente." >&2
+        echo "Conflict detected while merging $target_file. Please resolve manually." >&2
         exit 1
       fi
     fi
   else
-    echo "git merge-file falló al procesar $target_file, intentando resolver heurísticamente" >&2
     if auto_resolve_conflicts "$target_file" "$KEYWORD_PATTERN"; then
-      echo "Conflicto resuelto automáticamente en $target_file" >&2
+      echo "Conflict resolved automatically in $target_file" >&2
     else
-      echo "No se pudo fusionar $target_file" >&2
+      echo "git merge-file failed while processing $target_file, please resolve manually." >&2
       exit 1
     fi
   fi
@@ -427,6 +486,7 @@ copy_subset() {
     if [[ -f "$base_path" && -f "$custom_path" ]]; then
       mkdir -p "$merged_subset/$(dirname "$rel")"
       merge_file_with_base "$base_path" "$ancestor_path" "$custom_path" "$merged_subset/$rel"
+      post_process_merged_file "$rel" "$merged_subset/$rel"
       copied=$((copied + 1))
       continue
     fi
@@ -461,7 +521,7 @@ apply_overrides() {
 
   while IFS= read -r -d '' patch_file; do
     if patch -d "$target_dir" -p1 --forward --silent < "$patch_file"; then
-      echo "Aplicando override: $(basename "$patch_file")"
+      echo "Applying override: $(basename "$patch_file")"
       applied=1
     fi
   done < <(find "$override_dir" -type f -name '*.patch' -print0 | LC_ALL=C sort -z)
@@ -474,7 +534,10 @@ apply_overrides() {
 create_patch() {
   local diff_output
   diff_output=$(cd "$WORK_ROOT" && { git --no-pager diff --binary --no-index upstream_subset custom_subset || true; } | \
-    sed -e 's|a/|a/|g' -e 's|b/|b/|g')
+    sed -e 's|a/|a/|g' \
+        -e 's|b/|b/|g' \
+        -e 's|a/|a/|g' \
+        -e 's|b/|b/|g')
 
   if [[ -z "$diff_output" ]]; then
     echo "No differences detected between the selected files." >&2
@@ -498,7 +561,7 @@ main() {
   emit_manifest
 
   if [[ "$LIST_ONLY" -eq 1 ]]; then
-    echo "Se solicitó --list-only, no se generará diff."
+    echo "--list-only requested, diff generation skipped."
     return
   fi
   copy_subset

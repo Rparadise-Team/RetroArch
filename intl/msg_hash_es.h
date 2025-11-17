@@ -14296,11 +14296,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "Carga del guardado rápido n.º %d terminada."
+   "Se ha cargado el guardado rápido de la posición: %d."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "Carga del guardado rápido n.º -1 (automático) terminada."
+   "Se ha cargado el guardado rápido de la posición: automática."
+   "Carga del guardado rápido n.º %d terminada."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -14500,11 +14501,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "Guardado rápido n.º %d terminado."
+   "Se ha creado un guardado rápido en la posición: %d."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "Guardado rápido n.º -1 (automático) terminado."
+   "Se ha creado un guardado rápido en la posición: automática."
+   "Guardado rápido n.º %d terminado."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,

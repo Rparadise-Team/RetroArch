@@ -13696,11 +13696,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "Läste in tillstånd från plats #%d."
+   "Läste in tillstånd från plats: %d."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "Läste in tillstånd från plats #-1 (Auto)."
+   "Läste in tillstånd från plats: Auto."
+   "Läste in tillstånd från plats #%d."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -13888,11 +13889,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "Sparade tillstånd till plats #%d."
+   "Sparade tillstånd till plats: %d."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "Sparade tillstånd till plats #-1 (Auto)."
+   "Sparade tillstånd till plats: Auto."
+   "Sparade tillstånd till plats #%d."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,

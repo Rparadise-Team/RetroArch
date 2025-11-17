@@ -14372,11 +14372,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "Luchtaithe staid ó shliotán #%d."
+   "Stádas luchtaithe ón sliotán: %d."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "Luchtaithe staid ó shliotán #-1 (Uathoibríoch)."
+   "Stádas luchtaithe ón sliotán: Uathoibríoch."
+   "Luchtaithe staid ó shliotán #%d."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -14576,11 +14577,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "Stádas sábháilte chuig sliotán #%d."
+   "Stádas sábháilte chuig an sliotán: %d."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "Stádas sábháilte chuig sliotán #-1 (Uathoibríoch)."
+   "Stádas sábháilte chuig an sliotán: Uathoibríoch."
+   "Stádas sábháilte chuig sliotán #%d."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,

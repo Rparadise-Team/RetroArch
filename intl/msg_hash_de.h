@@ -13960,11 +13960,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "Spielstand aus Speicherplatz #%d geladen."
+   "Spielstand geladen aus Speicherplatz: %d."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "Spielstand aus Speicherplatz #-1 (auto) geladen."
+   "Spielstand geladen aus Speicherplatz: Automatisch."
+   "Spielstand aus Speicherplatz #%d geladen."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -14164,11 +14165,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "Spielstand in Speicherplatz #%d gespeichert."
+   "Spielstand gespeichert in Speicherplatz: %d."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "Spielstand in Speicherplatz #-1 (auto) gespeichert."
+   "Spielstand gespeichert in Speicherplatz: Automatisch."
+   "Spielstand in Speicherplatz #%d gespeichert."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,

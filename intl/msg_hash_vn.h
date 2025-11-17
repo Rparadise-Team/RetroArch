@@ -14364,11 +14364,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "Đã tải Lưu trạng thái từ slot #%d."
+   "Đã tải trạng thái từ khe: %d."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "Đã tải Lưu trạng thái từ slot #-1 (Tự động)."
+   "Đã tải trạng thái từ khe: Tự động."
+   "Đã tải Lưu trạng thái từ slot #%d."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -14568,11 +14569,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "Đã lưu trạng thái vào khe #%d."
+   "Đã lưu trạng thái vào khe: %d."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "Đã lưu trạng thái vào khe #-1 (Tự động)."
+   "Đã lưu trạng thái vào khe: Tự động."
+   "Đã lưu trạng thái vào khe #%d."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,
