@@ -5,12 +5,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #define MIYOO_AUDIO_CHANNELS            2u
 #define MIYOO_AUDIO_BYTES_PER_SAMPLE    2u
 #define MIYOO_AUDIO_TARGET_LATENCY_MS   18u
 #define MIYOO_AUDIO_SLEEP_MIN_US        400u
 #define MIYOO_AUDIO_SLEEP_MAX_US        4000u
+#define MIYOO_AUDIOSERVER_FIFO          "/tmp/audio_fifo_server"
 
 typedef struct miyoo_audio_timing
 {
@@ -134,6 +136,16 @@ static inline useconds_t miyoo_audio_backpressure(
       return MIYOO_AUDIO_SLEEP_MIN_US;
 
    return 0;
+}
+
+static inline bool miyoo_audio_server_available(void)
+{
+   struct stat st;
+
+   if (stat(MIYOO_AUDIOSERVER_FIFO, &st) != 0)
+      return false;
+
+   return S_ISFIFO(st.st_mode);
 }
 
 #endif

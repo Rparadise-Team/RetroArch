@@ -37,6 +37,7 @@
 #include <sys/soundcard.h>
 #include <mi_ao.h>
 #include "volume/volume.h"
+#include "miyoomini_audio_common.h"
 
 #ifdef HAVE_CONFIG_H
 #include "../../config.h"
@@ -44,7 +45,6 @@
 
 #include "../audio_driver.h"
 #include "../../verbosity.h"
-#include "miyoomini_audio_common.h"
 
 #define DEFAULT_OSS_DEV "/dev/dsp"
 
@@ -54,8 +54,6 @@ typedef struct oss_audio
    bool is_paused;
    bool nonblock;
    bool audioserver;
-   size_t fifo_chunk;
-   miyoo_audio_timing_t timing;
 } oss_audio_t;
 
 static void *oss_init(const char *device,
@@ -63,12 +61,9 @@ static void *oss_init(const char *device,
       unsigned block_frames,
       unsigned *new_out_rate)
 {
-   int frags, frag, channels, format, new_rate = (int)rate;
+   int frags, frag, channels, format, new_rate;
    oss_audio_t *ossaudio  = (oss_audio_t*)calloc(1, sizeof(oss_audio_t));
    const char *oss_device = device ? device : DEFAULT_OSS_DEV;
-   int audiofix           = getValueMM("audiofix");
-   bool prefer_audioserver = (audiofix != 0);
-   bool opened = false;
 
    if (!ossaudio)
       return NULL;
@@ -76,63 +71,22 @@ static void *oss_init(const char *device,
    /* Open /dev/dsp with audioserver check */
    /* Use the fact that padsp replaces open, but not __open */
    extern int __open(const char *file, int oflag);
-
-   if (prefer_audioserver)
-   {
-      ossaudio->fd = open(oss_device, O_WRONLY);
-      if (ossaudio->fd >= 0)
-      {
-         opened = true;
-         ossaudio->audioserver = true;
-         RARCH_LOG("[OSS]: forced audioserver path.\n");
+   if ((ossaudio->fd = __open(oss_device, O_WRONLY)) < 0) {
+      if ((ossaudio->fd = open(oss_device, O_WRONLY)) < 0) {
+         free(ossaudio);
+         perror("open");
+         return NULL;
       }
-      else
-      {
-         RARCH_WARN("[OSS]: Cannot open %s via audioserver path, falling back (errno=%d).\n",
-               oss_device, errno);
-      }
-   }
-
-   if (!opened)
-   {
-      ossaudio->fd = __open(oss_device, O_WRONLY);
-      if (ossaudio->fd >= 0)
-      {
-         opened = true;
-         ossaudio->audioserver = false;
-         RARCH_LOG("[OSS]: without audioserver.\n");
-      }
-   }
-
-   if (!opened)
-   {
-      ossaudio->fd = open(oss_device, O_WRONLY);
-      if (ossaudio->fd >= 0)
-      {
-         opened = true;
-         ossaudio->audioserver = true;
-         RARCH_LOG("[OSS]: with audioserver (fallback).\n");
-      }
-   }
-
-   if (!opened)
-   {
-      free(ossaudio);
-      perror("open");
-      return NULL;
-   }
-
-   if (!ossaudio->audioserver)
-   {
+      ossaudio->audioserver = true;
+      new_rate = rate;
+      RARCH_LOG("[OSS]: whit audioserver.\n");
+   } else {
       /* stock oss supports 48k, 32k, 16k, 8k only */
-      if (rate > 32000)
-         new_rate = 48000;
-      else if (rate > 16000)
-         new_rate = 32000;
-      else if (rate > 8000)
-         new_rate = 16000;
-      else
-         new_rate = 8000;
+      if ( rate > 32000 ) new_rate = 48000;
+      else if ( rate > 16000 ) new_rate = 32000;
+      else if ( rate > 8000 ) new_rate = 16000;
+      else new_rate = 8000;
+	  RARCH_LOG("[OSS]: whitout audioserver.\n");
    }
 
    frags = (latency * new_rate * 4) / (1000 * (1 << 10));
@@ -159,8 +113,7 @@ static void *oss_init(const char *device,
       *new_out_rate = new_rate;
    }
 
-   if (!ossaudio->audioserver)
-   {
+   if (!ossaudio->audioserver) {
       /* mi_ao init is required for stock oss */
       MI_AUDIO_Attr_t attr;
       memset(&attr, 0, sizeof(attr));
@@ -170,80 +123,38 @@ static void *oss_init(const char *device,
       attr.u32PtNumPerFrm = 256;
       MI_AO_SetPubAttr(0, &attr);
    }
-
-   set_snd_level(getVolumeMM());
-   miyoo_audio_timing_init(&ossaudio->timing, new_rate, 51200u);
-
-   if (ossaudio->audioserver)
-      ossaudio->fifo_chunk = miyoo_audio_fifo_chunk(&ossaudio->timing);
+	
+   int target_vol = getVolumeMM();
+   set_snd_level(target_vol);
 
    return ossaudio;
 
 error:
    close(ossaudio->fd);
-   free(ossaudio);
+   if (ossaudio)
+      free(ossaudio);
    perror("ioctl");
    return NULL;
 }
 
 static ssize_t oss_write(void *data, const void *buf, size_t size)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   const uint8_t *ptr    = (const uint8_t*)buf;
-   size_t total          = 0;
+   ssize_t ret;
+   oss_audio_t *ossaudio  = (oss_audio_t*)data;
 
-   if (!ossaudio || !buf || !size || ossaudio->is_paused)
+   /* For stock oss, no playback during fast forward to avoid blocking */
+   if ( (size == 0) || ((!ossaudio->audioserver)&&(ossaudio->nonblock)) )
       return 0;
 
-   if (ossaudio->audioserver)
+   if ((ret = write(ossaudio->fd, buf, size)) < 0)
    {
-      while (total < size)
-      {
-         size_t chunk = size - total;
-         if (ossaudio->fifo_chunk && chunk > ossaudio->fifo_chunk)
-            chunk = ossaudio->fifo_chunk;
-
-         ssize_t wrote = write(ossaudio->fd, ptr + total, chunk);
-         if (wrote > 0)
-         {
-            total += (size_t)wrote;
-            continue;
-         }
-
-         if (wrote < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
-         {
-            usleep(1000);
-            continue;
-         }
-
-         return -1;
-      }
-   }
-   else
-   {
-      /* For stock oss, no playback during fast forward to avoid blocking */
-      if (ossaudio->nonblock)
+      if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
          return 0;
 
-      total = (size_t)write(ossaudio->fd, buf, size);
-      if ((ssize_t)total < 0)
-      {
-         if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
-            return 0;
-         return -1;
-      }
-
-      MI_AO_ChnState_t status;
-      if (MI_AO_QueryChnStat(0, 0, &status) == MI_SUCCESS)
-      {
-         useconds_t backoff = miyoo_audio_backpressure(&ossaudio->timing,
-               status.u32ChnBusyNum);
-         if (backoff)
-            usleep(backoff);
-      }
+      return -1;
    }
 
-   return (ssize_t)total;
+   return ret;
 }
 
 static bool oss_stop(void *data)

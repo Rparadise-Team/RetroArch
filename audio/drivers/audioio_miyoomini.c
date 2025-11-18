@@ -50,7 +50,6 @@
 
 /* MI_AO_SendFrame Max bytes */
 #define MIAO_MAX_BUFSIZE 51200
-#define AUDIOSERVER_FIFO "/tmp/audio_fifo_server"
 
 typedef struct miao_audio
 {
@@ -71,7 +70,7 @@ static bool miao_open_audioserver(miao_audio_t *ctx)
    if (!ctx)
       return false;
 
-   ctx->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY | O_CLOEXEC);
+   ctx->audioserver_fd = open(MIYOO_AUDIOSERVER_FIFO, O_WRONLY | O_CLOEXEC);
    if (ctx->audioserver_fd < 0)
    {
       RARCH_ERR("[MIAO]: Cannot open audioserver FIFO (errno=%d).\n", errno);
@@ -91,7 +90,7 @@ static bool miao_try_reopen_fifo(miao_audio_t *ctx)
    if (ctx->audioserver_fd >= 0)
       close(ctx->audioserver_fd);
 
-   ctx->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY | O_CLOEXEC);
+   ctx->audioserver_fd = open(MIYOO_AUDIOSERVER_FIFO, O_WRONLY | O_CLOEXEC);
    if (ctx->audioserver_fd < 0)
    {
      RARCH_ERR("[MIAO]: Unable to reopen audioserver FIFO (errno=%d).\n", errno);
@@ -188,6 +187,7 @@ static void *miao_init(const char *device,
 {
    uint32_t samples;
    int audiofix;
+   bool has_audioserver;
    miao_audio_t *ctx = (miao_audio_t*)calloc(1, sizeof(*ctx));
 
    (void)device;
@@ -238,7 +238,10 @@ static void *miao_init(const char *device,
 
    miyoo_audio_timing_init(&ctx->timing, ctx->freq, ctx->bufsize);
    audiofix = getValueMM("audiofix");
-   ctx->audioserver_mode = (audiofix != 0);
+   has_audioserver = miyoo_audio_server_available();
+   if (audiofix != 0 && !has_audioserver)
+      RARCH_WARN("[MIAO]: Audioserver requested but FIFO not available, using direct path.\n");
+   ctx->audioserver_mode = (audiofix != 0) && has_audioserver;
 
    if (ctx->audioserver_mode)
    {

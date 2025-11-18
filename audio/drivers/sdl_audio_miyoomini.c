@@ -37,6 +37,7 @@
 #include "../audio_driver.h"
 #include "../../verbosity.h"
 #include "volume/volume.h"
+#include "miyoomini_audio_common.h"
 #include <mi_ao.h>
 
 #define SDL_AUDIO_SAMPLES 256
@@ -82,7 +83,9 @@ static void *sdl_audio_init(const char *device,
    void *tmp                    = NULL;
    sdl_audio_t *sdl             = NULL;
    uint32_t sdl_subsystem_flags = SDL_WasInit(0);
-   bool audioserver_mode        = (getValueMM("audiofix") != 0);
+   int audiofix                 = getValueMM("audiofix");
+   bool has_audioserver         = miyoo_audio_server_available();
+   bool audioserver_mode        = (audiofix != 0) && has_audioserver;
 
    (void)device;
 
@@ -159,6 +162,9 @@ static void *sdl_audio_init(const char *device,
             "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
       system(command2);
    }
+
+   if (audiofix != 0 && !has_audioserver)
+      RARCH_WARN("[SDL audio]: Audioserver requested but FIFO not available, using direct SDL path.\n");
 
    if (sdl->audioserver_mode)
       RARCH_LOG("[SDL audio]: with audioserver\n");
