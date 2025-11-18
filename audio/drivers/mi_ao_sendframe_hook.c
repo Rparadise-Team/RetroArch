@@ -1,133 +1,151 @@
 /*
- * Unified Miyoo Mini MI_AO pacing shim
- * ------------------------------------
- * Keep the hardware FIFO near ~18 ms of stereo S16 samples so RetroArch and
- * audioserver share the same cadence.  This replaces the "viejo/nuevo"
- * preload binaries – build it once and LD_PRELOAD it for both processes.
+ * Miyoo Mini MI_AO pacing shim
+ * ---------------------------------
  *
- * Build with the union-miyoomini-toolchain:
- *   arm-linux-gnueabihf-gcc -shared -fPIC -O2 \
- *      -o as_preload.so audio/drivers/mi_ao_sendframe_hook.c -ldl -lpthread
+ * This file implements an LD_PRELOAD-compatible replacement for
+ * MI_AO_SendFrame() that keeps the hardware queue close to a safe
+ * latency window.  It supersedes both of the historical
+ * "as_preload" binaries shipped with the audioserver because it
+ * auto-detects the underlying libmi_ao location. RetroArch can be built
+ * with this file to produce a helper shared object:
+ *
+ *   arm-linux-gnueabihf-gcc -shared -fPIC -O2 -o as_preload.so \
+ *      audio/drivers/mi_ao_sendframe_hook.c -ldl
+ *
+ * Drop the resulting library next to RetroArch and start it with
+ *   LD_PRELOAD=./as_preload.so ./retroarch
+ *
+ * To force a specific libmi_ao, set MI_AO_PRELOAD_SO=/path/libmi_ao.so
+ * before launching RetroArch.
+ * The shim is completely transparent for builds that do not preload it.
  */
 
 #include <dlfcn.h>
-#include <pthread.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <mi_ao.h>
 
 #define SAMPLE_RATE_HZ        48000u
 #define CHANNELS              2u
-#define BYTES_PER_SAMPLE      2u
+#define BYTES_PER_SAMPLE      2u /* S16LE */
 #define STREAM_BYTES_PER_SEC  (SAMPLE_RATE_HZ * CHANNELS * BYTES_PER_SAMPLE)
 
-#define TARGET_MS             18u
-#define TARGET_BYTES          ((STREAM_BYTES_PER_SEC * TARGET_MS) / 1000u)
-#define HIGH_WATER_BYTES      (TARGET_BYTES + (TARGET_BYTES / 2u))
-#define LOW_WATER_BYTES       (TARGET_BYTES / 2u)
+#define TARGET_QUEUE_MS       18u
+#define BUSY_TARGET_BYTES     ((STREAM_BYTES_PER_SEC * TARGET_QUEUE_MS) / 1000u)
+#define BUSY_HIGH_BYTES       (BUSY_TARGET_BYTES + BUSY_TARGET_BYTES / 2u)
+#define BUSY_LOW_BYTES        (BUSY_TARGET_BYTES / 3u)
 
-#define SLEEP_MIN_US          400u
-#define SLEEP_MAX_US          4000u
-
-#define MI_AO_OVERRIDE_ENV    "MI_AO_PRELOAD_SO"
+#define SLEEP_MIN_US          500u
+#define SLEEP_MAX_US          3500u
+#define SMOOTH_SHIFT          3u
 
 static void *mi_ao_handle;
 static MI_S32 (*real_send_frame)(MI_AUDIO_DEV, MI_AO_CHN, MI_AUDIO_Frame_t*, MI_S32);
 static MI_S32 (*real_query_state)(MI_AUDIO_DEV, MI_AO_CHN, MI_AO_ChnState_t*);
+static pthread_once_t resolver_once = PTHREAD_ONCE_INIT;
 
-static pthread_mutex_t busy_lock = PTHREAD_MUTEX_INITIALIZER;
-static uint32_t filtered_busy;
+#define MI_AO_OVERRIDE_ENV   "MI_AO_PRELOAD_SO"
 
-static const char *const mi_ao_paths[] = {
-   "/config/lib/libmi_ao.so",
-   "/customer/lib/libmi_ao.so",
+static const char *const mi_ao_default_paths[] = {
+   "/config/lib/libmi_ao.so",   /* MiniUI / Onion */
+   "/customer/lib/libmi_ao.so", /* Stock OS revisions */
    "/lib/libmi_ao.so",
    "libmi_ao.so",
    NULL
 };
 
-static void ensure_resolved(void)
+static void *open_mi_ao_handle(void)
 {
-   const char *override_path = getenv(MI_AO_OVERRIDE_ENV);
-   const char *const *cursor = mi_ao_paths;
+   const char *override = getenv(MI_AO_OVERRIDE_ENV);
+   const char *const *path;
+   void *handle = NULL;
 
-   if (real_send_frame && real_query_state)
-      return;
+   if (override && override[0])
+      handle = dlopen(override, RTLD_LAZY);
 
-   if (override_path && override_path[0])
-      mi_ao_handle = dlopen(override_path, RTLD_LAZY);
+   if (handle)
+      return handle;
 
-   while (!mi_ao_handle && *cursor)
+   for (path = mi_ao_default_paths; *path; ++path)
    {
-      mi_ao_handle = dlopen(*cursor, RTLD_LAZY);
-      cursor++;
+#ifdef RTLD_NOLOAD
+      handle = dlopen(*path, RTLD_LAZY | RTLD_NOLOAD);
+      if (handle)
+         return handle;
+#endif
+      handle = dlopen(*path, RTLD_LAZY);
+      if (handle)
+         return handle;
    }
 
+   return NULL;
+}
+
+static void resolve_mi_ao(void)
+{
+   mi_ao_handle = open_mi_ao_handle();
    if (!mi_ao_handle)
       return;
 
-   real_send_frame = (MI_S32 (*)(MI_AUDIO_DEV, MI_AO_CHN, MI_AUDIO_Frame_t*, MI_S32))
+   real_send_frame  = (MI_S32 (*)(MI_AUDIO_DEV, MI_AO_CHN, MI_AUDIO_Frame_t*, MI_S32))
       dlsym(mi_ao_handle, "MI_AO_SendFrame");
    real_query_state = (MI_S32 (*)(MI_AUDIO_DEV, MI_AO_CHN, MI_AO_ChnState_t*))
       dlsym(mi_ao_handle, "MI_AO_QueryChnStat");
 }
 
-static inline useconds_t busy_wait_time(uint32_t busy_bytes)
+static inline uint32_t busy_to_us(uint32_t bytes)
 {
-   uint64_t wait;
+   return (uint32_t)((bytes * 1000000ULL) / STREAM_BYTES_PER_SEC);
+}
 
-   if (busy_bytes > HIGH_WATER_BYTES)
+static void apply_backpressure(uint32_t busy_bytes)
+{
+   static uint32_t avg_busy = BUSY_TARGET_BYTES;
+
+   avg_busy -= avg_busy >> SMOOTH_SHIFT;
+   avg_busy += busy_bytes >> SMOOTH_SHIFT;
+
+   if (busy_bytes > BUSY_HIGH_BYTES || avg_busy > BUSY_TARGET_BYTES)
    {
-     wait = (uint64_t)(busy_bytes - TARGET_BYTES) * 1000000ULL / STREAM_BYTES_PER_SEC;
-     if (wait < SLEEP_MIN_US)
-        wait = SLEEP_MIN_US;
-     else if (wait > SLEEP_MAX_US)
-        wait = SLEEP_MAX_US;
-     return (useconds_t)wait;
+      uint32_t reference = busy_bytes > BUSY_TARGET_BYTES ?
+         busy_bytes : avg_busy;
+      uint32_t excess = reference - BUSY_TARGET_BYTES;
+      uint32_t wait_us = busy_to_us(excess);
+
+      if (wait_us < SLEEP_MIN_US)
+         wait_us = SLEEP_MIN_US;
+      else if (wait_us > SLEEP_MAX_US)
+         wait_us = SLEEP_MAX_US;
+
+      usleep(wait_us);
    }
-
-   if (busy_bytes < LOW_WATER_BYTES)
-      return SLEEP_MIN_US;
-
-   return 0;
+   else if (busy_bytes < BUSY_LOW_BYTES && avg_busy < BUSY_LOW_BYTES)
+   {
+      usleep(SLEEP_MIN_US);
+   }
 }
 
 MI_S32 MI_AO_SendFrame(MI_AUDIO_DEV dev, MI_AO_CHN ch,
       MI_AUDIO_Frame_t *frame, MI_S32 timeout_ms)
 {
-   MI_AO_ChnState_t state;
-   MI_S32 ret;
-   useconds_t sleep_us = 0;
-   uint32_t busy;
+   pthread_once(&resolver_once, resolve_mi_ao);
 
-   (void)timeout_ms;
-
-   ensure_resolved();
    if (!real_send_frame)
       return -1;
 
-   ret = real_send_frame(dev, ch, frame, 0);
+   MI_S32 ret = real_send_frame(dev, ch, frame, 0);
+
    if (ret != MI_SUCCESS || !real_query_state)
       return ret;
 
-   if (real_query_state(dev, ch, &state) != MI_SUCCESS)
+   MI_AO_ChnState_t status;
+   if (real_query_state(dev, ch, &status) != MI_SUCCESS)
       return ret;
 
-   pthread_mutex_lock(&busy_lock);
-   busy = state.u32ChnBusyNum;
-
-   if (!filtered_busy)
-      filtered_busy = busy;
-   else
-      filtered_busy = (filtered_busy * 3u + busy) >> 2;
-
-   sleep_us = busy_wait_time(filtered_busy);
-   pthread_mutex_unlock(&busy_lock);
-
-   if (sleep_us)
-      usleep(sleep_us);
-
+   apply_backpressure(status.u32ChnBusyNum);
    return ret;
 }

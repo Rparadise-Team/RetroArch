@@ -19,7 +19,6 @@ INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
 LIB_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/lib
 
 LTO = -flto
-NEON_CFLAGS :=
 
 #########################
 #########################
@@ -34,7 +33,7 @@ MIYOOMINI = 1
 MMIYOOV4 = 0
 DINGUX = 1
 HAVE_SCREENSHOTS = 1
-HAVE_REWIND = 0
+HAVE_REWIND = 1
 HAVE_7ZIP = 1
 HAVE_AL = 0
 HAVE_ALSA = 0
@@ -52,7 +51,6 @@ HAVE_CC_RESAMPLER = 1
 HAVE_CHD = 1
 HAVE_COMMAND = 1
 HAVE_CXX = 1
-HAVE_C_A7A7 = 0
 HAVE_DR_MP3 = 1
 HAVE_DYNAMIC = 1
 HAVE_DYLIB = 1
@@ -82,7 +80,7 @@ HAVE_RBMP = 1
 HAVE_RJPEG = 1
 HAVE_RPILED = 0
 HAVE_RPNG = 1
-HAVE_RUNAHEAD = 0
+HAVE_RUNAHEAD = 1
 HAVE_SDL_DINGUX = 1
 HAVE_SHADERPIPELINE = 0
 HAVE_STB_FONT = 0

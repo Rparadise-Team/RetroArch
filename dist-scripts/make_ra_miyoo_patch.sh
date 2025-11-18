@@ -32,26 +32,26 @@ usage() {
   cat <<'USAGE'
 Usage: dist-scripts/make_ra_miyoo_patch.sh [options]
 
-Produce a Miyoo/Trimui focused patch that rebases RetroArch 1.22.0 custom code
-onto the official RetroArch v1.22.1 sources.
+Creates a patch that layers the Miyoo/Trimui drivers and features on top of a
+clean RetroArch v1.22.1 checkout.
 
 Main options:
-  --output <file>            Path where the resulting patch will be stored (default RA_MIYOOMINI.patch)
-  --upstream-dir <path>      Existing clone of RetroArch v1.22.1
-  --miyoo-dir <path>         Existing clone of the Miyoo fork (default branch 1.22.0)
-  --upstream-url <url>       Alternate RetroArch official URL (default github.com/libretro/RetroArch.git)
-  --base-url <url>           URL used for the common ancestor tree
-  --miyoo-url <url>          Alternate fork URL (default github.com/Rparadise-Team/RetroArch.git)
-  --upstream-ref <ref>       Ref/tag/branch for the official RetroArch tree (default v1.22.1)
-  --base-ref <ref>           Ref/tag/branch that acts as the common ancestor (default v1.22.0)
+  --output <file>            Path for the generated patch (default RA_MIYOOMINI.patch)
+  --upstream-dir <path>      Existing RetroArch v1.22.1 checkout
+  --miyoo-dir <path>         Checkout of the Rparadise fork (default tag 1.22.0)
+  --upstream-url <url>       Alternate RetroArch upstream URL (default official repo)
+  --base-url <url>           URL for the common ancestor repo (default official repo)
+  --miyoo-url <url>          Alternate URL for the Miyoo fork
+  --upstream-ref <ref>       Ref/tag/branch for RetroArch upstream (default v1.22.1)
+  --base-ref <ref>           Ref/tag/branch for the common ancestor (default v1.22.0)
   --miyoo-ref <ref>          Ref/tag/branch for the fork (default 1.22.0)
-  --keywords <regex>         Extra keyword filter for relevant files
-  --extra <path>             Additional file or directory to include (repeat as needed)
-  --manifest <file>          Writes the selected file list to disk
-  --list-only                Only emit the manifest without generating a diff
-  --base-dir <path>          Existing clone for the common ancestor (optional)
-  --keep-workdir             Keep the temporary working directory for debugging
-  -h, --help                 Display this help text
+  --keywords <regex>         Extra keywords to locate relevant files
+  --extra <path>             Additional file or directory to include (repeatable)
+  --manifest <file>          Save the selected file list for inspection
+  --list-only                Only produce the list (no diff is generated)
+  --base-dir <path>          Local clone of the base checkout (optional)
+  --keep-workdir             Preserve the temporary workdir for debugging
+  -h, --help                 Show this help text
 USAGE
 }
 
@@ -519,27 +519,9 @@ apply_overrides() {
     return
   fi
 
-  apply_single_override() {
-    local patch_file="$1"
-    local -a base_args=(--directory "$target_dir" --strip 1 --input "$patch_file")
-
-    if patch --forward --dry-run "${base_args[@]}" >/dev/null 2>&1; then
-      patch --forward "${base_args[@]}" >/dev/null
-      echo "Applying override: $(basename "$patch_file")"
-      return 0
-    fi
-
-    if patch --reverse --dry-run "${base_args[@]}" >/dev/null 2>&1; then
-      echo "Override already applied: $(basename "$patch_file")"
-      return 0
-    fi
-
-    echo "Failed to apply override: $(basename "$patch_file")" >&2
-    patch --forward "${base_args[@]}"
-  }
-
   while IFS= read -r -d '' patch_file; do
-    if apply_single_override "$patch_file"; then
+    if patch -d "$target_dir" -p1 --forward --silent < "$patch_file"; then
+      echo "Applying override: $(basename "$patch_file")"
       applied=1
     fi
   done < <(find "$override_dir" -type f -name '*.patch' -print0 | LC_ALL=C sort -z)

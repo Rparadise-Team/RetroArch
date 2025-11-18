@@ -135,7 +135,7 @@ static void *sdl_audio_init(const char *device,
    /* Create a buffer twice as big as needed */
    sdl->bufsize = out.samples * out.channels * sizeof(int16_t) * frames * 2;
    sdl->buffer  = fifo_new(sdl->bufsize);
-   sdl->wake_threshold = sdl->bufsize / 2;
+   sdl->wake_threshold = sdl->bufsize / (sdl->audioserver_mode ? 3 : 2);
    if (sdl->wake_threshold < out.samples * out.channels * sizeof(int16_t))
       sdl->wake_threshold = out.samples * out.channels * sizeof(int16_t);
 
@@ -199,16 +199,15 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
             slock_lock(sdl->lock);
             scond_wait(sdl->cond, sdl->lock);
             slock_unlock(sdl->lock);
-#else
-            SDL_Delay(1);
 #endif
-            continue;
          }
-
-         size_t write_amt = size - written > avail ? avail : size - written;
-         fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
-         SDL_UnlockAudio();
-         written += write_amt;
+         else
+         {
+            size_t write_amt = size - written > avail ? avail : size - written;
+            fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
+            SDL_UnlockAudio();
+            written += write_amt;
+         }
       }
       ret = written;
    }

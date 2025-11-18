@@ -44,7 +44,6 @@
 
 #include "../audio_driver.h"
 #include "../../verbosity.h"
-#include "miyoomini_audio_common.h"
 
 #define DEFAULT_OSS_DEV "/dev/dsp"
 
@@ -56,9 +55,45 @@ typedef struct oss_audio
    bool audioserver;
    bool need_volume_apply;
    int pending_volume;
-   size_t fifo_chunk;
-   miyoo_audio_timing_t timing;
 } oss_audio_t;
+
+static ssize_t oss_blocking_write(oss_audio_t *ctx, const uint8_t *buf, size_t size)
+{
+   size_t total = 0;
+
+   if (!ctx)
+      return -1;
+
+   while (total < size)
+   {
+      ssize_t ret = write(ctx->fd, buf + total, size - total);
+
+      if (ret > 0)
+      {
+         total += (size_t)ret;
+         continue;
+      }
+
+      if (ret == 0)
+         break;
+
+      if (errno == EINTR)
+         continue;
+
+      if (errno == EAGAIN)
+      {
+         if (ctx->nonblock)
+            break;
+
+         usleep(2000);
+         continue;
+      }
+
+      return -1;
+   }
+
+   return (ssize_t)total;
+}
 
 static void *oss_init(const char *device,
       unsigned rate, unsigned latency,
@@ -169,10 +204,6 @@ static void *oss_init(const char *device,
 
    ossaudio->pending_volume    = getVolumeMM();
    ossaudio->need_volume_apply = true;
-   miyoo_audio_timing_init(&ossaudio->timing, new_rate, 51200u);
-
-   if (ossaudio->audioserver)
-      ossaudio->fifo_chunk = miyoo_audio_fifo_chunk(&ossaudio->timing);
 
    return ossaudio;
 
@@ -186,76 +217,16 @@ error:
 
 static ssize_t oss_write(void *data, const void *buf, size_t size)
 {
-   oss_audio_t *ossaudio = (oss_audio_t*)data;
-   const uint8_t *ptr    = (const uint8_t*)buf;
-   size_t total          = 0;
+   ssize_t ret;
+   oss_audio_t *ossaudio  = (oss_audio_t*)data;
 
-   if (!ossaudio || !buf || !size || ossaudio->is_paused)
+   /* For stock oss, no playback during fast forward to avoid blocking */
+   if ( (size == 0) || ((!ossaudio->audioserver)&&(ossaudio->nonblock)) )
       return 0;
 
-   if (ossaudio->audioserver)
-   {
-      while (total < size)
-      {
-         size_t chunk = size - total;
-         if (chunk > ossaudio->fifo_chunk)
-            chunk = ossaudio->fifo_chunk;
-
-         ssize_t wrote = write(ossaudio->fd, ptr + total, chunk);
-         if (wrote > 0)
-         {
-            total += (size_t)wrote;
-            continue;
-         }
-
-         if (wrote < 0 && errno == EINTR)
-            continue;
-         if (wrote < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-         {
-            usleep(1000);
-            continue;
-         }
-
-         break;
-      }
-   }
-   else
-   {
-      if (ossaudio->nonblock)
-         return 0;
-
-      while (total < size)
-      {
-         ssize_t wrote = write(ossaudio->fd, ptr + total, size - total);
-         if (wrote > 0)
-         {
-            total += (size_t)wrote;
-            continue;
-         }
-
-         if (wrote < 0 && errno == EINTR)
-            continue;
-
-         if (wrote < 0 && errno == EAGAIN)
-         {
-            if (ossaudio->nonblock)
-               return (ssize_t)total;
-            usleep(2000);
-            continue;
-         }
-
-         return -1;
-      }
-
-      MI_AO_ChnState_t status;
-      if (MI_AO_QueryChnStat(0, 0, &status) == MI_SUCCESS)
-      {
-         useconds_t backoff = miyoo_audio_backpressure(&ossaudio->timing,
-               status.u32ChnBusyNum);
-         if (backoff)
-            usleep(backoff);
-      }
-   }
+   ret = oss_blocking_write(ossaudio, (const uint8_t*)buf, size);
+   if (ret < 0)
+      return ret;
 
    if (ossaudio->need_volume_apply)
    {
@@ -263,7 +234,7 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
       ossaudio->need_volume_apply = false;
    }
 
-   return (ssize_t)total;
+   return ret;
 }
 
 static bool oss_stop(void *data)
