@@ -13,12 +13,13 @@ CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
 STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
 
 SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
-FREETYPE_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+FREETYPE_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
 
 INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
 LIB_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/lib
 
 LTO = -flto
+NEON_CFLAGS :=
 
 #########################
 #########################
@@ -50,6 +51,7 @@ HAVE_CC_RESAMPLER = 1
 HAVE_CHD = 1
 HAVE_COMMAND = 1
 HAVE_CXX = 1
+HAVE_C_A7A7 = 0
 HAVE_DR_MP3 = 1
 HAVE_DYNAMIC = 1
 HAVE_DYLIB = 1
@@ -123,7 +125,6 @@ HAVE_SSL = 1
 HAVE_SYSTEMMBEDTLS = 1
 SYSTEMMBEDTLS_LIBS = -lmbedtls -lmbedx509 -lmbedcrypto
 endif
-
 
 OS = Linux
 TARGET = $(PACKAGE_NAME)
