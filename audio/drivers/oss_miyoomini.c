@@ -54,8 +54,6 @@ typedef struct oss_audio
    bool is_paused;
    bool nonblock;
    bool audioserver;
-   bool need_volume_apply;
-   int pending_volume;
    size_t fifo_chunk;
    miyoo_audio_timing_t timing;
 } oss_audio_t;
@@ -65,7 +63,7 @@ static void *oss_init(const char *device,
       unsigned block_frames,
       unsigned *new_out_rate)
 {
-   int frags, frag, channels, format, new_rate;
+   int frags, frag, channels, format, new_rate = (int)rate;
    oss_audio_t *ossaudio  = (oss_audio_t*)calloc(1, sizeof(oss_audio_t));
    const char *oss_device = device ? device : DEFAULT_OSS_DEV;
    int audiofix           = getValueMM("audiofix");
@@ -78,6 +76,7 @@ static void *oss_init(const char *device,
    /* Open /dev/dsp with audioserver check */
    /* Use the fact that padsp replaces open, but not __open */
    extern int __open(const char *file, int oflag);
+
    if (prefer_audioserver)
    {
       ossaudio->fd = open(oss_device, O_WRONLY);
@@ -85,12 +84,13 @@ static void *oss_init(const char *device,
       {
          opened = true;
          ossaudio->audioserver = true;
-         new_rate = rate;
          RARCH_LOG("[OSS]: forced audioserver path.\n");
       }
       else
+      {
          RARCH_WARN("[OSS]: Cannot open %s via audioserver path, falling back (errno=%d).\n",
                oss_device, errno);
+      }
    }
 
    if (!opened)
@@ -111,7 +111,6 @@ static void *oss_init(const char *device,
       {
          opened = true;
          ossaudio->audioserver = true;
-         new_rate = rate;
          RARCH_LOG("[OSS]: with audioserver (fallback).\n");
       }
    }
@@ -126,10 +125,14 @@ static void *oss_init(const char *device,
    if (!ossaudio->audioserver)
    {
       /* stock oss supports 48k, 32k, 16k, 8k only */
-      if ( rate > 32000 ) new_rate = 48000;
-      else if ( rate > 16000 ) new_rate = 32000;
-      else if ( rate > 8000 ) new_rate = 16000;
-      else new_rate = 8000;
+      if (rate > 32000)
+         new_rate = 48000;
+      else if (rate > 16000)
+         new_rate = 32000;
+      else if (rate > 8000)
+         new_rate = 16000;
+      else
+         new_rate = 8000;
    }
 
    frags = (latency * new_rate * 4) / (1000 * (1 << 10));
@@ -156,7 +159,8 @@ static void *oss_init(const char *device,
       *new_out_rate = new_rate;
    }
 
-   if (!ossaudio->audioserver) {
+   if (!ossaudio->audioserver)
+   {
       /* mi_ao init is required for stock oss */
       MI_AUDIO_Attr_t attr;
       memset(&attr, 0, sizeof(attr));
@@ -167,8 +171,7 @@ static void *oss_init(const char *device,
       MI_AO_SetPubAttr(0, &attr);
    }
 
-   ossaudio->pending_volume    = getVolumeMM();
-   ossaudio->need_volume_apply = true;
+   set_snd_level(getVolumeMM());
    miyoo_audio_timing_init(&ossaudio->timing, new_rate, 51200u);
 
    if (ossaudio->audioserver)
@@ -178,8 +181,7 @@ static void *oss_init(const char *device,
 
 error:
    close(ossaudio->fd);
-   if (ossaudio)
-      free(ossaudio);
+   free(ossaudio);
    perror("ioctl");
    return NULL;
 }
@@ -198,7 +200,7 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
       while (total < size)
       {
          size_t chunk = size - total;
-         if (chunk > ossaudio->fifo_chunk)
+         if (ossaudio->fifo_chunk && chunk > ossaudio->fifo_chunk)
             chunk = ossaudio->fifo_chunk;
 
          ssize_t wrote = write(ossaudio->fd, ptr + total, chunk);
@@ -208,42 +210,26 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
             continue;
          }
 
-         if (wrote < 0 && errno == EINTR)
-            continue;
-         if (wrote < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+         if (wrote < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
          {
             usleep(1000);
             continue;
          }
 
-         break;
+         return -1;
       }
    }
    else
    {
+      /* For stock oss, no playback during fast forward to avoid blocking */
       if (ossaudio->nonblock)
          return 0;
 
-      while (total < size)
+      total = (size_t)write(ossaudio->fd, buf, size);
+      if ((ssize_t)total < 0)
       {
-         ssize_t wrote = write(ossaudio->fd, ptr + total, size - total);
-         if (wrote > 0)
-         {
-            total += (size_t)wrote;
-            continue;
-         }
-
-         if (wrote < 0 && errno == EINTR)
-            continue;
-
-         if (wrote < 0 && errno == EAGAIN)
-         {
-            if (ossaudio->nonblock)
-               return (ssize_t)total;
-            usleep(2000);
-            continue;
-         }
-
+         if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
+            return 0;
          return -1;
       }
 
@@ -255,12 +241,6 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
          if (backoff)
             usleep(backoff);
       }
-   }
-
-   if (ossaudio->need_volume_apply)
-   {
-      set_snd_level(ossaudio->pending_volume);
-      ossaudio->need_volume_apply = false;
    }
 
    return (ssize_t)total;

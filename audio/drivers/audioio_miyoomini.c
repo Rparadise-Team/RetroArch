@@ -18,7 +18,7 @@
       MIAO audio driver for miyoomini
       The name "audioio" is used to minimize the number of files to be rewritten as much as possible,
       but /dev/audio is not used.
- */
+*/
 
 #include <errno.h>
 #include <fcntl.h>
@@ -29,9 +29,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#define YIELD_WAIT
+#define YIELD_WAIT /* Flag to wait with sched_yield() when the wait time is less than 10ms */
+
 #include <mi_ao.h>
-#ifdef YIELD_WAIT
+#ifdef  YIELD_WAIT
 #include <sched.h>
 #ifndef SCHED_IDLE
 #define SCHED_IDLE 5
@@ -47,47 +48,23 @@
 #include "volume/volume.h"
 #include "miyoomini_audio_common.h"
 
+/* MI_AO_SendFrame Max bytes */
 #define MIAO_MAX_BUFSIZE 51200
 #define AUDIOSERVER_FIFO "/tmp/audio_fifo_server"
 
 typedef struct miao_audio
 {
-   MI_AUDIO_Frame_t frame;
+   MI_AUDIO_Frame_t AoSendFrame;
    size_t bufsize;
    uint32_t freq;
    bool nonblock;
    bool is_paused;
-
+   void *nullbuf;
    bool audioserver_mode;
    int audioserver_fd;
    size_t fifo_chunk;
    miyoo_audio_timing_t timing;
-
-   void *nullbuf;
 } miao_audio_t;
-
-static bool miao_hw_enable(uint32_t freq, uint32_t samples)
-{
-   MI_AUDIO_Attr_t attr;
-
-   memset(&attr, 0, sizeof(attr));
-   attr.eSamplerate    = (MI_AUDIO_SampleRate_e)freq;
-   attr.eSoundmode     = E_MI_AUDIO_SOUND_MODE_STEREO;
-   attr.u32ChnCnt      = 2;
-   attr.u32PtNumPerFrm = samples;
-
-   if (MI_AO_SetPubAttr(0, &attr) != MI_SUCCESS)
-      return false;
-   if (MI_AO_Enable(0) != MI_SUCCESS)
-      return false;
-   if (MI_AO_EnableChn(0, 0) != MI_SUCCESS)
-      return false;
-   if (MI_AO_SetMute(0, FALSE) != MI_SUCCESS)
-      return false;
-
-   MI_AO_ClearChnBuf(0, 0);
-   return true;
-}
 
 static bool miao_open_audioserver(miao_audio_t *ctx)
 {
@@ -102,103 +79,8 @@ static bool miao_open_audioserver(miao_audio_t *ctx)
    }
 
    ctx->fifo_chunk = miyoo_audio_fifo_chunk(&ctx->timing);
-
    RARCH_LOG("[MIAO]: using audioserver FIFO.\n");
    return true;
-}
-
-static bool miao_init_hw_context(miao_audio_t *ctx, uint32_t samples)
-{
-   if (!ctx)
-      return false;
-
-   if (!miao_hw_enable(ctx->freq, samples))
-      return false;
-
-   ctx->frame.eSoundmode   = E_MI_AUDIO_SOUND_MODE_STEREO;
-   ctx->frame.apVirAddr[0] = ctx->nullbuf;
-   ctx->frame.u32Len       = ctx->bufsize;
-
-   MI_AO_SendFrame(0, 0, &ctx->frame, 0);
-   RARCH_LOG("[MIAO]: direct MI_AO path.\n");
-   return true;
-}
-
-static void miao_dispose_hw(void)
-{
-   MI_AO_ClearChnBuf(0, 0);
-   MI_AO_DisableChn(0, 0);
-   MI_AO_Disable(0);
-}
-
-static void *miao_init(const char *device,
-      unsigned rate, unsigned latency,
-      unsigned block_frames,
-      unsigned *new_rate)
-{
-   uint32_t samples;
-   miao_audio_t *ctx = (miao_audio_t*)calloc(1, sizeof(*ctx));
-   int audiofix;
-
-   (void)device;
-   (void)block_frames;
-
-   if (!ctx)
-      return NULL;
-
-   ctx->freq = miyoo_audio_select_rate(rate);
-   if (ctx->freq != rate)
-   {
-      *new_rate = ctx->freq;
-      RARCH_WARN("[MIAO]: Requested rate adjusted to %u Hz.\n", ctx->freq);
-   }
-
-   ctx->bufsize = (latency * ctx->freq / 1000u) << 2;
-   ctx->bufsize = (ctx->bufsize + 15u) & ~15u;
-   if (!ctx->bufsize)
-      ctx->bufsize = 16u;
-   else if (ctx->bufsize > MIAO_MAX_BUFSIZE)
-      ctx->bufsize = MIAO_MAX_BUFSIZE;
-
-   samples = ctx->bufsize >> 2;
-   if (samples > 2048u)
-      samples = 2048u;
-
-   ctx->nullbuf = calloc(1, ctx->bufsize);
-   if (!ctx->nullbuf)
-      goto error;
-
-   miyoo_audio_timing_init(&ctx->timing, ctx->freq, ctx->bufsize);
-
-   audiofix = getValueMM("audiofix");
-   ctx->audioserver_mode = (audiofix != 0);
-   ctx->audioserver_fd   = -1;
-
-   if (ctx->audioserver_mode)
-   {
-      if (!miao_open_audioserver(ctx))
-         goto error;
-   }
-   else if (!miao_init_hw_context(ctx, samples))
-      goto error;
-
-   ctx->frame.apVirAddr[0] = ctx->nullbuf;
-   ctx->frame.u32Len       = ctx->bufsize;
-
-   int target_vol = getVolumeMM();
-   set_snd_level(target_vol);
-
-   ctx->is_paused = false;
-   ctx->nonblock  = false;
-
-   return ctx;
-
-error:
-   if (ctx->audioserver_fd >= 0)
-      close(ctx->audioserver_fd);
-   free(ctx->nullbuf);
-   free(ctx);
-   return NULL;
 }
 
 static bool miao_try_reopen_fifo(miao_audio_t *ctx)
@@ -212,8 +94,8 @@ static bool miao_try_reopen_fifo(miao_audio_t *ctx)
    ctx->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY | O_CLOEXEC);
    if (ctx->audioserver_fd < 0)
    {
-      RARCH_ERR("[MIAO]: Unable to reopen audioserver FIFO (errno=%d).\n", errno);
-      return false;
+     RARCH_ERR("[MIAO]: Unable to reopen audioserver FIFO (errno=%d).\n", errno);
+     return false;
    }
 
    RARCH_WARN("[MIAO]: Audioserver FIFO reconnected.\n");
@@ -224,8 +106,8 @@ static ssize_t miao_write_fifo(miao_audio_t *ctx, const uint8_t *data, size_t si
 {
    size_t total = 0;
 
-   if (!ctx || ctx->audioserver_fd < 0)
-      return -1;
+   if (!ctx || !data || !size || ctx->audioserver_fd < 0)
+      return 0;
 
    while (total < size)
    {
@@ -240,7 +122,7 @@ static ssize_t miao_write_fifo(miao_audio_t *ctx, const uint8_t *data, size_t si
          continue;
       }
 
-      if (wrote < 0 && (errno == EINTR))
+      if (wrote < 0 && errno == EINTR)
          continue;
       if (wrote < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
       {
@@ -261,67 +143,185 @@ static ssize_t miao_write_fifo(miao_audio_t *ctx, const uint8_t *data, size_t si
    return (ssize_t)total;
 }
 
-static ssize_t miao_write_hw(miao_audio_t *ctx, const uint8_t *data, size_t size)
+static void miao_hw_shutdown(void)
 {
-   size_t total = 0;
+   MI_AO_ClearChnBuf(0, 0);
+   MI_AO_DisableChn(0, 0);
+   MI_AO_Disable(0);
+}
+
+static bool miao_hw_init(miao_audio_t *ctx, uint32_t samples)
+{
+   MI_AUDIO_Attr_t attr;
 
    if (!ctx)
-      return -1;
+      return false;
 
-   while (total < size)
+   memset(&attr, 0, sizeof(attr));
+   attr.eSamplerate    = (MI_AUDIO_SampleRate_e)ctx->freq;
+   attr.eSoundmode     = E_MI_AUDIO_SOUND_MODE_STEREO;
+   attr.u32ChnCnt      = 2;
+   attr.u32PtNumPerFrm = samples;
+   ctx->AoSendFrame.eSoundmode = E_MI_AUDIO_SOUND_MODE_STEREO;
+
+   if (MI_AO_SetPubAttr(0, &attr))
+      return false;
+   if (MI_AO_Enable(0))
+      return false;
+   if (MI_AO_EnableChn(0, 0))
+      return false;
+   if (MI_AO_SetMute(0, FALSE))
+      return false;
+
+   ctx->AoSendFrame.apVirAddr[0] = ctx->nullbuf;
+   ctx->AoSendFrame.u32Len       = ctx->bufsize;
+   MI_AO_ClearChnBuf(0, 0);
+   MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
+   RARCH_LOG("[MIAO]: direct MI_AO path.\n");
+   return true;
+}
+
+static void *miao_init(const char *device,
+      unsigned rate, unsigned latency,
+      unsigned block_frames,
+      unsigned *new_rate)
+{
+   uint32_t samples;
+   int audiofix;
+   miao_audio_t *ctx = (miao_audio_t*)calloc(1, sizeof(*ctx));
+
+   (void)device;
+   (void)block_frames;
+
+   if (!ctx)
+      return NULL;
+
+   ctx->audioserver_fd   = -1;
+   ctx->fifo_chunk       = 0;
+   ctx->audioserver_mode = false;
+
+   const int freqtable[] = { 8000,11025,12000,16000,22050,24000,32000,44100,48000 };
+   for (uint32_t i = 0; i < (sizeof(freqtable) / sizeof(int)); i++)
    {
-      MI_AO_ChnState_t status;
-      size_t avail;
-      size_t chunk;
-      useconds_t backoff;
-
-      if (MI_AO_QueryChnStat(0, 0, &status) != MI_SUCCESS)
-         break;
-
-      if (status.u32ChnBusyNum >= ctx->bufsize)
-         avail = 0;
-      else
-         avail = ctx->bufsize - status.u32ChnBusyNum;
-
-      if (!avail)
+      if (rate <= (unsigned)freqtable[i])
       {
-         if (ctx->nonblock)
-            break;
-         backoff = miyoo_audio_backpressure(&ctx->timing, status.u32ChnBusyNum);
-         if (backoff)
-            usleep(backoff);
-         continue;
-      }
-
-      chunk = size - total;
-      if (chunk > avail)
-         chunk = avail;
-      if (chunk > ctx->bufsize)
-         chunk = ctx->bufsize;
-
-      ctx->frame.apVirAddr[0] = (void*)(data + total);
-      ctx->frame.u32Len       = (MI_U32)chunk;
-
-      if (MI_AO_SendFrame(0, 0, &ctx->frame, 0) == MI_SUCCESS)
-      {
-         total += chunk;
-         backoff = miyoo_audio_backpressure(&ctx->timing,
-               status.u32ChnBusyNum + (uint32_t)chunk);
-         if (backoff)
-            usleep(backoff);
-         continue;
-      }
-
-      if (ctx->nonblock)
+         ctx->freq = (uint32_t)freqtable[i];
          break;
+      }
+   }
+   if (rate > 48000)
+      ctx->freq = 48000;
 
-      backoff = miyoo_audio_backpressure(&ctx->timing, ctx->bufsize);
-      if (!backoff)
-         backoff = 500;
-      usleep(backoff);
+   if (ctx->freq != rate)
+   {
+      *new_rate = ctx->freq;
+      RARCH_WARN("[MIAO]: Requested sample rate not supported, adjusting output rate to %u Hz.\n", ctx->freq);
    }
 
-   return (ssize_t)total;
+   ctx->bufsize = (latency * ctx->freq / 1000u) << 2;
+   ctx->bufsize = (ctx->bufsize + 15u) & ~15u;
+   if (!ctx->bufsize)
+      ctx->bufsize = 16u;
+   else if (ctx->bufsize > MIAO_MAX_BUFSIZE)
+      ctx->bufsize = MIAO_MAX_BUFSIZE;
+
+   RARCH_LOG("[MIAO]: Requested %u ms latency, got %.2f ms\n",
+         latency, (float)((ctx->bufsize >> 2) * 1000u / ctx->freq));
+
+   samples = ctx->bufsize >> 2;
+   if (samples > 2048u)
+      samples = 2048u;
+
+   ctx->nullbuf = calloc(1, ctx->bufsize);
+   if (!ctx->nullbuf)
+      goto error;
+
+   miyoo_audio_timing_init(&ctx->timing, ctx->freq, ctx->bufsize);
+   audiofix = getValueMM("audiofix");
+   ctx->audioserver_mode = (audiofix != 0);
+
+   if (ctx->audioserver_mode)
+   {
+      if (!miao_open_audioserver(ctx))
+         goto error;
+   }
+   else if (!miao_hw_init(ctx, samples))
+      goto error;
+
+   set_snd_level(getVolumeMM());
+
+   ctx->is_paused = false;
+   ctx->nonblock  = false;
+
+   return ctx;
+
+error:
+   if (ctx->audioserver_fd >= 0)
+      close(ctx->audioserver_fd);
+   free(ctx->nullbuf);
+   free(ctx);
+   RARCH_ERR("[MIAO]: Failed to initialize...\n");
+   return NULL;
+}
+
+static ssize_t miao_write_hw(miao_audio_t *ctx, const uint8_t *buf, size_t size)
+{
+   ssize_t write_bytes;
+   uint32_t usleepclock;
+   MI_AO_ChnState_t status;
+   int avail;
+
+   if (!ctx || !buf || !size || ctx->is_paused)
+      return 0;
+
+   ctx->AoSendFrame.apVirAddr[0] = (void*)buf;
+   MI_AO_QueryChnStat(0, 0, &status);
+   avail = (int)ctx->bufsize - (int)status.u32ChnBusyNum;
+
+   if ((avail < (int)size) && (!ctx->nonblock))
+   {
+      write_bytes = (ssize_t)size;
+      ctx->AoSendFrame.u32Len = (MI_U32)write_bytes;
+      MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
+
+      MI_AO_QueryChnStat(0, 0, &status);
+      if (status.u32ChnBusyNum > ctx->bufsize)
+      {
+         usleepclock = (uint32_t)(((uint64_t)(status.u32ChnBusyNum - ctx->bufsize) * 1000000ULL) / (ctx->freq << 2));
+#ifndef YIELD_WAIT
+         if (usleepclock)
+            usleep(usleepclock);
+#else
+         if (usleepclock > 0x2800u)
+            usleep(usleepclock - 0x2800u);
+
+         {
+            const struct sched_param scprm = {0};
+            int policy = sched_getscheduler(0);
+            sched_setscheduler(0, SCHED_IDLE, &scprm);
+            do
+            {
+               sched_yield();
+               MI_AO_QueryChnStat(0, 0, &status);
+            } while(status.u32ChnBusyNum > ctx->bufsize);
+            sched_setscheduler(0, policy, &scprm);
+         }
+#endif
+      }
+   }
+   else
+   {
+      write_bytes = avail > (int)size ? (ssize_t)size : (ssize_t)avail;
+      if (write_bytes > 0)
+      {
+         ctx->AoSendFrame.u32Len = (MI_U32)write_bytes;
+         MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
+      }
+      else
+         return 0;
+   }
+
+   return write_bytes;
 }
 
 static ssize_t miao_write(void *data, const void *buf, size_t size)
@@ -343,6 +343,9 @@ static bool miao_stop(void *data)
    if (!ctx)
       return false;
 
+   if (!ctx->is_paused)
+      RARCH_LOG("[MIAO audio]: Pausing.\n");
+
    ctx->is_paused = true;
    return true;
 }
@@ -350,18 +353,20 @@ static bool miao_stop(void *data)
 static bool miao_start(void *data, bool is_shutdown)
 {
    miao_audio_t *ctx = (miao_audio_t*)data;
-
-   (void)is_shutdown;
-
    if (!ctx)
       return false;
+
+   if (is_shutdown)
+      return true;
 
    if (ctx->is_paused)
    {
       if (!ctx->audioserver_mode)
       {
+         ctx->AoSendFrame.apVirAddr[0] = ctx->nullbuf;
+         ctx->AoSendFrame.u32Len       = ctx->bufsize;
          MI_AO_ClearChnBuf(0, 0);
-         MI_AO_SendFrame(0, 0, &ctx->frame, 0);
+         MI_AO_SendFrame(0, 0, &ctx->AoSendFrame, 0);
       }
       ctx->is_paused = false;
    }
@@ -371,7 +376,11 @@ static bool miao_start(void *data, bool is_shutdown)
 
 static bool miao_alive(void *data)
 {
-   return data && !((miao_audio_t*)data)->is_paused;
+   miao_audio_t *ctx = (miao_audio_t*)data;
+
+   if (!ctx)
+      return false;
+   return !ctx->is_paused;
 }
 
 static void miao_set_nonblock_state(void *data, bool state)
@@ -394,7 +403,7 @@ static void miao_free(void *data)
          close(ctx->audioserver_fd);
    }
    else
-      miao_dispose_hw();
+      miao_hw_shutdown();
 
    free(ctx->nullbuf);
    free(ctx);
@@ -408,13 +417,33 @@ static bool miao_use_float(void *data)
 
 static size_t miao_write_avail(void *data)
 {
-   (void)data;
-   return MIAO_MAX_BUFSIZE;
+   miao_audio_t *ctx = (miao_audio_t*)data;
+   MI_AO_ChnState_t status;
+
+   if (!ctx)
+      return 0;
+
+   if (ctx->audioserver_mode)
+      return ctx->fifo_chunk ? ctx->fifo_chunk : MIAO_MAX_BUFSIZE;
+
+   if (MI_AO_QueryChnStat(0, 0, &status) != MI_SUCCESS)
+      return 0;
+
+   {
+      int avail = (int)ctx->bufsize - (int)status.u32ChnBusyNum;
+      return (avail > 0) ? (size_t)avail : 0u;
+   }
 }
 
 static size_t miao_buffer_size(void *data)
 {
-   (void)data;
+   miao_audio_t *ctx = (miao_audio_t*)data;
+   if (!ctx)
+      return MIAO_MAX_BUFSIZE;
+
+   if (ctx->audioserver_mode)
+      return ctx->fifo_chunk ? ctx->fifo_chunk : MIAO_MAX_BUFSIZE;
+
    return MIAO_MAX_BUFSIZE;
 }
 

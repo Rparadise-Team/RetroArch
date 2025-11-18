@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <boolean.h>
 #include <rthreads/rthreads.h>
@@ -141,18 +142,24 @@ static void *sdl_audio_init(const char *device,
 
    /* Allocate the null-buffer and prefill */
    tmp = calloc(1, (sdl->bufsize / 2));
-   if (tmp) { fifo_write(sdl->buffer, tmp, (sdl->bufsize / 2)); free(tmp); }
+   if (tmp)
+   {
+      fifo_write(sdl->buffer, tmp, (sdl->bufsize / 2));
+      free(tmp);
+   }
 
    SDL_PauseAudio(0);
    
-   /*set volumen */
-   int target_vol = getVolumeMM();
-   set_snd_level(target_vol);
-   int brightnessMM = setBrightnessMM();
-   char command2[100];
-   sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
-   system(command2);
-	
+   /* Apply saved mixer level and refresh panel brightness */
+   set_snd_level(getVolumeMM());
+   {
+      int brightnessMM = setBrightnessMM();
+      char command2[100];
+      snprintf(command2, sizeof(command2),
+            "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
+      system(command2);
+   }
+
    if (sdl->audioserver_mode)
       RARCH_LOG("[SDL audio]: with audioserver\n");
    else
@@ -175,7 +182,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
       size_t avail, write_amt;
 
       SDL_LockAudio();
-      avail = FIFO_WRITE_AVAIL(sdl->buffer);
+      avail     = FIFO_WRITE_AVAIL(sdl->buffer);
       write_amt = avail > size ? size : avail;
       fifo_write(sdl->buffer, buf, write_amt);
       SDL_UnlockAudio();
@@ -205,10 +212,12 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
             continue;
          }
 
-         size_t write_amt = size - written > avail ? avail : size - written;
-         fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
-         SDL_UnlockAudio();
-         written += write_amt;
+         {
+            size_t write_amt = size - written > avail ? avail : size - written;
+            fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
+            SDL_UnlockAudio();
+            written += write_amt;
+         }
       }
       ret = written;
    }
