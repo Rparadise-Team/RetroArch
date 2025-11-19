@@ -37,7 +37,6 @@
 #include <sys/soundcard.h>
 #include <mi_ao.h>
 #include "volume/volume.h"
-#include "miyoomini_audio_common.h"
 
 #ifdef HAVE_CONFIG_H
 #include "../../config.h"
@@ -79,7 +78,7 @@ static void *oss_init(const char *device,
       }
       ossaudio->audioserver = true;
       new_rate = rate;
-      RARCH_LOG("[OSS]: whit audioserver.\n");
+      RARCH_LOG("[OSS]: with audioserver.\n");
    } else {
       /* stock oss supports 48k, 32k, 16k, 8k only */
       if ( rate > 32000 ) new_rate = 48000;
@@ -90,7 +89,7 @@ static void *oss_init(const char *device,
    }
 
    frags = (latency * new_rate * 4) / (1000 * (1 << 10));
-   frag  = (frags << 16) | 10;
+   frag  = (frags << 16) | 9;
 
    if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFRAGMENT, &frag) < 0)
       RARCH_WARN("Cannot set fragment sizes. Latency might not be as expected ...\n");
@@ -139,22 +138,32 @@ error:
 
 static ssize_t oss_write(void *data, const void *buf, size_t size)
 {
-   ssize_t ret;
-   oss_audio_t *ossaudio  = (oss_audio_t*)data;
+   ssize_t ret, total_written = 0;
+   oss_audio_t *ossaudio = (oss_audio_t*)data;
 
    /* For stock oss, no playback during fast forward to avoid blocking */
    if ( (size == 0) || ((!ossaudio->audioserver)&&(ossaudio->nonblock)) )
       return 0;
 
-   if ((ret = write(ossaudio->fd, buf, size)) < 0)
+   // OPTIMIZACIÓN: Escribe en bloques pequeños para evitar bloqueos
+   size_t chunk_size = 512;  // Escribir en chunks de 512 bytes
+   const uint8_t *src = (const uint8_t *)buf;
+   
+   while (total_written < size)
    {
-      if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
-         return 0;
-
-      return -1;
+      size_t to_write = (size - total_written) > chunk_size ? 
+                        chunk_size : (size - total_written);
+      
+      if ((ret = write(ossaudio->fd, src + total_written, to_write)) < 0)
+      {
+         if (errno == EAGAIN && (fcntl(ossaudio->fd, F_GETFL) & O_NONBLOCK))
+            return total_written;  // Retorna lo que escribió
+         return -1;
+      }
+      total_written += ret;
    }
 
-   return ret;
+   return total_written;
 }
 
 static bool oss_stop(void *data)

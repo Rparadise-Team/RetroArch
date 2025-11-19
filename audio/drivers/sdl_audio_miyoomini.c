@@ -23,7 +23,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <boolean.h>
 #include <rthreads/rthreads.h>
@@ -37,7 +36,6 @@
 #include "../audio_driver.h"
 #include "../../verbosity.h"
 #include "volume/volume.h"
-#include "miyoomini_audio_common.h"
 #include <mi_ao.h>
 
 #define SDL_AUDIO_SAMPLES 256
@@ -52,24 +50,27 @@ typedef struct sdl_audio
    bool nonblock;
    bool is_paused;
    size_t bufsize;
-   size_t wake_threshold;
-   bool audioserver_mode;
 } sdl_audio_t;
 
 static void sdl_audio_cb(void *data, Uint8 *stream, int len)
 {
-   sdl_audio_t  *sdl = (sdl_audio_t*)data;
-   size_t      avail = FIFO_READ_AVAIL(sdl->buffer);
-   size_t write_size = len > (int)avail ? avail : len;
-
-   fifo_read(sdl->buffer, stream, write_size);
-#ifdef HAVE_THREADS
+   sdl_audio_t *sdl = (sdl_audio_t*)data;
+   size_t avail = FIFO_READ_AVAIL(sdl->buffer);
+   
+   if (avail < (size_t)len / 2)
+   {
+      memset(stream, 0, len);
+      if (avail > 0)
+         fifo_read(sdl->buffer, stream, avail);
+   }
+   else
+   {
+      size_t write_size = len > (int)avail ? avail : len;
+      fifo_read(sdl->buffer, stream, write_size);
+      if (len > (int)write_size)
+         memset(stream + write_size, 0, len - write_size);
+   }
    scond_signal(sdl->cond);
-#endif
-#ifdef HAVE_SDL2
-   /* If underrun, fill rest with silence. */
-   if (len > (int)avail) memset(stream + write_size, 0, len - write_size);
-#endif
 }
 
 static void *sdl_audio_init(const char *device,
@@ -83,9 +84,6 @@ static void *sdl_audio_init(const char *device,
    void *tmp                    = NULL;
    sdl_audio_t *sdl             = NULL;
    uint32_t sdl_subsystem_flags = SDL_WasInit(0);
-   int audiofix                 = getValueMM("audiofix");
-   bool has_audioserver         = miyoo_audio_server_available();
-   bool audioserver_mode        = (audiofix != 0) && has_audioserver;
 
    (void)device;
 
@@ -104,8 +102,6 @@ static void *sdl_audio_init(const char *device,
    sdl = (sdl_audio_t*)calloc(1, sizeof(*sdl));
    if (!sdl)
       return NULL;
-
-   sdl->audioserver_mode = audioserver_mode;
 
    spec.freq     = rate;
    spec.format   = AUDIO_S16SYS;
@@ -127,11 +123,7 @@ static void *sdl_audio_init(const char *device,
 
    *new_rate = out.freq;
    frames    = (latency * (out.freq - 1)) / (1000 * out.samples) + 1;
-   if (frames < 2)
-      frames = 2; /* at least 2 frames */
-
-   if (sdl->audioserver_mode && frames < 3)
-      frames = 3;
+   if (frames < 2) frames = 2; /* at least 2 frames */
 
    RARCH_LOG("[SDL audio]: Requested %u ms latency, got %d ms\n",
          latency, (int)(out.samples * frames * 1000 / (*new_rate)));
@@ -139,37 +131,28 @@ static void *sdl_audio_init(const char *device,
    /* Create a buffer twice as big as needed */
    sdl->bufsize = out.samples * out.channels * sizeof(int16_t) * frames * 2;
    sdl->buffer  = fifo_new(sdl->bufsize);
-   sdl->wake_threshold = sdl->bufsize / 2;
-   if (sdl->wake_threshold < out.samples * out.channels * sizeof(int16_t))
-      sdl->wake_threshold = out.samples * out.channels * sizeof(int16_t);
 
    /* Allocate the null-buffer and prefill */
-   tmp = calloc(1, (sdl->bufsize / 2));
-   if (tmp)
-   {
-      fifo_write(sdl->buffer, tmp, (sdl->bufsize / 2));
-      free(tmp);
-   }
+   size_t prefill_size = (sdl->bufsize * 3) / 4;
+   tmp = calloc(1, prefill_size);
+   if (tmp) { fifo_write(sdl->buffer, tmp, prefill_size); free(tmp); }
 
    SDL_PauseAudio(0);
    
-   /* Apply saved mixer level and refresh panel brightness */
-   set_snd_level(getVolumeMM());
-   {
-      int brightnessMM = setBrightnessMM();
-      char command2[100];
-      snprintf(command2, sizeof(command2),
-            "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
-      system(command2);
-   }
-
-   if (audiofix != 0 && !has_audioserver)
-      RARCH_WARN("[SDL audio]: Audioserver requested but FIFO not available, using direct SDL path.\n");
-
-   if (sdl->audioserver_mode)
-      RARCH_LOG("[SDL audio]: with audioserver\n");
-   else
+   /*set volumen */
+   int audiofix = getValueMM("audiofix");
+   int target_vol = getVolumeMM();
+   set_snd_level(target_vol);
+   int brightnessMM = setBrightnessMM();
+   char command2[100];
+   sprintf(command2, "echo %d > /sys/class/pwm/pwmchip0/pwm0/duty_cycle", brightnessMM);
+   system(command2);
+	
+   if (audiofix == 0) {
       RARCH_LOG("[SDL audio]: without audioserver\n");
+   } else {
+      RARCH_LOG("[SDL audio]: with audioserver\n");
+   }
 
    return sdl;
 
@@ -188,7 +171,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
       size_t avail, write_amt;
 
       SDL_LockAudio();
-      avail     = FIFO_WRITE_AVAIL(sdl->buffer);
+      avail = FIFO_WRITE_AVAIL(sdl->buffer);
       write_amt = avail > size ? size : avail;
       fifo_write(sdl->buffer, buf, write_amt);
       SDL_UnlockAudio();
@@ -197,37 +180,45 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
    else
    {
       size_t written = 0;
-
       while (written < size)
       {
          size_t avail;
-
          SDL_LockAudio();
          avail = FIFO_WRITE_AVAIL(sdl->buffer);
-
-         if (avail < sdl->wake_threshold)
+         
+         if (avail < (sdl->bufsize/3))
          {
             SDL_UnlockAudio();
-#ifdef HAVE_THREADS
+            #ifdef HAVE_THREADS
             slock_lock(sdl->lock);
             scond_wait(sdl->cond, sdl->lock);
             slock_unlock(sdl->lock);
-#else
-            SDL_Delay(1);
-#endif
-            continue;
+            #endif
          }
-
+         else
          {
             size_t write_amt = size - written > avail ? avail : size - written;
             fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
             SDL_UnlockAudio();
             written += write_amt;
+            
+            /* FIX: Delay adaptativo para AudioServer OFF
+             * Si buffer está muy lleno, esperar un poco antes de siguiente write
+             * Esto sincroniza mejor con el callback y evita acumulación
+             */
+            SDL_LockAudio();
+            size_t current_avail = FIFO_WRITE_AVAIL(sdl->buffer);
+            SDL_UnlockAudio();
+            
+            if (current_avail < (sdl->bufsize/4))
+            {
+               /* Buffer muy lleno, dormir un poco */
+               SDL_Delay(1);  /* 1ms es imperceptible pero da tiempo */
+            }
          }
       }
       ret = written;
    }
-
    return ret;
 }
 
