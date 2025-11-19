@@ -57,6 +57,12 @@ static void sdl_audio_cb(void *data, Uint8 *stream, int len)
    sdl_audio_t *sdl = (sdl_audio_t*)data;
    size_t avail = FIFO_READ_AVAIL(sdl->buffer);
    
+#ifdef NO_MMP
+   size_t write_size = len > (int)avail ? avail : len;
+   fifo_read(sdl->buffer, stream, write_size);
+   if (len > (int)write_size)
+      memset(stream + write_size, 0, len - write_size);
+#else
    if (avail < (size_t)len / 2)
    {
       memset(stream, 0, len);
@@ -70,6 +76,7 @@ static void sdl_audio_cb(void *data, Uint8 *stream, int len)
       if (len > (int)write_size)
          memset(stream + write_size, 0, len - write_size);
    }
+#endif
    scond_signal(sdl->cond);
 }
 
@@ -133,7 +140,11 @@ static void *sdl_audio_init(const char *device,
    sdl->buffer  = fifo_new(sdl->bufsize);
 
    /* Allocate the null-buffer and prefill */
+#ifdef NO_MMP
+   size_t prefill_size = (sdl->bufsize * 7) / 10;
+#else
    size_t prefill_size = (sdl->bufsize * 3) / 4;
+#endif
    tmp = calloc(1, prefill_size);
    if (tmp) { fifo_write(sdl->buffer, tmp, prefill_size); free(tmp); }
 
@@ -185,8 +196,11 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
          size_t avail;
          SDL_LockAudio();
          avail = FIFO_WRITE_AVAIL(sdl->buffer);
-         
+#ifdef NO_MMP         
+         if (avail < (sdl->bufsize/2))
+#else
          if (avail < (sdl->bufsize/3))
+#endif
          {
             SDL_UnlockAudio();
             #ifdef HAVE_THREADS
@@ -201,7 +215,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
             fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
             SDL_UnlockAudio();
             written += write_amt;
-            
+        
             /* FIX: Delay adaptativo para AudioServer OFF
              * Si buffer está muy lleno, esperar un poco antes de siguiente write
              * Esto sincroniza mejor con el callback y evita acumulación
@@ -209,12 +223,19 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
             SDL_LockAudio();
             size_t current_avail = FIFO_WRITE_AVAIL(sdl->buffer);
             SDL_UnlockAudio();
-            
+#ifdef NO_MMP            
+            if (current_avail < (sdl->bufsize/3))
+            {
+               /* Buffer muy lleno, dormir un poco */
+               SDL_Delay(2);  /* 2ms es imperceptible pero da tiempo */
+            }
+#else            
             if (current_avail < (sdl->bufsize/4))
             {
                /* Buffer muy lleno, dormir un poco */
                SDL_Delay(1);  /* 1ms es imperceptible pero da tiempo */
             }
+#endif
          }
       }
       ret = written;

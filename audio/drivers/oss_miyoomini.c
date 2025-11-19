@@ -89,7 +89,11 @@ static void *oss_init(const char *device,
    }
 
    frags = (latency * new_rate * 4) / (1000 * (1 << 10));
-   frag  = (frags << 16) | 9;
+#ifdef NO_MMP
+   frag  = (frags << 16) | 10; /* 1024 bytes - más estable en SSD20X */
+#else
+   frag  = (frags << 16) | 9; /* 512 bytes - latencia baja en SSD202 */
+#endif
 
    if (ioctl(ossaudio->fd, SNDCTL_DSP_SETFRAGMENT, &frag) < 0)
       RARCH_WARN("Cannot set fragment sizes. Latency might not be as expected ...\n");
@@ -140,13 +144,16 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
 {
    ssize_t ret, total_written = 0;
    oss_audio_t *ossaudio = (oss_audio_t*)data;
-
    /* For stock oss, no playback during fast forward to avoid blocking */
    if ( (size == 0) || ((!ossaudio->audioserver)&&(ossaudio->nonblock)) )
       return 0;
-
-   // OPTIMIZACIÓN: Escribe en bloques pequeños para evitar bloqueos
+	
+// OPTIMIZACIÓN: Escribe en bloques pequeños para evitar bloqueos
+#ifdef NO_MMP
+   size_t chunk_size = 1024;  // Escribir en chunks de 2048 bytes
+#else
    size_t chunk_size = 512;  // Escribir en chunks de 512 bytes
+#endif
    const uint8_t *src = (const uint8_t *)buf;
    
    while (total_written < size)
