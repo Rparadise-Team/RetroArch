@@ -17,6 +17,7 @@
 
 #include "bsvmovie.h"
 #include <retro_endianness.h>
+#include <stdint.h>
 #include "../input_driver.h"
 #include "../../retroarch.h"
 #include "../../state_manager.h"
@@ -144,7 +145,8 @@ static bool bsv_movie_peek_frame_info(bsv_movie_t *movie, uint8_t *token, uint64
          if (intfstream_read(movie->file, &(state_length), sizeof(uint64_t)) != sizeof(uint64_t))
             goto end;
          state_length = swap_if_big64(state_length);
-         ret = intfstream_seek(movie->file, state_length, SEEK_CUR) >= 0;
+         if (intfstream_seek(movie->file, state_length, SEEK_CUR) < 0)
+            goto end;
       }
       else if (tok == REPLAY_TOKEN_CHECKPOINT2_FRAME)
       {
@@ -156,7 +158,8 @@ static bool bsv_movie_peek_frame_info(bsv_movie_t *movie, uint8_t *token, uint64
          if (intfstream_read(movie->file, &(state_length), sizeof(uint32_t)) != sizeof(uint32_t))
             goto end;
          /* Seek past the state data */
-         ret = intfstream_seek(movie->file, state_length, SEEK_CUR) >= 0;
+         if (intfstream_seek(movie->file, state_length, SEEK_CUR) < 0)
+            goto end;
       }
       /* We are already at the end of the frame */
       else if (tok == REPLAY_TOKEN_REGULAR_FRAME) { }
@@ -668,7 +671,7 @@ int64_t bsv_movie_write_checkpoint(bsv_movie_t *handle, uint8_t compression, uin
    uint8_t *swap;
    size_t size_swap;
    int64_t ret = -1;
-   uint32_t encoded_size, compressed_encoded_size, size_;
+   uint32_t encoded_size = 0, compressed_encoded_size, size_ = 0;
    uint8_t *encoded_data = NULL, *compressed_encoded_data = NULL;
    bool owns_encoded = false, owns_compressed_encoded = false;
    retro_ctx_serialize_info_t serial_info;
@@ -689,15 +692,17 @@ int64_t bsv_movie_write_checkpoint(bsv_movie_t *handle, uint8_t compression, uin
    switch (encoding)
    {
       case REPLAY_CHECKPOINT2_ENCODING_RAW:
-         encoded_size = serial_info.size;
+         /* If serial_info.size > uint32 max, we have bigger problems on our hands */
+         encoded_size = (uint32_t)serial_info.size;
          encoded_data = (uint8_t*)serial_info.data;
          break;
 #ifdef HAVE_STATESTREAM
       case REPLAY_CHECKPOINT2_ENCODING_STATESTREAM:
-         encoded_size = serial_info.size + serial_info.size / 2;
+         /* encoded size estimate or actual encoded state size should not exceed uint32 max */
+         encoded_size = (uint32_t)(serial_info.size + serial_info.size / 2);
          encoded_data = (uint8_t*)malloc(encoded_size);
          owns_encoded = true;
-         encoded_size = bsv_movie_write_deduped_state(handle, (uint8_t*)serial_info.data,
+         encoded_size = (uint32_t)bsv_movie_write_deduped_state(handle, (uint8_t*)serial_info.data,
                serial_info.size, encoded_data, encoded_size);
          break;
 #endif
@@ -723,23 +728,24 @@ int64_t bsv_movie_write_checkpoint(bsv_movie_t *handle, uint8_t compression, uin
             ret = -1;
             goto exit;
          }
-         compressed_encoded_size = zlib_compressed_encoded_size;
+         compressed_encoded_size = (uint32_t)zlib_compressed_encoded_size;
          break;
       }
 #endif
 #ifdef HAVE_ZSTD
       case REPLAY_CHECKPOINT2_COMPRESSION_ZSTD:
       {
-         size_t compressed_encoded_size_big = ZSTD_compressBound(encoded_size);
-         compressed_encoded_data = (uint8_t*)calloc(compressed_encoded_size_big, sizeof(uint8_t));
+         size_t compressed_encoded_size_zstd = ZSTD_compressBound(encoded_size);
+         compressed_encoded_data = (uint8_t*)calloc(compressed_encoded_size_zstd, sizeof(uint8_t));
          owns_compressed_encoded = true;
-         compressed_encoded_size_big = ZSTD_compress(compressed_encoded_data, compressed_encoded_size_big, encoded_data, encoded_size, 3);
-         if (ZSTD_isError(compressed_encoded_size_big))
+         compressed_encoded_size_zstd = ZSTD_compress(compressed_encoded_data, compressed_encoded_size_zstd, encoded_data, encoded_size, 3);
+         if (ZSTD_isError(compressed_encoded_size_zstd))
          {
             ret = -1;
             goto exit;
          }
-         compressed_encoded_size = compressed_encoded_size_big;
+         /* Have to cast after checking the error flags, not before */
+         compressed_encoded_size = (uint32_t)compressed_encoded_size_zstd;
          break;
       }
 #endif
@@ -749,7 +755,7 @@ int64_t bsv_movie_write_checkpoint(bsv_movie_t *handle, uint8_t compression, uin
          goto exit;
    }
    /* uncompressed, unencoded size */
-   size_ = swap_if_big32(serial_info.size);
+   size_ = swap_if_big32((uint32_t)serial_info.size);
    if (intfstream_write(handle->file, &size_, sizeof(uint32_t)) < (int64_t)sizeof(uint32_t))
    {
       ret = -1;
@@ -1127,7 +1133,12 @@ bool replay_get_serialized_data(void* buffer)
       buf                     = ((uint8_t *)buffer) + sizeof(uint32_t);
       intfstream_rewind(handle->file);
       read_amt                = intfstream_read(handle->file, buf, file_end);
-      ((uint32_t *)buffer)[1+REPLAY_HEADER_FRAME_COUNT_INDEX] = swap_if_big32(handle->frame_counter);
+      if (handle->frame_counter > UINT32_MAX) {
+         RARCH_ERR("[Replay] Frame counter too big to fit in 32 bits\n");
+         return false;
+      }
+      /* Bounds checked above, this cast is safe */
+      ((uint32_t *)buffer)[1+REPLAY_HEADER_FRAME_COUNT_INDEX] = swap_if_big32((uint32_t)(handle->frame_counter));
       if (read_amt != file_end)
          RARCH_ERR("[Replay] Failed to write correct number of replay bytes into state file: %d / %d.\n",
                read_amt, file_end);
@@ -1199,11 +1210,13 @@ bool replay_check_same_timeline(bsv_movie_t *movie,
          intfstream_seek(movie->file, sizeof(uint32_t), SEEK_CUR);
          intfstream_seek(check_stream, sizeof(uint32_t), SEEK_CUR);
       }
+      keycount1 = UINT8_MAX;
+      keycount2 = UINT8_MAX;
       if (intfstream_read(movie->file, &keycount1, 1) < 1 ||
             intfstream_read(check_stream, &keycount2, 1) < 1 ||
             keycount1 != keycount2)
       {
-         RARCH_ERR("[Replay] Replay checkpoints disagree on key count, %d vs %d\n", keycount1, keycount2);
+         RARCH_ERR("[Replay] Replay checkpoints disagree on key count, %d vs %d (255 means read error)\n", keycount1, keycount2);
          ret = false;
          goto exit;
       }
@@ -1585,7 +1598,8 @@ int64_t bsv_movie_write_deduped_state(bsv_movie_t *movie, uint8_t *state,
             /* write "here is a new block" and new block to file */
             rmsgpack_write_int(out_stream, BSV_IFRAME_NEW_BLOCK_TOKEN);
             rmsgpack_write_int(out_stream, found_block.index);
-            rmsgpack_write_bin(out_stream, state+block_start, block_byte_size);
+            /* Cast is fine, a single block can't be super big */
+            rmsgpack_write_bin(out_stream, state+block_start, (uint32_t)block_byte_size);
          }
          else
             reused_blocks++;
@@ -1597,7 +1611,8 @@ int64_t bsv_movie_write_deduped_state(bsv_movie_t *movie, uint8_t *state,
          /* write "here is a new superblock" and new superblock to file */
          rmsgpack_write_int(out_stream, BSV_IFRAME_NEW_SUPERBLOCK_TOKEN);
          rmsgpack_write_int(out_stream, found_block.index);
-         rmsgpack_write_array_header(out_stream, superblock_size);
+         /* Cast is fine, a single superblock can't be billions of blocks long */
+         rmsgpack_write_array_header(out_stream, (uint32_t)superblock_size);
          for (i = 0; i < superblock_size; i++)
             rmsgpack_write_int(out_stream, superblock_buf[i]);
       }
@@ -1610,7 +1625,8 @@ int64_t bsv_movie_write_deduped_state(bsv_movie_t *movie, uint8_t *state,
    /* uint32s_index_commit(movie->superblocks); */
    /* write "here is the superblock seq" and superblock seq to file */
    rmsgpack_write_int(out_stream, BSV_IFRAME_SUPERBLOCK_SEQ_TOKEN);
-   rmsgpack_write_array_header(out_stream, superblock_count);
+   /* Cast is fine, we won't have billions of superblocks */
+   rmsgpack_write_array_header(out_stream, (uint32_t)superblock_count);
    for (i = 0; i < superblock_count; i++)
        rmsgpack_write_int(out_stream, movie->superblock_seq[i]);
    free(superblock_buf);
@@ -1646,6 +1662,10 @@ bool bsv_movie_read_deduped_state(bsv_movie_t *movie, uint8_t *encoded, size_t e
    {
       free(movie->superblock_seq);
       movie->superblock_seq = NULL;
+   }
+   if (!movie->cur_save) {
+      RARCH_ERR("[STATESTREAM] movie has no current serialized save\n");
+      goto exit;
    }
    total_decode_count++;
    rmsgpack_dom_read_with(read_mem, &item, reader_state);
@@ -1684,7 +1704,8 @@ bool bsv_movie_read_deduped_state(bsv_movie_t *movie, uint8_t *encoded, size_t e
                RARCH_ERR("[STATESTREAM] new block index type is wrong\n");
                goto exit;
             }
-            index = item.val.uint_;
+            /* Block indexes must be 32bit */
+            index = (uint32_t)item.val.uint_;
             rmsgpack_dom_read_with(read_mem, &item, reader_state);
             if (item.type != RDT_BINARY)
             {
@@ -1715,7 +1736,8 @@ bool bsv_movie_read_deduped_state(bsv_movie_t *movie, uint8_t *encoded, size_t e
                RARCH_ERR("[STATESTREAM] new superblock index type is wrong\n");
                goto exit;
             }
-            index = item.val.uint_;
+            /* Block indices are 32-bit */
+            index = (uint32_t)item.val.uint_;
             if (rmsgpack_dom_read_with(read_mem, &item, reader_state) < 0)
             {
                RARCH_ERR("[STATESTREAM] array read failed\n");
@@ -1738,7 +1760,8 @@ bool bsv_movie_read_deduped_state(bsv_movie_t *movie, uint8_t *encoded, size_t e
             {
                struct rmsgpack_dom_value inner_item = item.val.array.items[i];
                /* assert(inner_item.type == RDT_INT || inner_item.type == RDT_UINT); */
-               superblock[i] = inner_item.val.uint_;
+               /* Superblock indices are 32-bit */
+               superblock[i] = (uint32_t)inner_item.val.uint_;
             }
             if (!uint32s_index_insert_exact(movie->superblocks, index, superblock, movie->frame_counter))
             {
@@ -1766,7 +1789,8 @@ bool bsv_movie_read_deduped_state(bsv_movie_t *movie, uint8_t *encoded, size_t e
                uint32_t *superblock;
                struct rmsgpack_dom_value inner_item = item.val.array.items[i];
                /* assert(inner_item.type == RDT_INT || inner_item.type == RDT_UINT); */
-               uint32_t superblock_idx = inner_item.val.uint_;
+               /* Superblock indices are 32-bit */
+               uint32_t superblock_idx = (uint32_t)inner_item.val.uint_;
                /* if this superblock is the same as last time, no need to scan the blocks. */
                if (movie->cur_save_valid && movie->cur_save && superblock_idx == movie->superblock_seq[i])
                {

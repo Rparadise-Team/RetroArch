@@ -3,11 +3,11 @@ set -euo pipefail
 
 # Default configuration (can be overridden via CLI flags)
 UPSTREAM_URL="https://github.com/libretro/RetroArch.git"
-UPSTREAM_REF="v1.22.1"
+UPSTREAM_REF="v1.22.2"
 BASE_URL="$UPSTREAM_URL"
-BASE_REF="v1.22.0"
+BASE_REF="v1.22.1"
 MIYOO_URL="https://github.com/Rparadise-Team/RetroArch.git"
-MIYOO_REF="1.22.0"
+MIYOO_REF="1.22.1"
 OUTPUT_PATCH="RA_MIYOOMINI.patch"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFEST_FILE=""
@@ -550,20 +550,22 @@ apply_overrides() {
 }
 
 create_patch() {
-  local diff_output
-  diff_output=$(cd "$WORK_ROOT" && { git --no-pager diff --binary --no-index upstream_subset custom_subset || true; } | \
-    sed -e 's|a/|a/|g' \
-        -e 's|b/|b/|g' \
-        -e 's|a/|a/|g' \
-        -e 's|b/|b/|g')
+    local diff_output
+    diff_output=$(cd "$WORK_ROOT" && { git --no-pager diff --binary --no-index upstream_subset custom_subset || true; } | \
+        sed -e 's|a/|a/|g' \
+            -e 's|b/|b/|g' \
+            -e 's|--- a/|--- a/|g' \
+            -e 's|+++ b/|+++ b/|g' \
+            -e 's|diff --git a/|diff --git a/|g' \
+            -e 's| b/| b/|g')
 
-  if [[ -z "$diff_output" ]]; then
-    echo "No differences detected between the selected files." >&2
-    exit 1
-  fi
+    if [[ -z "$diff_output" ]]; then
+        echo "No differences detected between the selected files." >&2
+        exit 1
+    fi
 
-  printf '%s\n' "$diff_output" > "$OUTPUT_PATCH"
-  echo "Patch written to $OUTPUT_PATCH"
+    printf '%s\n' "$diff_output" > "$OUTPUT_PATCH"
+    echo "Patch written to $OUTPUT_PATCH"
 }
 
 main() {

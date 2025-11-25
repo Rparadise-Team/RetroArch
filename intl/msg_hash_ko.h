@@ -218,6 +218,14 @@ MSG_HASH(
    "RetroArch 응용 프로그램을 종료합니다. 종료 시 구성 저장이 활성화되어 있습니다."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_NOW,
+   "지금 동기화"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_SYNC_NOW,
+   "수동으로 클라우드 동기화를 수행합니다."
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_QUIT_RETROARCH_NOSAVE,
    "RetroArch 응용 프로그램을 종료합니다. 종료 시 구성 저장이 비활성화되어 있습니다."
    )
@@ -1331,6 +1339,22 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CLOUD_SYNC_DESTRUCTIVE,
    "비활성화할 경우, 동기화 대상 파일들을 덮어씌우거나 삭제하지 않고 백업 폴더에 저장합니다."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_MODE,
+   "동기화 모드"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_SYNC_MODE,
+   "자동: RetroArch가 실행될 때와 코어가 종료될 때 동기화합니다. 수동: '지금 동기화' 버튼을 직접 누를 때에만 동기화합니다."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_MODE_AUTOMATIC,
+   "자동"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_MODE_MANUAL,
+   "수동"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_DRIVER,
@@ -5092,10 +5116,6 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CORE_SUGGEST_ALWAYS,
    "항상 코어 제안하기"
-   )
-MSG_HASH(
-   MENU_ENUM_SUBLABEL_CORE_SUGGEST_ALWAYS,
-   "코어가 이미 불러와져 있더라도 항상 사용 가능한 코어 목록을 표시합니다."
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_USE_BUILTIN_PLAYER,
@@ -14404,11 +14424,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "#%d 슬롯에서 상태 불러옴."
+   "%d번 슬롯에서 상태 불러옴."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "슬롯 #-1(자동)에서 상태 불러옴."
+   "자동 슬롯에서 상태 불러옴."
+   "#%d 슬롯에서 상태 불러옴."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -14608,11 +14629,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "슬롯 #%d에 상태저장."
+   "%d번 슬롯에 상태 저장함."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "슬롯 #-1(자동)에 상태저장."
+   "자동 슬롯에 상태 저장함."
+   "슬롯 #%d에 상태저장."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,

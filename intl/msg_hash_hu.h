@@ -210,6 +210,14 @@ MSG_HASH(
    "Kilépés a RetroArch alkalmazásból. Konfiguráció mentése kilépéskor: engedélyezve."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_NOW,
+   "Szinkronizálás most"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_SYNC_NOW,
+   "A felhőbe szinkronizálás kézi indítása."
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_QUIT_RETROARCH_NOSAVE,
    "Kilépés a RetroArch alkalmazásból. Konfiguráció mentése kilépéskor: letiltva."
    )
@@ -1303,6 +1311,22 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_CLOUD_SYNC_DESTRUCTIVE,
    "Kikapcsolt állapotban a fájlok egy tartalék könyvtárba kerülnek felülírás vagy törlés előtt."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_MODE,
+   "Szinkronizálás módja"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_SYNC_MODE,
+   "Automatikus: szinkronizálás a RetroArch indításakor és magok leállításakor. Kézi: csak a \"Szinkronizálás most\" gomb megnyomásakor."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_MODE_AUTOMATIC,
+   "Automatikus"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_SYNC_MODE_MANUAL,
+   "Kézi"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_DRIVER,
@@ -14052,11 +14076,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT,
-   "Játékállás betöltve a #%d. rekeszből."
+   "Játékállás betöltve a %d. rekeszből."
    )
 MSG_HASH(
    MSG_LOADED_STATE_FROM_SLOT_AUTO,
-   "Játékállás betöltve a #-1 (automata) rekeszből."
+   "Játékállás betöltve az automata rekeszből."
+   "Játékállás betöltve a #%d. rekeszből."
    )
 MSG_HASH(
    MSG_LOADING,
@@ -14256,11 +14281,12 @@ MSG_HASH(
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT,
-   "Játékállás elmentve a #%d. rekeszbe."
+   "Játékállás elmentve a %d. rekeszbe."
    )
 MSG_HASH(
    MSG_SAVED_STATE_TO_SLOT_AUTO,
-   "Játékállás elmentve a #-1 (automatikus) rekeszbe."
+   "Játékállás elmentve az automata rekeszbe."
+   "Játékállás elmentve a #%d. rekeszbe."
    )
 MSG_HASH(
    MSG_SAVED_SUCCESSFULLY_TO,
