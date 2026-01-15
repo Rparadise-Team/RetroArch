@@ -246,6 +246,89 @@ const char *msg_queue_pull(msg_queue_t *queue)
 }
 
 /**
+ * msg_queue_pull_entry:
+ * @queue             : pointer to queue object
+ * @queue_entry       : pointer to external queue entry struct
+ *
+ * Pulls highest priority message in queue and copies
+ * contents into queue_entry struct. If the message is
+ * still active, it remains in the queue.
+ *
+ * Returns: false if no message in queue, otherwise true
+ **/
+bool msg_queue_pull_entry(msg_queue_t *queue, msg_queue_entry_t *queue_entry)
+{
+   struct queue_elem *front  = NULL, *last = NULL;
+   size_t tmp_ptr = 1;
+
+   /* Ensure arguments are valid and queue is not
+    * empty */
+   if (!queue || queue->ptr == 1 || !queue_entry)
+      return false;
+
+   front = (struct queue_elem*)queue->elems[1];
+   front->duration--;
+
+   queue_entry->duration = front->duration;
+   queue_entry->prio     = front->prio;
+   queue_entry->icon     = front->icon;
+   queue_entry->category = front->category;
+   queue_entry->msg[0]   = '\0';
+   queue_entry->title[0] = '\0';
+
+   if (front->msg)
+      strlcpy(queue_entry->msg, front->msg, sizeof(queue_entry->msg));
+
+   if (front->title)
+      strlcpy(queue_entry->title, front->title, sizeof(queue_entry->title));
+
+   if (front->duration > 0)
+      return true;
+
+   last  = (struct queue_elem*)queue->elems[--queue->ptr];
+   queue->elems[1] = last;
+
+   free(front->msg);
+   free(front->title);
+   free(front);
+
+   for (;;)
+   {
+      struct queue_elem *parent = NULL;
+      struct queue_elem *child  = NULL;
+      size_t switch_index       = tmp_ptr;
+      bool left                 = (tmp_ptr * 2 <= queue->ptr)
+         && (queue->elems[tmp_ptr] < queue->elems[tmp_ptr * 2]);
+      bool right                = (tmp_ptr * 2 + 1 <= queue->ptr)
+         && (queue->elems[tmp_ptr] < queue->elems[tmp_ptr * 2 + 1]);
+
+      if (!left && !right)
+         break;
+
+      if (left && !right)
+         switch_index <<= 1;
+      else if (right && !left)
+         switch_index += switch_index + 1;
+      else
+      {
+         if (queue->elems[tmp_ptr * 2]
+               >= queue->elems[tmp_ptr * 2 + 1])
+            switch_index <<= 1;
+         else
+            switch_index += switch_index + 1;
+      }
+
+      parent = (struct queue_elem*)queue->elems[tmp_ptr];
+      child  = (struct queue_elem*)queue->elems[switch_index];
+      queue->elems[tmp_ptr]      = child;
+      queue->elems[switch_index] = parent;
+      tmp_ptr                    = switch_index;
+   }
+
+   return true;
+}
+
+/**
  * msg_queue_extract:
  * @queue             : pointer to queue object
  * @queue_entry       : pointer to external queue entry struct

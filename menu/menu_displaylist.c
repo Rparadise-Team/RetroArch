@@ -9557,10 +9557,18 @@ unsigned menu_displaylist_build_list(
          break;
       case DISPLAYLIST_CHEEVOS_APPEARANCE_SETTINGS_LIST:
          {
-#if defined(HAVE_CHEEVOS) && defined(HAVE_GFX_WIDGETS)
-            unsigned cheevos_anchor  = settings->uints.cheevos_appearance_anchor;
-            bool     cheevos_autopad = settings->bools.cheevos_appearance_padding_auto;
+            bool cheevos_anchor_enabled  = true;
+            bool cheevos_padding_enabled = false;
+            unsigned cheevos_anchor      = CHEEVOS_APPEARANCE_ANCHOR_TOPLEFT;
+            bool     cheevos_autopad     = true;
+#if defined(HAVE_CHEEVOS)
+            cheevos_anchor  = settings->uints.cheevos_appearance_anchor;
+            cheevos_autopad = settings->bools.cheevos_appearance_padding_auto;
+#if defined(HAVE_GFX_WIDGETS)
             bool     gfx_widgets     = settings->bools.menu_enable_widgets;
+
+            cheevos_padding_enabled = gfx_widgets;
+#endif
 #endif
             menu_displaylist_build_info_selective_t build_list[] = {
                {MENU_ENUM_LABEL_CHEEVOS_APPEARANCE_ANCHOR,                             PARSE_ONLY_UINT,   true},
@@ -9569,12 +9577,14 @@ unsigned menu_displaylist_build_list(
                {MENU_ENUM_LABEL_CHEEVOS_APPEARANCE_PADDING_V,                          PARSE_ONLY_FLOAT,  false},
             };
 
-#if defined(HAVE_CHEEVOS) && defined(HAVE_GFX_WIDGETS)
             for (i = 0; i < ARRAY_SIZE(build_list); i++)
             {
-               if (!gfx_widgets)
-                  build_list[i].checked = false;
-               else if (!cheevos_autopad)
+               if (build_list[i].enum_idx == MENU_ENUM_LABEL_CHEEVOS_APPEARANCE_ANCHOR)
+                  build_list[i].checked = cheevos_anchor_enabled;
+               else
+                  build_list[i].checked = cheevos_padding_enabled;
+
+               if (cheevos_padding_enabled && !cheevos_autopad)
                {
                   if (build_list[i].enum_idx == MENU_ENUM_LABEL_CHEEVOS_APPEARANCE_PADDING_V)
                      build_list[i].checked = true;
@@ -9585,7 +9595,6 @@ unsigned menu_displaylist_build_list(
                      build_list[i].checked = true;
                }
             }
-#endif
 
             for (i = 0; i < ARRAY_SIZE(build_list); i++)
             {

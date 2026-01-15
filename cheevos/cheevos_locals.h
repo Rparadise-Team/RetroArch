@@ -102,6 +102,11 @@ typedef struct rcheevos_locals_t
    bool hardcore_being_enabled;       /* allows callers to detect hardcore mode while it's being enabled */
 
    bool core_supports;                /* false if core explicitly disables achievements */
+
+   bool summary_badge_pending;        /* true when game summary is waiting on badge download */
+   size_t summary_badge_msg_len;      /* cached summary message length */
+   char summary_badge_name[32];       /* cached badge filename without extension */
+   char summary_badge_msg[256];       /* cached summary message */
 } rcheevos_locals_t;
 
 rcheevos_locals_t* get_rcheevos_locals(void);

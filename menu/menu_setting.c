@@ -9144,7 +9144,6 @@ static size_t setting_get_string_representation_uint_cheevos_visibility_summary(
    return 0;
 }
 
-#ifdef HAVE_GFX_WIDGETS
 static size_t setting_get_string_representation_uint_cheevos_appearance_anchor(
    rarch_setting_t* setting, char *s, size_t len)
 {
@@ -9189,10 +9188,13 @@ static size_t setting_get_string_representation_uint_cheevos_appearance_anchor(
 
 static void cheevos_appearance_write_handler(rarch_setting_t* setting)
 {
+#ifdef HAVE_GFX_WIDGETS
    gfx_widgets_update_cheevos_appearance();
+#else
+   (void)setting;
+#endif
 }
-#endif
-#endif
+#endif /* HAVE_CHEEVOS */
 
 static void update_streaming_url_write_handler(rarch_setting_t *setting)
 {
@@ -22480,7 +22482,6 @@ static bool setting_append_list(
          parent_group = msg_hash_to_str(MENU_ENUM_LABEL_CHEEVOS_APPEARANCE_SETTINGS);
          START_SUB_GROUP(list, list_info, "State", &group_info, &subgroup_info, parent_group);
 
-#ifdef HAVE_GFX_WIDGETS
          CONFIG_UINT(
             list, list_info,
             &settings->uints.cheevos_appearance_anchor,
@@ -22500,6 +22501,7 @@ static bool setting_append_list(
          menu_settings_list_current_add_range(list, list_info, 0, CHEEVOS_APPEARANCE_ANCHOR_LAST - 1, 1, true, true);
          (*list)[list_info->index - 1].ui_type = ST_UI_TYPE_UINT_COMBOBOX;
 
+#if defined(HAVE_GFX_WIDGETS)
          CONFIG_BOOL(
             list, list_info,
             &settings->bools.cheevos_appearance_padding_auto,

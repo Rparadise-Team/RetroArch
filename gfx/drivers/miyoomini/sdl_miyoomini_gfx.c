@@ -28,6 +28,8 @@
 #include <string/stdstring.h>
 #include <encodings/utf.h>
 #include <features/features_cpu.h>
+#include <formats/rpng.h>
+#include <streams/file_stream.h>
 
 #include "gfx.c"
 #include "scaler_neon.c"
@@ -39,6 +41,10 @@
 #include "../../config.h"
 #endif
 
+#ifdef HAVE_CHEEVOS
+#include "../../cheevos/cheevos.h"
+#endif
+
 #ifdef HAVE_MENU
 #include "../../menu/menu_driver.h"
 #endif
@@ -47,6 +53,7 @@
 
 #include "../../verbosity.h"
 #include "../../gfx/drivers_font_renderer/bitmap.h"
+#include "../../gfx_widgets.h"
 #include "../../configuration.h"
 #include "../../file_path_special.h"
 #include "../../paths.h"
@@ -65,6 +72,7 @@
 #define OSD_TEXT_LINES_MAX 3	/* 1 .. 7 */
 #define OSD_TEXT_LINE_LEN ((uint32_t)(RGUI_MENU_WIDTH / FONT_WIDTH_STRIDE)-1)
 #define OSD_TEXT_LEN_MAX (OSD_TEXT_LINE_LEN * OSD_TEXT_LINES_MAX)
+#define CHEEVOS_ICON_DURATION_FRAMES (3 * 60)
 
 typedef struct sdl_miyoomini_video sdl_miyoomini_video_t;
 struct sdl_miyoomini_video
@@ -103,7 +111,405 @@ struct sdl_miyoomini_video
 #endif
    unsigned msg_count;
    char msg_tmp[OSD_TEXT_LEN_MAX];
+#ifdef HAVE_CHEEVOS
+   uint32_t *cheevos_icon_data;
+   unsigned cheevos_icon_width;
+   unsigned cheevos_icon_height;
+   unsigned cheevos_icon_size;
+   bool cheevos_icon_visible;
+   unsigned cheevos_icon_timer;
+   bool cheevos_icon_background_stored;
+   bool cheevos_icon_restore_pending;
+   void *cheevos_icon_restore_data;
+   size_t cheevos_icon_restore_pitch;
+   unsigned cheevos_icon_restore_width;
+   unsigned cheevos_icon_restore_height;
+   int cheevos_icon_restore_x;
+   int cheevos_icon_restore_y;
+   bool cheevos_badge_requested;
+   unsigned cheevos_icon_retry_counter;
+   char cheevos_badge_name[32];
+   char cheevos_badge_pending[32];
+#endif
 };
+
+#ifdef HAVE_CHEEVOS
+static bool sdl_miyoomini_load_png_argb(const char *path, uint32_t **data,
+      unsigned *width, unsigned *height)
+{
+   rpng_t *rpng                 = NULL;
+   void *file_data              = NULL;
+   int64_t file_len             = 0;
+   int process_ret              = 0;
+   bool success                 = false;
+
+   if (filestream_read_file(path, &file_data, &file_len) <= 0 || !file_data)
+      return false;
+
+   rpng = rpng_alloc();
+   if (!rpng)
+      goto cleanup;
+
+   if (!rpng_set_buf_ptr(rpng, (uint8_t*)file_data, (size_t)file_len))
+      goto cleanup;
+
+   if (!rpng_start(rpng))
+      goto cleanup;
+
+   while (rpng_iterate_image(rpng));
+
+   if (!rpng_is_valid(rpng))
+      goto cleanup;
+
+   do
+   {
+      process_ret = rpng_process_image(rpng, (void**)data,
+            (size_t)file_len, width, height);
+   } while (process_ret == IMAGE_PROCESS_NEXT);
+
+   if (process_ret == IMAGE_PROCESS_ERROR || process_ret == IMAGE_PROCESS_ERROR_END)
+      goto cleanup;
+
+   success = true;
+
+cleanup:
+   if (rpng)
+      rpng_free(rpng);
+   if (!success && data && *data)
+   {
+      free(*data);
+      *data = NULL;
+   }
+   free(file_data);
+
+   return success;
+}
+
+static void sdl_miyoomini_free_cheevos_icon(sdl_miyoomini_video_t *vid)
+{
+   if (!vid)
+      return;
+
+   free(vid->cheevos_icon_data);
+   free(vid->cheevos_icon_restore_data);
+   vid->cheevos_icon_data   = NULL;
+   vid->cheevos_icon_width  = 0;
+   vid->cheevos_icon_height = 0;
+   vid->cheevos_icon_size   = 0;
+   vid->cheevos_icon_timer  = 0;
+   vid->cheevos_icon_background_stored = false;
+   vid->cheevos_icon_restore_pending = false;
+   vid->cheevos_icon_restore_data = NULL;
+   vid->cheevos_icon_restore_pitch = 0;
+   vid->cheevos_icon_restore_width = 0;
+   vid->cheevos_icon_restore_height = 0;
+   vid->cheevos_icon_restore_x = 0;
+   vid->cheevos_icon_restore_y = 0;
+   vid->cheevos_badge_requested = false;
+   vid->cheevos_icon_retry_counter = 0;
+   vid->cheevos_badge_name[0] = '\0';
+   vid->cheevos_badge_pending[0] = '\0';
+}
+
+static unsigned sdl_miyoomini_get_cheevos_icon_size(unsigned screen_height)
+{
+   return (screen_height >= 480) ? 104 : 72;
+}
+
+static void sdl_miyoomini_scale_argb(const uint32_t *src, unsigned src_w, unsigned src_h,
+      uint32_t *dst, unsigned dst_w, unsigned dst_h)
+{
+   unsigned y;
+   for (y = 0; y < dst_h; y++)
+   {
+      unsigned x;
+      unsigned src_y = (y * src_h) / dst_h;
+      for (x = 0; x < dst_w; x++)
+      {
+         unsigned src_x = (x * src_w) / dst_w;
+         dst[y * dst_w + x] = src[src_y * src_w + src_x];
+      }
+   }
+}
+
+static bool sdl_miyoomini_load_cheevos_icon(sdl_miyoomini_video_t *vid,
+      const char *badge_name, unsigned screen_height, bool request_download)
+{
+   char badge_path[PATH_MAX_LENGTH];
+   uint32_t *icon_data = NULL;
+   uint32_t *scaled_data = NULL;
+   unsigned icon_width = 0;
+   unsigned icon_height = 0;
+   unsigned target_size = sdl_miyoomini_get_cheevos_icon_size(screen_height);
+
+   if (!vid || string_is_empty(badge_name))
+      return false;
+
+   fill_pathname_application_special(badge_path, sizeof(badge_path),
+         APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+   fill_pathname_slash(badge_path, sizeof(badge_path));
+   strlcat(badge_path, badge_name, sizeof(badge_path));
+   strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
+
+   if (!path_is_valid(badge_path))
+   {
+      if (request_download)
+         rcheevos_get_badge_texture(badge_name, false, true);
+      return false;
+   }
+
+   if (!sdl_miyoomini_load_png_argb(badge_path, &icon_data, &icon_width, &icon_height))
+      return false;
+
+   scaled_data = (uint32_t*)malloc(sizeof(uint32_t) * target_size * target_size);
+   if (!scaled_data)
+   {
+      free(icon_data);
+      return false;
+   }
+
+   sdl_miyoomini_scale_argb(icon_data, icon_width, icon_height,
+         scaled_data, target_size, target_size);
+
+   free(icon_data);
+   sdl_miyoomini_free_cheevos_icon(vid);
+
+   vid->cheevos_icon_data   = scaled_data;
+   vid->cheevos_icon_width  = target_size;
+   vid->cheevos_icon_height = target_size;
+   vid->cheevos_icon_size   = target_size;
+   strlcpy(vid->cheevos_badge_name, badge_name, sizeof(vid->cheevos_badge_name));
+
+   return true;
+}
+
+static void sdl_miyoomini_store_cheevos_background(
+      sdl_miyoomini_video_t *vid,
+      unsigned screen_width,
+      unsigned screen_height,
+      int icon_x,
+      int icon_y)
+{
+   size_t bytes_per_pixel = (size_t)(vinfo.bits_per_pixel / 8);
+   size_t row_bytes       = vid->cheevos_icon_width * bytes_per_pixel;
+   size_t buffer_bytes    = row_bytes * vid->cheevos_icon_height;
+   uint8_t *screen_buf    = NULL;
+   unsigned y;
+
+   if (!vid || vid->cheevos_icon_background_stored
+         || !vid->cheevos_icon_data || bytes_per_pixel == 0)
+      return;
+
+   if (!vid->cheevos_icon_restore_data
+         || vid->cheevos_icon_restore_pitch != row_bytes
+         || vid->cheevos_icon_restore_width != vid->cheevos_icon_width
+         || vid->cheevos_icon_restore_height != vid->cheevos_icon_height)
+   {
+      free(vid->cheevos_icon_restore_data);
+      vid->cheevos_icon_restore_data = malloc(buffer_bytes);
+      if (!vid->cheevos_icon_restore_data)
+      {
+         vid->cheevos_icon_restore_pitch = 0;
+         vid->cheevos_icon_restore_width = 0;
+         vid->cheevos_icon_restore_height = 0;
+         return;
+      }
+
+      vid->cheevos_icon_restore_pitch  = row_bytes;
+      vid->cheevos_icon_restore_width  = vid->cheevos_icon_width;
+      vid->cheevos_icon_restore_height = vid->cheevos_icon_height;
+   }
+
+   if ((unsigned)icon_x + vid->cheevos_icon_width > screen_width
+         || (unsigned)icon_y + vid->cheevos_icon_height > screen_height)
+      return;
+
+   screen_buf = (uint8_t*)fb_addr + (vinfo.yoffset * screen_width * bytes_per_pixel);
+   screen_buf += ((size_t)icon_y * screen_width + (size_t)icon_x) * bytes_per_pixel;
+
+   for (y = 0; y < vid->cheevos_icon_height; y++)
+   {
+      memcpy((uint8_t*)vid->cheevos_icon_restore_data + y * row_bytes,
+            screen_buf + y * screen_width * bytes_per_pixel,
+            row_bytes);
+   }
+
+   vid->cheevos_icon_restore_x = icon_x;
+   vid->cheevos_icon_restore_y = icon_y;
+   vid->cheevos_icon_background_stored = true;
+}
+
+static void sdl_miyoomini_restore_cheevos_background(
+      sdl_miyoomini_video_t *vid,
+      unsigned screen_width)
+{
+   size_t bytes_per_pixel = (size_t)(vinfo.bits_per_pixel / 8);
+   size_t row_bytes       = vid->cheevos_icon_restore_pitch;
+   uint8_t *screen_buf    = NULL;
+   unsigned y;
+
+   if (!vid || !vid->cheevos_icon_restore_data || bytes_per_pixel == 0)
+      return;
+
+   screen_buf = (uint8_t*)fb_addr + (vinfo.yoffset * screen_width * bytes_per_pixel);
+   screen_buf += ((size_t)vid->cheevos_icon_restore_y * screen_width
+         + (size_t)vid->cheevos_icon_restore_x) * bytes_per_pixel;
+
+   for (y = 0; y < vid->cheevos_icon_restore_height; y++)
+   {
+      memcpy(screen_buf + y * screen_width * bytes_per_pixel,
+            (uint8_t*)vid->cheevos_icon_restore_data + y * row_bytes,
+            row_bytes);
+   }
+
+   vid->cheevos_icon_background_stored = false;
+}
+
+static void sdl_miyoomini_draw_cheevos_icon(sdl_miyoomini_video_t *vid,
+      unsigned screen_width, unsigned screen_height)
+{
+   const settings_t *settings = NULL;
+   unsigned anchor = 0;
+   unsigned padding_x = 0;
+   unsigned padding_y = 0;
+   int icon_x = 0;
+   int icon_y = 0;
+   unsigned x, y;
+   uint32_t *icon_data = NULL;
+
+   if (!vid || !vid->cheevos_icon_visible || !vid->cheevos_icon_data)
+      return;
+
+   settings = config_get_ptr();
+   anchor = settings->uints.cheevos_appearance_anchor;
+
+   if (settings->bools.cheevos_appearance_padding_auto)
+   {
+      padding_x = 10;
+      padding_y = 10;
+   }
+   else
+   {
+      padding_x = (unsigned)(settings->floats.cheevos_appearance_padding_h * screen_width);
+      padding_y = (unsigned)(settings->floats.cheevos_appearance_padding_v * screen_height);
+   }
+
+   if (anchor == CHEEVOS_APPEARANCE_ANCHOR_TOPCENTER ||
+       anchor == CHEEVOS_APPEARANCE_ANCHOR_BOTTOMCENTER)
+      icon_x = (int)((screen_width - vid->cheevos_icon_size) / 2) + (int)padding_x;
+   else if (anchor == CHEEVOS_APPEARANCE_ANCHOR_TOPRIGHT ||
+            anchor == CHEEVOS_APPEARANCE_ANCHOR_BOTTOMRIGHT)
+      icon_x = (int)(screen_width - vid->cheevos_icon_size - padding_x);
+   else
+      icon_x = (int)padding_x;
+
+   if (anchor == CHEEVOS_APPEARANCE_ANCHOR_BOTTOMLEFT ||
+       anchor == CHEEVOS_APPEARANCE_ANCHOR_BOTTOMCENTER ||
+       anchor == CHEEVOS_APPEARANCE_ANCHOR_BOTTOMRIGHT)
+      icon_y = (int)(screen_height - vid->cheevos_icon_size - padding_y);
+   else
+      icon_y = (int)padding_y;
+
+   if (icon_x < 0 || icon_y < 0)
+      return;
+
+   icon_x = (int)(screen_width - (unsigned)icon_x - vid->cheevos_icon_size);
+   icon_y = (int)(screen_height - (unsigned)icon_y - vid->cheevos_icon_size);
+
+   if (icon_x < 0 || icon_y < 0)
+      return;
+   if ((unsigned)(icon_x + vid->cheevos_icon_size) > screen_width
+         || (unsigned)(icon_y + vid->cheevos_icon_size) > screen_height)
+      return;
+
+   sdl_miyoomini_store_cheevos_background(vid, screen_width, screen_height, icon_x, icon_y);
+   icon_data = vid->cheevos_icon_data;
+
+   if (vinfo.bits_per_pixel == 32)
+   {
+      uint32_t *screen_buf = (uint32_t*)(fb_addr + (vinfo.yoffset * screen_width * sizeof(uint32_t)));
+
+      for (y = 0; y < vid->cheevos_icon_height; y++)
+      {
+         unsigned src_y = vid->cheevos_icon_height - 1 - y;
+
+         for (x = 0; x < vid->cheevos_icon_width; x++)
+         {
+            unsigned src_x = vid->cheevos_icon_width - 1 - x;
+            uint32_t src_pixel = icon_data[src_y * vid->cheevos_icon_width + src_x];
+            uint8_t alpha      = (uint8_t)(src_pixel >> 24);
+            uint32_t *dst_pixel = &screen_buf[(icon_y + y) * screen_width + (icon_x + x)];
+
+            if (alpha == 0)
+               continue;
+
+            if (alpha == 255)
+               *dst_pixel = src_pixel & 0x00ffffff;
+            else
+            {
+               uint32_t dst        = *dst_pixel;
+               uint8_t src_r       = (uint8_t)(src_pixel >> 16);
+               uint8_t src_g       = (uint8_t)(src_pixel >> 8);
+               uint8_t src_b       = (uint8_t)(src_pixel >> 0);
+               uint8_t dst_r       = (uint8_t)(dst >> 16);
+               uint8_t dst_g       = (uint8_t)(dst >> 8);
+               uint8_t dst_b       = (uint8_t)(dst >> 0);
+               uint8_t inv_alpha   = 255 - alpha;
+
+               dst_r = (uint8_t)((src_r * alpha + dst_r * inv_alpha) / 255);
+               dst_g = (uint8_t)((src_g * alpha + dst_g * inv_alpha) / 255);
+               dst_b = (uint8_t)((src_b * alpha + dst_b * inv_alpha) / 255);
+               *dst_pixel = (dst_r << 16) | (dst_g << 8) | dst_b;
+            }
+         }
+      }
+   }
+   else if (vinfo.bits_per_pixel == 16)
+   {
+      uint16_t *screen_buf = (uint16_t*)(fb_addr + (vinfo.yoffset * screen_width * sizeof(uint16_t)));
+
+      for (y = 0; y < vid->cheevos_icon_height; y++)
+      {
+         unsigned src_y = vid->cheevos_icon_height - 1 - y;
+
+         for (x = 0; x < vid->cheevos_icon_width; x++)
+         {
+            unsigned src_x = vid->cheevos_icon_width - 1 - x;
+            uint32_t src_pixel = icon_data[src_y * vid->cheevos_icon_width + src_x];
+            uint8_t alpha      = (uint8_t)(src_pixel >> 24);
+            uint16_t *dst_pixel = &screen_buf[(icon_y + y) * screen_width + (icon_x + x)];
+
+            if (alpha == 0)
+               continue;
+
+            if (alpha == 255)
+            {
+               uint8_t src_r = (uint8_t)(src_pixel >> 16);
+               uint8_t src_g = (uint8_t)(src_pixel >> 8);
+               uint8_t src_b = (uint8_t)(src_pixel >> 0);
+               *dst_pixel = (uint16_t)(((src_r >> 3) << 11) | ((src_g >> 2) << 5) | (src_b >> 3));
+            }
+            else
+            {
+               uint16_t dst      = *dst_pixel;
+               uint8_t dst_r     = (uint8_t)(((dst >> 11) & 0x1f) << 3);
+               uint8_t dst_g     = (uint8_t)(((dst >> 5) & 0x3f) << 2);
+               uint8_t dst_b     = (uint8_t)((dst & 0x1f) << 3);
+               uint8_t src_r     = (uint8_t)(src_pixel >> 16);
+               uint8_t src_g     = (uint8_t)(src_pixel >> 8);
+               uint8_t src_b     = (uint8_t)(src_pixel >> 0);
+               uint8_t inv_alpha = 255 - alpha;
+
+               dst_r = (uint8_t)((src_r * alpha + dst_r * inv_alpha) / 255);
+               dst_g = (uint8_t)((src_g * alpha + dst_g * inv_alpha) / 255);
+               dst_b = (uint8_t)((src_b * alpha + dst_b * inv_alpha) / 255);
+               *dst_pixel = (uint16_t)(((dst_r >> 3) << 11) | ((dst_g >> 2) << 5) | (dst_b >> 3));
+            }
+         }
+      }
+   }
+}
+#endif
 
 /* Clear OSD text area, without video_rect, rotate180 */
 static void sdl_miyoomini_clear_msgarea(void* buf, unsigned x, unsigned y, unsigned w, unsigned h, unsigned lines) {
@@ -217,6 +623,21 @@ static void sdl_miyoomini_print_msg(void* data) {
       sdl_miyoomini_clear_msgarea(screen_buf, vid->video_x, vid->video_y, vid->video_w, vid->video_h, vid->msg_count & 7);
    }
    vid->msg_count >>= 3;
+#ifdef HAVE_CHEEVOS
+   if (vid->cheevos_icon_timer > 0 && vid->cheevos_icon_visible)
+   {
+      sdl_miyoomini_draw_cheevos_icon(vid, SDL_MIYOOMINI_WIDTH, SDL_MIYOOMINI_HEIGHT);
+      vid->cheevos_icon_timer--;
+      if (vid->cheevos_icon_timer == 0)
+         vid->cheevos_icon_restore_pending = true;
+   }
+
+   if (vid->cheevos_icon_restore_pending)
+   {
+      sdl_miyoomini_restore_cheevos_background(vid, SDL_MIYOOMINI_WIDTH);
+      vid->cheevos_icon_restore_pending = false;
+   }
+#endif
 }
 
 /* Nearest neighbor scalers */
@@ -676,6 +1097,10 @@ static void sdl_miyoomini_gfx_free(void *data) {
 
    if (vid->osd_font) bitmapfont_free_lut(vid->osd_font);
 
+#ifdef HAVE_CHEEVOS
+   sdl_miyoomini_free_cheevos_icon(vid);
+#endif
+
    free(vid);
 
    sdl_miyoomini_set_cpugovernor(ONDEMAND);
@@ -986,9 +1411,102 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
     menu_driver_frame(menu_is_alive, video_info);
 #endif
 
+#ifdef HAVE_CHEEVOS
+   if (video_info->msg_queue_icon != MESSAGE_QUEUE_ICON_ACHIEVEMENT
+         || !video_info->msg_queue_title[0])
+   {
+      if (vid->cheevos_icon_timer > 0)
+      {
+         vid->cheevos_icon_timer = 0;
+         vid->cheevos_icon_visible = false;
+         vid->cheevos_icon_restore_pending = true;
+      }
+   }
+   else if (video_info->msg_queue_icon == MESSAGE_QUEUE_ICON_ACHIEVEMENT
+         && video_info->msg_queue_title[0])
+   {
+      bool badge_changed = !string_is_equal(video_info->msg_queue_title, vid->cheevos_badge_pending);
+
+      if (badge_changed)
+      {
+         sdl_miyoomini_free_cheevos_icon(vid);
+         strlcpy(vid->cheevos_badge_pending, video_info->msg_queue_title, sizeof(vid->cheevos_badge_pending));
+         vid->cheevos_badge_requested = false;
+         vid->cheevos_icon_retry_counter = 0;
+      }
+
+      if (vid->cheevos_badge_pending[0] != '\0')
+      {
+         if (vid->cheevos_icon_retry_counter == 0)
+         {
+            bool request_download = !vid->cheevos_badge_requested;
+            if (sdl_miyoomini_load_cheevos_icon(
+                     vid, vid->cheevos_badge_pending, SDL_MIYOOMINI_HEIGHT, request_download))
+               vid->cheevos_badge_requested = false;
+            else if (request_download)
+               vid->cheevos_badge_requested = true;
+
+            vid->cheevos_icon_retry_counter = 30;
+         }
+      }
+
+      if (vid->cheevos_icon_data)
+      {
+         vid->cheevos_icon_visible = true;
+         vid->cheevos_icon_timer = video_info->msg_queue_duration > 0
+               ? video_info->msg_queue_duration
+               : CHEEVOS_ICON_DURATION_FRAMES;
+      }
+      else
+         vid->cheevos_icon_visible = false;
+   }
+   else if (vid->cheevos_icon_timer > 0)
+   {
+      if (vid->cheevos_icon_retry_counter > 0)
+         vid->cheevos_icon_retry_counter--;
+
+      if (vid->cheevos_icon_data)
+         vid->cheevos_icon_visible = true;
+      else if (vid->cheevos_badge_pending[0] != '\0')
+      {
+         if (vid->cheevos_icon_retry_counter == 0)
+         {
+            if (sdl_miyoomini_load_cheevos_icon(
+                     vid, vid->cheevos_badge_pending, SDL_MIYOOMINI_HEIGHT,
+                     !vid->cheevos_badge_requested))
+            {
+               vid->cheevos_badge_requested = false;
+               vid->cheevos_icon_visible = true;
+            }
+            else
+            {
+               vid->cheevos_badge_requested = true;
+               vid->cheevos_icon_visible = false;
+            }
+
+            vid->cheevos_icon_retry_counter = 30;
+         }
+         else
+            vid->cheevos_icon_visible = false;
+      }
+      else
+         vid->cheevos_icon_visible = false;
+   }
+   else
+      vid->cheevos_icon_visible = false;
+#endif
+
    /* Render OSD text at flip */
-   if (msg) {
-      memcpy(vid->msg_tmp, msg, sizeof(vid->msg_tmp));
+   if (msg
+#ifdef HAVE_CHEEVOS
+         || vid->cheevos_icon_timer > 0
+         || vid->cheevos_icon_restore_pending
+#endif
+      ) {
+      if (msg)
+         memcpy(vid->msg_tmp, msg, sizeof(vid->msg_tmp));
+      else
+         vid->msg_tmp[0] = '\0';
       GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
    } else if (vid->msg_count) {
       vid->msg_tmp[0] = 0;

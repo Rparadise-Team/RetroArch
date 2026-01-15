@@ -322,14 +322,19 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
 #endif
       {
          char buffer[256];
+         char badge_title[32];
          size_t _len = strlcpy(buffer, msg_hash_to_str(MSG_ACHIEVEMENT_UNLOCKED),
                sizeof(buffer));
          _len += strlcpy(buffer + _len, ": ", sizeof(buffer) - _len);
          _len += strlcpy(buffer + _len, cheevo->title, sizeof(buffer) - _len);
-         runloop_msg_queue_push(buffer, _len, 0, 2 * 60, false, NULL,
-            MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
-         runloop_msg_queue_push(cheevo->description, strlen(cheevo->description), 0, 3 * 60, false, NULL,
-            MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
+
+         rcheevos_get_badge_texture(cheevo->badge_name, false, true);
+         strlcpy(badge_title, cheevo->badge_name, sizeof(badge_title));
+
+         runloop_msg_queue_push(buffer, _len, 0, 2 * 60, false, badge_title,
+            MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+         runloop_msg_queue_push(cheevo->description, strlen(cheevo->description), 0, 3 * 60, false, badge_title,
+            MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
       }
    }
 
@@ -701,6 +706,11 @@ bool rcheevos_unload(void)
    if (rcheevos_locals.memory.count > 0)
       rc_libretro_memory_destroy(&rcheevos_locals.memory);
 
+   rcheevos_locals.summary_badge_pending = false;
+   rcheevos_locals.summary_badge_msg_len = 0;
+   rcheevos_locals.summary_badge_name[0] = '\0';
+   rcheevos_locals.summary_badge_msg[0] = '\0';
+
    if (was_loaded)
    {
 #ifdef HAVE_MENU
@@ -1006,6 +1016,26 @@ void rcheevos_test(void)
    }
 #endif
 
+   if (rcheevos_locals.summary_badge_pending)
+   {
+      char badge_path[PATH_MAX_LENGTH];
+
+      fill_pathname_application_special(badge_path, sizeof(badge_path),
+            APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+      fill_pathname_slash(badge_path, sizeof(badge_path));
+      strlcat(badge_path, rcheevos_locals.summary_badge_name, sizeof(badge_path));
+      strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
+
+      if (path_is_valid(badge_path))
+      {
+         runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
+               rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
+               rcheevos_locals.summary_badge_name,
+               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+         rcheevos_locals.summary_badge_pending = false;
+      }
+   }
+
    if (rcheevos_locals.memory.count != 0)
       rc_client_do_frame(rcheevos_locals.client);
    else
@@ -1275,8 +1305,33 @@ static void rcheevos_show_game_placard(void)
       }
       else
 #endif
-         runloop_msg_queue_push(msg, _len, 0, 3 * 60, false, NULL,
-               MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
+      {
+         char badge_name[32];
+         char badge_path[PATH_MAX_LENGTH];
+         size_t __len = strlcpy(badge_name, "i", sizeof(badge_name));
+         strlcpy(badge_name + __len, game->badge_name, sizeof(badge_name) - __len);
+
+         fill_pathname_application_special(badge_path, sizeof(badge_path),
+               APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+         fill_pathname_slash(badge_path, sizeof(badge_path));
+         strlcat(badge_path, badge_name, sizeof(badge_path));
+         strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
+
+         rcheevos_get_badge_texture(badge_name, false, true);
+         if (!path_is_valid(badge_path))
+         {
+            rcheevos_locals.summary_badge_pending = true;
+            rcheevos_locals.summary_badge_msg_len = _len;
+            strlcpy(rcheevos_locals.summary_badge_name, badge_name,
+                  sizeof(rcheevos_locals.summary_badge_name));
+            strlcpy(rcheevos_locals.summary_badge_msg, msg,
+                  sizeof(rcheevos_locals.summary_badge_msg));
+            return;
+         }
+
+         runloop_msg_queue_push(msg, _len, 0, 3 * 60, false, badge_name,
+               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+      }
    }
 
    if (summary.num_unsupported_achievements)
@@ -1405,12 +1460,15 @@ static void rcheevos_finalize_game_load(rc_client_t* client)
 {
    settings_t* settings = config_get_ptr();
    bool want_badges     = settings->bools.cheevos_badges_enable;
+   const rc_client_game_t* game = rc_client_get_game_info(client);
 #if !defined(HAVE_GFX_WIDGETS)
    /* Then badges are only needed for xmb and ozone menus */
    want_badges          = want_badges &&
       (        string_is_equal(settings->arrays.menu_driver, "xmb")
             || string_is_equal(settings->arrays.menu_driver, "ozone"));
 #endif
+   if (settings->bools.cheevos_badges_enable)
+      rcheevos_client_download_game_badge(game);
    if (want_badges)
          rcheevos_client_download_achievement_badges(client);
 

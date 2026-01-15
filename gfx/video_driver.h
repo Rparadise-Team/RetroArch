@@ -38,6 +38,8 @@
 #include "../input/input_driver.h"
 #include "../input/input_types.h"
 
+#include <queues/message_queue.h>
+
 #include "video_defines.h"
 
 #ifdef HAVE_CRTSWITCHRES
@@ -467,6 +469,10 @@ typedef struct video_frame_info
    uint16_t frame_time_target;
 
    char stat_text[1024];
+   char msg_queue_title[1024];
+   unsigned msg_queue_duration;
+   enum message_queue_icon msg_queue_icon;
+   enum message_queue_category msg_queue_category;
 
    bool widgets_active;
    bool notifications_hidden;

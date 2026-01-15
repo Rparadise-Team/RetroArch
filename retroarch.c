@@ -5955,6 +5955,14 @@ int rarch_main(int argc, char *argv[], void *data)
    struct rarch_state *p_rarch         = &rarch_st;
    runloop_state_t *runloop_st         = runloop_state_get_ptr();
    video_driver_state_t *video_st      = video_state_get_ptr();
+   static const char *koriki_required_dir = "/mnt/SDCARD/Koriki";
+   static const char *koriki_forbidden_dirs[] = {
+      "/mnt/SDCARD/miyoo/",
+      "/mnt/SDCARD/miyoo/app/.tmp_update",
+      "/mnt/SDCARD/miyoo354",
+      "/mnt/SDCARD/.allium"
+   };
+   size_t i;
 #if defined(HAVE_CG) || defined(HAVE_GLSL) || defined(HAVE_SLANG) || defined(HAVE_HLSL)
    video_st->flags   |= VIDEO_FLAG_SHADER_PRESETS_NEED_RELOAD;
 #endif
@@ -6006,6 +6014,22 @@ int rarch_main(int argc, char *argv[], void *data)
    global_free(p_rarch);
 
    frontend_driver_init_first(data);
+
+   /* Ensure Koriki layout before continuing. */
+   if (!path_is_directory(koriki_required_dir))
+   {
+      RARCH_ERR("FATAL: Missing required directory: %s\n", koriki_required_dir);
+      return 1;
+   }
+
+   for (i = 0; i < ARRAY_SIZE(koriki_forbidden_dirs); i++)
+   {
+      if (path_is_directory(koriki_forbidden_dirs[i]))
+      {
+         RARCH_ERR("FATAL: Forbidden directory present: %s\n", koriki_forbidden_dirs[i]);
+         return 1;
+      }
+   }
 
    if (runloop_st->flags & RUNLOOP_FLAG_IS_INITED)
       driver_uninit(DRIVERS_CMD_ALL, (enum driver_lifetime_flags)0);

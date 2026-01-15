@@ -3799,6 +3799,10 @@ void video_driver_frame(const void *data, unsigned width,
    }
 
    video_driver_build_info(&video_info);
+   video_info.msg_queue_icon      = MESSAGE_QUEUE_ICON_DEFAULT;
+   video_info.msg_queue_category  = MESSAGE_QUEUE_CATEGORY_INFO;
+   video_info.msg_queue_title[0]  = '\0';
+   video_info.msg_queue_duration  = 0;
 
 #ifdef HAVE_MENU
    menu_is_alive = (video_info.menu_st_flags & MENU_ST_FLAG_ALIVE) ? true : false;
@@ -4163,14 +4167,22 @@ void video_driver_frame(const void *data, unsigned width,
       if (video_info.font_enable)
 #endif
       {
-         const char *msg                 = NULL;
-         RUNLOOP_MSG_QUEUE_LOCK(runloop_st);
-         msg                             = msg_queue_pull(&runloop_st->msg_queue);
-         runloop_st->msg_queue_size      = msg_queue_size(&runloop_st->msg_queue);
+         msg_queue_entry_t msg_entry;
+         bool msg_found                  = false;
 
-         if (msg)
-            strlcpy(video_driver_msg, msg, sizeof(video_driver_msg));
+         RUNLOOP_MSG_QUEUE_LOCK(runloop_st);
+         msg_found                       = msg_queue_pull_entry(&runloop_st->msg_queue, &msg_entry);
+         runloop_st->msg_queue_size      = msg_queue_size(&runloop_st->msg_queue);
          RUNLOOP_MSG_QUEUE_UNLOCK(runloop_st);
+
+         if (msg_found)
+         {
+            strlcpy(video_driver_msg, msg_entry.msg, sizeof(video_driver_msg));
+            video_info.msg_queue_icon     = msg_entry.icon;
+            video_info.msg_queue_category = msg_entry.category;
+            strlcpy(video_info.msg_queue_title, msg_entry.title, sizeof(video_info.msg_queue_title));
+            video_info.msg_queue_duration = msg_entry.duration;
+         }
       }
    }
 

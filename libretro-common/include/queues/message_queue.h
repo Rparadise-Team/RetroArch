@@ -32,7 +32,8 @@ RETRO_BEGIN_DECLS
 
 enum message_queue_icon
 {
-   MESSAGE_QUEUE_ICON_DEFAULT = 0 /* default icon is tied to category */
+   MESSAGE_QUEUE_ICON_DEFAULT = 0, /* default icon is tied to category */
+   MESSAGE_QUEUE_ICON_ACHIEVEMENT
 };
 
 enum message_queue_category
@@ -110,6 +111,19 @@ void msg_queue_push(msg_queue_t *queue, const char *msg,
  * containing the message.
  **/
 const char *msg_queue_pull(msg_queue_t *queue);
+
+/**
+ * msg_queue_pull_entry:
+ * @queue             : pointer to queue object
+ * @queue_entry       : pointer to external queue entry struct
+ *
+ * Pulls highest priority message in queue and copies
+ * contents into queue_entry struct. If the message is
+ * still active, it remains in the queue.
+ *
+ * Returns: false if no message in queue, otherwise true
+ **/
+bool msg_queue_pull_entry(msg_queue_t *queue, msg_queue_entry_t *queue_entry);
 
 /**
  * msg_queue_extract:
