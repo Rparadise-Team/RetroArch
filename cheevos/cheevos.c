@@ -18,6 +18,7 @@
 #include <ctype.h>
 
 #include <file/file_path.h>
+#include <retro_dirent.h>
 #include <string/stdstring.h>
 #include <streams/interface_stream.h>
 #include <streams/file_stream.h>
@@ -1090,8 +1091,47 @@ const char* rcheevos_get_hash(void)
 
 static void* rc_hash_handle_file_open(const char* path)
 {
-   return intfstream_open_file(path,
+   char resolved_path[PATH_MAX_LENGTH];
+   intfstream_t* handle = intfstream_open_file(path,
          RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+   if (!handle)
+   {
+      char parent_dir[DIR_MAX_LENGTH];
+      const char* basename = path_basename(path);
+      struct RDIR* dir;
+
+      if (!string_is_empty(basename))
+      {
+         fill_pathname_parent_dir(parent_dir, path, sizeof(parent_dir));
+         if (!string_is_empty(parent_dir))
+         {
+            dir = retro_opendir(parent_dir);
+            if (dir)
+            {
+               while (retro_readdir(dir))
+               {
+                  const char* entry = retro_dirent_get_name(dir);
+                  if (!entry || retro_dirent_is_dir(dir, NULL))
+                     continue;
+
+                  if (string_is_equal_case_insensitive(entry, basename))
+                  {
+                     fill_pathname_join_special(
+                           resolved_path, parent_dir, entry, sizeof(resolved_path));
+                     handle = intfstream_open_file(resolved_path,
+                           RETRO_VFS_FILE_ACCESS_READ,
+                           RETRO_VFS_FILE_ACCESS_HINT_NONE);
+                     break;
+                  }
+               }
+               retro_closedir(dir);
+            }
+         }
+      }
+   }
+
+   return handle;
 }
 
 static void rc_hash_handle_file_seek(
@@ -1119,27 +1159,70 @@ static void rc_hash_handle_file_close(void* file_handle)
 }
 
 #ifdef HAVE_CHD
+static bool rc_hash_resolve_case_insensitive_path(
+      const char* path, char* resolved_path, size_t resolved_size)
+{
+   char parent_dir[DIR_MAX_LENGTH];
+   const char* basename = path_basename(path);
+   struct RDIR* dir;
+
+   if (string_is_empty(basename))
+      return false;
+
+   fill_pathname_parent_dir(parent_dir, path, sizeof(parent_dir));
+   if (string_is_empty(parent_dir))
+      return false;
+
+   dir = retro_opendir(parent_dir);
+   if (!dir)
+      return false;
+
+   while (retro_readdir(dir))
+   {
+      const char* entry = retro_dirent_get_name(dir);
+      if (!entry || retro_dirent_is_dir(dir, NULL))
+         continue;
+
+      if (string_is_equal_case_insensitive(entry, basename))
+      {
+         fill_pathname_join_special(
+               resolved_path, parent_dir, entry, resolved_size);
+         retro_closedir(dir);
+         return true;
+      }
+   }
+
+   retro_closedir(dir);
+   return false;
+}
+
 static void* rc_hash_handle_chd_open_track(
       const char* path, uint32_t track)
 {
+   char resolved_path[PATH_MAX_LENGTH];
    cdfs_track_t* cdfs_track;
+   const char* chd_path = path;
+
+   if (rc_hash_resolve_case_insensitive_path(
+         path, resolved_path, sizeof(resolved_path)))
+      chd_path = resolved_path;
 
    switch (track)
    {
       case RC_HASH_CDTRACK_FIRST_DATA:
-         cdfs_track = cdfs_open_data_track(path);
+         cdfs_track = cdfs_open_data_track(chd_path);
          break;
 
       case RC_HASH_CDTRACK_LAST:
-         cdfs_track = cdfs_open_track(path, CHDSTREAM_TRACK_LAST);
+         cdfs_track = cdfs_open_track(chd_path, CHDSTREAM_TRACK_LAST);
          break;
 
       case RC_HASH_CDTRACK_LARGEST:
-         cdfs_track = cdfs_open_track(path, CHDSTREAM_TRACK_PRIMARY);
+         cdfs_track = cdfs_open_track(chd_path, CHDSTREAM_TRACK_PRIMARY);
          break;
 
       default:
-         cdfs_track = cdfs_open_track(path, track);
+         cdfs_track = cdfs_open_track(chd_path, track);
          break;
    }
 
@@ -1231,6 +1314,19 @@ static void rc_hash_reset_cdreader_hooks(void)
    rc_hash_get_default_cdreader(&cdreader);
    cdreader.open_track_iterator = rc_hash_handle_cd_open_track;
    rc_hash_init_custom_cdreader(&cdreader);
+}
+
+static void rc_hash_reset_filereader_hooks(void)
+{
+   struct rc_hash_filereader filereader;
+
+   filereader.open  = rc_hash_handle_file_open;
+   filereader.seek  = rc_hash_handle_file_seek;
+   filereader.tell  = rc_hash_handle_file_tell;
+   filereader.read  = rc_hash_handle_file_read;
+   filereader.close = rc_hash_handle_file_close;
+
+   rc_hash_init_custom_filereader(&filereader);
 }
 
 /* end hooks */
@@ -1692,6 +1788,7 @@ bool rcheevos_load(const void *data)
 
    /* provide hooks for reading files */
    rc_hash_reset_cdreader_hooks();
+   rc_hash_reset_filereader_hooks();
 
 #if defined(HAVE_GFX_WIDGETS)
    if (settings->bools.cheevos_verbose_enable)
