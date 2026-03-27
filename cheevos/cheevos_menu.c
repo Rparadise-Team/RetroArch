@@ -400,7 +400,11 @@ void rcheevos_menu_populate(void* data, bool cheevos_enable,
             break;
          }
 
+#if defined(MIYOOMINI)
+         rcheevos_menu_update_badge(menuitem, false);
+#else
          rcheevos_menu_update_badge(menuitem, true);
+#endif
       }
    }
 
