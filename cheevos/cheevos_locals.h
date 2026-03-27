@@ -104,6 +104,7 @@ typedef struct rcheevos_locals_t
    bool core_supports;                /* false if core explicitly disables achievements */
 
    bool summary_badge_pending;        /* true when game summary is waiting on badge download */
+   uint8_t summary_badge_retries;
    char summary_badge_path[512];
    size_t summary_badge_msg_len;      /* cached summary message length */
    char summary_badge_name[32];       /* cached badge filename without extension */
@@ -111,6 +112,7 @@ typedef struct rcheevos_locals_t
 	
 	/* NUEVAS VARIABLES para la sala de espera de los logros */
    bool unlock_badge_pending;
+   uint8_t unlock_badge_retries;
    char unlock_badge_path[512];
    size_t unlock_badge_msg_len;
    size_t unlock_badge_desc_len;

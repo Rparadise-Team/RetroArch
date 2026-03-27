@@ -344,6 +344,7 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
          if (!path_is_valid(badge_path))
          {
             rcheevos_locals.unlock_badge_pending = true;
+			rcheevos_locals.unlock_badge_retries = 0;
             strlcpy(rcheevos_locals.unlock_badge_path, badge_path, sizeof(rcheevos_locals.unlock_badge_path));
             rcheevos_locals.unlock_badge_msg_len = _len;
             rcheevos_locals.unlock_badge_desc_len = strlen(cheevo->description);
@@ -731,12 +732,14 @@ bool rcheevos_unload(void)
 
    rcheevos_locals.summary_badge_pending = false;
    rcheevos_locals.summary_badge_msg_len = 0;
+   rcheevos_locals.summary_badge_retries = 0;
    rcheevos_locals.summary_badge_name[0] = '\0';
    rcheevos_locals.summary_badge_msg[0] = '\0';
 	
    /* Limpiamos también la sala de espera de los logros */
    rcheevos_locals.unlock_badge_pending = false;
    rcheevos_locals.unlock_badge_msg_len = 0;
+   rcheevos_locals.unlock_badge_retries = 0;
    rcheevos_locals.unlock_badge_desc_len = 0;
    rcheevos_locals.unlock_badge_name[0] = '\0';
    rcheevos_locals.unlock_badge_msg[0] = '\0';
@@ -1056,30 +1059,48 @@ void rcheevos_test(void)
       {
          sd_poll_counter = 0;
 
-         /* Usamos la ruta cacheada 'summary_badge_path' en lugar de fabricarla aquí */
-         if (rcheevos_locals.summary_badge_pending && path_is_valid(rcheevos_locals.summary_badge_path))
+         /* COMPROBACIÓN DEL SUMMARY BADGE */
+         if (rcheevos_locals.summary_badge_pending)
          {
-            runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
-                  rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
-                  rcheevos_locals.summary_badge_name,
-                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-            rcheevos_locals.summary_badge_pending = false;
+            rcheevos_locals.summary_badge_retries++;
+            
+            /* Si el archivo existe O hemos superado el tiempo máximo de espera (10 reintentos = ~1.6 seg) */
+            if (path_is_valid(rcheevos_locals.summary_badge_path) || rcheevos_locals.summary_badge_retries > 10)
+            {
+               /* Cast a char* para arreglar el warning de const */
+               char* badge_to_show = path_is_valid(rcheevos_locals.summary_badge_path) ? rcheevos_locals.summary_badge_name : (char*)"00000";
+
+               runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
+                     rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
+                     badge_to_show,
+                     MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+               rcheevos_locals.summary_badge_pending = false;
+            }
          }
 
-         /* Usamos la ruta cacheada 'unlock_badge_path' en lugar de fabricarla aquí */
-         if (rcheevos_locals.unlock_badge_pending && path_is_valid(rcheevos_locals.unlock_badge_path))
+         /* COMPROBACIÓN DEL UNLOCK BADGE */
+         if (rcheevos_locals.unlock_badge_pending)
          {
-            runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
-                  rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
-                  rcheevos_locals.unlock_badge_name,
-                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-                  
-            runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
-                  rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
-                  rcheevos_locals.unlock_badge_name,
-                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-                  
-            rcheevos_locals.unlock_badge_pending = false; /* Lo sacamos de espera */
+            rcheevos_locals.unlock_badge_retries++;
+
+            /* Si el archivo existe O hemos superado el tiempo máximo de espera */
+            if (path_is_valid(rcheevos_locals.unlock_badge_path) || rcheevos_locals.unlock_badge_retries > 10)
+            {
+               /* Cast a char* para arreglar el warning de const */
+               char* badge_to_show = path_is_valid(rcheevos_locals.unlock_badge_path) ? rcheevos_locals.unlock_badge_name : (char*)"00000";
+
+               runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
+                     rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
+                     badge_to_show,
+                     MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+                     
+               runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
+                     rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
+                     badge_to_show,
+                     MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+                     
+               rcheevos_locals.unlock_badge_pending = false; /* Lo sacamos de espera */
+            }
          }
       }
    }
@@ -1464,6 +1485,7 @@ static void rcheevos_show_game_placard(void)
          if (!path_is_valid(badge_path))
          {
             rcheevos_locals.summary_badge_pending = true;
+			rcheevos_locals.summary_badge_retries = 0;
 			strlcpy(rcheevos_locals.summary_badge_path, badge_path, sizeof(rcheevos_locals.summary_badge_path));
             rcheevos_locals.summary_badge_msg_len = _len;
             strlcpy(rcheevos_locals.summary_badge_name, badge_name,
