@@ -489,10 +489,17 @@ static void rcheevos_client_fetch_next_badge(rc_client_download_queue_t* queue)
       slock_lock(queue->lock);
 #endif
       /* if the game is no longer loaded, stop processing the queue */
+#if defined(MIYOOMINI)
+      if (queue->game != rc_client_get_game_info(queue->client))
+         queue->pass = 1;
+	   
+	  while (queue->pass < 1)
+#else
       if (queue->game != rc_client_get_game_info(queue->client))
          queue->pass = 2;
-
+	   
       while (queue->pass < 2)
+#endif
       {
          if (queue->bucket_index >= queue->list->num_buckets)
          {
@@ -502,6 +509,17 @@ static void rcheevos_client_fetch_next_badge(rc_client_download_queue_t* queue)
          }
 
          bucket = &queue->list->buckets[queue->bucket_index];
+		  
+#if defined(MIYOOMINI)
+         if (bucket->bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_LOCKED ||
+             bucket->bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_UNSUPPORTED ||
+             bucket->bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_UNOFFICIAL)
+         {
+            queue->bucket_index++;
+            queue->achievement_index = 0;
+            continue;
+         }
+#endif
 
          if (queue->achievement_index >= bucket->num_achievements)
          {
@@ -516,6 +534,14 @@ static void rcheevos_client_fetch_next_badge(rc_client_download_queue_t* queue)
 
          if (queue->pass == 0)
          {
+#if defined(MIYOOMINI)
+            if (bucket->bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_LOCKED ||
+                bucket->bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_UNSUPPORTED ||
+                bucket->bucket_type == RC_CLIENT_ACHIEVEMENT_BUCKET_UNOFFICIAL)
+            {
+               continue;
+            }
+#endif
             /* First pass - get all unlocked badges */
             url        = achievement->badge_url;
             next_badge = achievement->badge_name;

@@ -344,6 +344,7 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
          if (!path_is_valid(badge_path))
          {
             rcheevos_locals.unlock_badge_pending = true;
+            strlcpy(rcheevos_locals.unlock_badge_path, badge_path, sizeof(rcheevos_locals.unlock_badge_path));
             rcheevos_locals.unlock_badge_msg_len = _len;
             rcheevos_locals.unlock_badge_desc_len = strlen(cheevo->description);
             strlcpy(rcheevos_locals.unlock_badge_name, badge_title, sizeof(rcheevos_locals.unlock_badge_name));
@@ -1046,49 +1047,40 @@ void rcheevos_test(void)
    }
 #endif
 
-   if (rcheevos_locals.summary_badge_pending)
+   /* solo 1 de cada 10 frames para eliminar los cuellos de botella del bus. */
+   if (rcheevos_locals.summary_badge_pending || rcheevos_locals.unlock_badge_pending)
    {
-      char badge_path[PATH_MAX_LENGTH];
+      static uint8_t sd_poll_counter = 0;
 
-      fill_pathname_application_special(badge_path, sizeof(badge_path),
-            APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
-      fill_pathname_slash(badge_path, sizeof(badge_path));
-      strlcat(badge_path, rcheevos_locals.summary_badge_name, sizeof(badge_path));
-      strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
-
-      if (path_is_valid(badge_path))
+      if (++sd_poll_counter >= 10)
       {
-         runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
-               rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
-               rcheevos_locals.summary_badge_name,
-               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-         rcheevos_locals.summary_badge_pending = false;
-      }
-   }
-	
-   if (rcheevos_locals.unlock_badge_pending)
-   {
-      char badge_path[PATH_MAX_LENGTH];
+         sd_poll_counter = 0;
 
-      fill_pathname_application_special(badge_path, sizeof(badge_path),
-            APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
-      fill_pathname_slash(badge_path, sizeof(badge_path));
-      strlcat(badge_path, rcheevos_locals.unlock_badge_name, sizeof(badge_path));
-      strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
+         /* Usamos la ruta cacheada 'summary_badge_path' en lugar de fabricarla aquí */
+         if (rcheevos_locals.summary_badge_pending && path_is_valid(rcheevos_locals.summary_badge_path))
+         {
+            runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
+                  rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
+                  rcheevos_locals.summary_badge_name,
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+            rcheevos_locals.summary_badge_pending = false;
+         }
 
-      if (path_is_valid(badge_path))
-      {
-         runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
-               rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
-               rcheevos_locals.unlock_badge_name,
-               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-               
-         runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
-               rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
-               rcheevos_locals.unlock_badge_name,
-               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-               
-         rcheevos_locals.unlock_badge_pending = false; /* Lo sacamos de espera */
+         /* Usamos la ruta cacheada 'unlock_badge_path' en lugar de fabricarla aquí */
+         if (rcheevos_locals.unlock_badge_pending && path_is_valid(rcheevos_locals.unlock_badge_path))
+         {
+            runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
+                  rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
+                  rcheevos_locals.unlock_badge_name,
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+                  
+            runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
+                  rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
+                  rcheevos_locals.unlock_badge_name,
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+                  
+            rcheevos_locals.unlock_badge_pending = false; /* Lo sacamos de espera */
+         }
       }
    }
 
@@ -1472,6 +1464,7 @@ static void rcheevos_show_game_placard(void)
          if (!path_is_valid(badge_path))
          {
             rcheevos_locals.summary_badge_pending = true;
+			strlcpy(rcheevos_locals.summary_badge_path, badge_path, sizeof(rcheevos_locals.summary_badge_path));
             rcheevos_locals.summary_badge_msg_len = _len;
             strlcpy(rcheevos_locals.summary_badge_name, badge_name,
                   sizeof(rcheevos_locals.summary_badge_name));
@@ -1620,10 +1613,8 @@ static void rcheevos_finalize_game_load(rc_client_t* client)
 #endif
    if (settings->bools.cheevos_badges_enable)
       rcheevos_client_download_game_badge(game);
-#if !defined(MIYOOMINI)
    if (want_badges)
          rcheevos_client_download_achievement_badges(client);
-#endif
    if (!rc_client_is_processing_required(client))
    {
       CHEEVOS_LOG(RCHEEVOS_TAG "No runtime logic for game, pausing hardcore\n");
