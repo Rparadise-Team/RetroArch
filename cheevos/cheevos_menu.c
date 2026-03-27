@@ -528,6 +528,9 @@ void rcheevos_menu_populate(void* data, bool cheevos_enable,
 
 static void rcheevos_client_download_achievement_badge(const char* badge_name, bool locked)
 {
+#if defined(MIYOOMINI)
+   locked = false;
+#endif
    /* have to find the achievement associated to badge_name, then fetch either badge_url
     * or badge_locked_url based on the locked parameter */
    rcheevos_locals_t* rcheevos_locals = get_rcheevos_locals();
@@ -569,6 +572,9 @@ static void rcheevos_client_download_achievement_badge(const char* badge_name, b
 
 uintptr_t rcheevos_get_badge_texture(const char* badge, bool locked, bool download_if_missing)
 {
+#if defined(MIYOOMINI)
+   locked = false;
+#endif
    size_t _len;
    char badge_file[24];
    char fullpath[PATH_MAX_LENGTH];
