@@ -98,7 +98,11 @@ int setBrightnessMM()
   // set Brightness lever save from last sesion
     int brightness = getValueMM("brightness");
     int set = 0;
-    set = (brightness*10);
+	if (brightness == 0) {
+    	set = (brightness+3);
+	} else {
+		set = (brightness*10);
+	}
 	return set;
 }
 

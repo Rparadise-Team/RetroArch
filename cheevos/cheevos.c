@@ -324,6 +324,7 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
       {
          char buffer[256];
          char badge_title[32];
+         char badge_path[PATH_MAX_LENGTH]; /* Añadido para verificar SD */
          size_t _len = strlcpy(buffer, msg_hash_to_str(MSG_ACHIEVEMENT_UNLOCKED),
                sizeof(buffer));
          _len += strlcpy(buffer + _len, ": ", sizeof(buffer) - _len);
@@ -332,6 +333,26 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
          rcheevos_get_badge_texture(cheevo->badge_name, false, true);
          strlcpy(badge_title, cheevo->badge_name, sizeof(badge_title));
 
+         /* Construimos la ruta para comprobar si el archivo ya existe */
+         fill_pathname_application_special(badge_path, sizeof(badge_path),
+               APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+         fill_pathname_slash(badge_path, sizeof(badge_path));
+         strlcat(badge_path, badge_title, sizeof(badge_path));
+         strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
+
+         /* LÓGICA ASÍNCRONA: Si no existe en la SD, lo mandamos a la sala de espera */
+         if (!path_is_valid(badge_path))
+         {
+            rcheevos_locals.unlock_badge_pending = true;
+            rcheevos_locals.unlock_badge_msg_len = _len;
+            rcheevos_locals.unlock_badge_desc_len = strlen(cheevo->description);
+            strlcpy(rcheevos_locals.unlock_badge_name, badge_title, sizeof(rcheevos_locals.unlock_badge_name));
+            strlcpy(rcheevos_locals.unlock_badge_msg, buffer, sizeof(rcheevos_locals.unlock_badge_msg));
+            strlcpy(rcheevos_locals.unlock_badge_desc, cheevo->description, sizeof(rcheevos_locals.unlock_badge_desc));
+            return; /* Cortamos aquí, se imprimirá luego en rcheevos_test */
+         }
+
+         /* Si el archivo ya existía (ej. segundo intento), lo imprimimos al instante */
          runloop_msg_queue_push(buffer, _len, 0, 2 * 60, false, badge_title,
             MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
          runloop_msg_queue_push(cheevo->description, strlen(cheevo->description), 0, 3 * 60, false, badge_title,
@@ -711,6 +732,14 @@ bool rcheevos_unload(void)
    rcheevos_locals.summary_badge_msg_len = 0;
    rcheevos_locals.summary_badge_name[0] = '\0';
    rcheevos_locals.summary_badge_msg[0] = '\0';
+	
+   /* Limpiamos también la sala de espera de los logros */
+   rcheevos_locals.unlock_badge_pending = false;
+   rcheevos_locals.unlock_badge_msg_len = 0;
+   rcheevos_locals.unlock_badge_desc_len = 0;
+   rcheevos_locals.unlock_badge_name[0] = '\0';
+   rcheevos_locals.unlock_badge_msg[0] = '\0';
+   rcheevos_locals.unlock_badge_desc[0] = '\0';
 
    if (was_loaded)
    {
@@ -1034,6 +1063,32 @@ void rcheevos_test(void)
                rcheevos_locals.summary_badge_name,
                MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
          rcheevos_locals.summary_badge_pending = false;
+      }
+   }
+	
+   if (rcheevos_locals.unlock_badge_pending)
+   {
+      char badge_path[PATH_MAX_LENGTH];
+
+      fill_pathname_application_special(badge_path, sizeof(badge_path),
+            APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+      fill_pathname_slash(badge_path, sizeof(badge_path));
+      strlcat(badge_path, rcheevos_locals.unlock_badge_name, sizeof(badge_path));
+      strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
+
+      if (path_is_valid(badge_path))
+      {
+         runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
+               rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
+               rcheevos_locals.unlock_badge_name,
+               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+               
+         runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
+               rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
+               rcheevos_locals.unlock_badge_name,
+               MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+               
+         rcheevos_locals.unlock_badge_pending = false; /* Lo sacamos de espera */
       }
    }
 
@@ -1565,9 +1620,10 @@ static void rcheevos_finalize_game_load(rc_client_t* client)
 #endif
    if (settings->bools.cheevos_badges_enable)
       rcheevos_client_download_game_badge(game);
+#if !defined(MIYOOMINI)
    if (want_badges)
          rcheevos_client_download_achievement_badges(client);
-
+#endif
    if (!rc_client_is_processing_required(client))
    {
       CHEEVOS_LOG(RCHEEVOS_TAG "No runtime logic for game, pausing hardcore\n");

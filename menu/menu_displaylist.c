@@ -9526,7 +9526,9 @@ unsigned menu_displaylist_build_list(
                {MENU_ENUM_LABEL_CHEEVOS_HARDCORE_MODE_ENABLE,                          PARSE_ONLY_BOOL,   false  },
                {MENU_ENUM_LABEL_CHEEVOS_LEADERBOARDS_ENABLE,                           PARSE_ONLY_STRING_OPTIONS,   false  },
                {MENU_ENUM_LABEL_CHEEVOS_RICHPRESENCE_ENABLE,                           PARSE_ONLY_BOOL,   false  },
+#if !defined(MIYOOMINI)
                {MENU_ENUM_LABEL_CHEEVOS_BADGES_ENABLE,                                 PARSE_ONLY_BOOL,   false  },
+#endif
                {MENU_ENUM_LABEL_CHEEVOS_TEST_UNOFFICIAL,                               PARSE_ONLY_BOOL,   false  },
 #ifdef HAVE_AUDIOMIXER
                {MENU_ENUM_LABEL_CHEEVOS_UNLOCK_SOUND_ENABLE,                           PARSE_ONLY_BOOL,   false  },
@@ -9614,8 +9616,10 @@ unsigned menu_displaylist_build_list(
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_SUMMARY,                            PARSE_ONLY_UINT,   true},
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_UNLOCK,                             PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_MASTERY,                            PARSE_ONLY_BOOL,   true},
+#if !defined(MIYOOMINI)
                {MENU_ENUM_LABEL_CHEEVOS_CHALLENGE_INDICATORS,                          PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_PROGRESS_TRACKER,                   PARSE_ONLY_BOOL,   true},
+#endif
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_LBOARD_START,                       PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_LBOARD_SUBMIT,                      PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_CHEEVOS_VISIBILITY_LBOARD_CANCEL,                      PARSE_ONLY_BOOL,   true},
