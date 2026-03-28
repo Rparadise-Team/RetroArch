@@ -1064,8 +1064,8 @@ void rcheevos_test(void)
          {
             rcheevos_locals.summary_badge_retries++;
             
-            /* Si el archivo existe O hemos superado el tiempo máximo de espera (10 reintentos = ~1.6 seg) */
-            if (path_is_valid(rcheevos_locals.summary_badge_path) || rcheevos_locals.summary_badge_retries > 10)
+            /* Si el archivo existe O hemos superado el tiempo máximo de espera (15 reintentos = ~2.5 seg) */
+            if (path_is_valid(rcheevos_locals.summary_badge_path) || rcheevos_locals.summary_badge_retries > 15)
             {
                /* Cast a char* para arreglar el warning de const */
                char* badge_to_show = path_is_valid(rcheevos_locals.summary_badge_path) ? rcheevos_locals.summary_badge_name : (char*)"00000";
@@ -1084,7 +1084,7 @@ void rcheevos_test(void)
             rcheevos_locals.unlock_badge_retries++;
 
             /* Si el archivo existe O hemos superado el tiempo máximo de espera */
-            if (path_is_valid(rcheevos_locals.unlock_badge_path) || rcheevos_locals.unlock_badge_retries > 10)
+            if (path_is_valid(rcheevos_locals.unlock_badge_path) || rcheevos_locals.unlock_badge_retries > 15)
             {
                /* Cast a char* para arreglar el warning de const */
                char* badge_to_show = path_is_valid(rcheevos_locals.unlock_badge_path) ? rcheevos_locals.unlock_badge_name : (char*)"00000";
