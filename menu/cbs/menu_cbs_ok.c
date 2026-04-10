@@ -82,6 +82,9 @@
 #endif
 #include "../../gfx/video_display_server.h"
 #include "../../manual_content_scan.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 
 #ifdef HAVE_NETWORKING
 #include "../../network/netplay/netplay.h"
@@ -150,6 +153,13 @@ enum
 #ifndef BIND_ACTION_OK
 #define BIND_ACTION_OK(cbs, name) (cbs)->action_ok = (name)
 #endif
+
+#if defined(MIYOO_CUSTOM_MENU) && defined(HAVE_NETWORKING)
+static int action_ok_netplay_sublist(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx);
+#endif
+static int action_ok_push_default(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx);
 
 #ifdef HAVE_NETWORKING
 
@@ -5779,6 +5789,242 @@ int action_ok_close_content(const char *path, const char *label, unsigned type, 
    return ret;
 }
 
+#if defined(MIYOO_CUSTOM_MENU)
+static int action_ok_miyoo_menu_return(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+
+   miyoo_menu_resume_from_native_quickmenu();
+
+   if (!menu_st)
+      return -1;
+
+   menu_st->selection_ptr = 0;
+   menu_st->flags        |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+
+   return 0;
+}
+
+static int action_ok_miyoo_resume(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_resume();
+}
+
+static int action_ok_miyoo_save_state(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   miyoo_menu_action_save_state();
+   if (menu_st)
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   return 0;
+}
+
+static int action_ok_miyoo_load_state(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   miyoo_menu_action_load_state();
+   if (menu_st)
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   return 0;
+}
+
+static int action_ok_miyoo_sync_now(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_sync_now();
+}
+
+static int action_ok_miyoo_cpu_clock(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   miyoo_menu_cpu_menu_open();
+   if (menu_st)
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   return 0;
+}
+
+static int action_ok_miyoo_cpu_value_internal(int mhz)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   int ret                    = miyoo_menu_action_set_cpu_clock(mhz);
+
+   miyoo_menu_cpu_menu_close();
+   if (menu_st)
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   return ret;
+}
+
+static int action_ok_miyoo_cpu_200(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(200);
+}
+
+static int action_ok_miyoo_cpu_300(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(300);
+}
+
+static int action_ok_miyoo_cpu_400(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(400);
+}
+
+static int action_ok_miyoo_cpu_500(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(500);
+}
+
+static int action_ok_miyoo_cpu_600(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(600);
+}
+
+static int action_ok_miyoo_cpu_700(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(700);
+}
+
+static int action_ok_miyoo_cpu_800(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(800);
+}
+
+static int action_ok_miyoo_cpu_900(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(900);
+}
+
+static int action_ok_miyoo_cpu_1000(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1000);
+}
+
+static int action_ok_miyoo_cpu_1100(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1100);
+}
+
+static int action_ok_miyoo_cpu_1200(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1200);
+}
+
+static int action_ok_miyoo_cpu_1300(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1300);
+}
+
+static int action_ok_miyoo_cpu_1400(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1400);
+}
+
+static int action_ok_miyoo_cpu_back(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   miyoo_menu_cpu_menu_close();
+   if (menu_st)
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   return 0;
+}
+
+static int action_ok_miyoo_save_cpu_core(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_save_cpu_core();
+}
+
+static int action_ok_miyoo_save_cpu_rom(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_save_cpu_rom();
+}
+
+static int action_ok_miyoo_netplay_host(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_netplay_host();
+}
+
+static int action_ok_miyoo_netplay_client(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+#ifdef HAVE_NETWORKING
+   int ret = action_ok_push_default(path,
+         msg_hash_to_str(MENU_ENUM_LABEL_NETPLAY),
+         type, idx, entry_idx);
+
+   if (ret == 0)
+      miyoo_menu_netplay_menu_open();
+   else
+      miyoo_menu_netplay_menu_close();
+
+   return ret;
+#else
+   return -1;
+#endif
+}
+
+static int action_ok_miyoo_quick_menu(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_open_quick_menu();
+}
+
+static int action_ok_miyoo_quit(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_quit_retroarch();
+}
+
+static int action_ok_miyoo_state_slot_1(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_state_slot(0);
+}
+
+static int action_ok_miyoo_state_slot_2(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_state_slot(1);
+}
+
+static int action_ok_miyoo_state_slot_3(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return miyoo_menu_action_state_slot(2);
+}
+
+static int action_ok_miyoo_state_back(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   miyoo_menu_state_menu_close();
+   if (menu_st)
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   return 0;
+}
+#endif
+
 STATIC_DEFAULT_ACTION_OK_CMD_FUNC(action_ok_cheat_apply_changes,      CMD_EVENT_CHEATS_APPLY)
 STATIC_DEFAULT_ACTION_OK_CMD_FUNC(action_ok_quit,                     CMD_EVENT_QUIT)
 STATIC_DEFAULT_ACTION_OK_CMD_FUNC(action_ok_save_new_config,          CMD_EVENT_MENU_SAVE_CONFIG)
@@ -9649,6 +9895,98 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
          case FILE_TYPE_PLAYLIST_ENTRY:
             BIND_ACTION_OK(cbs, action_ok_playlist_entry_collection);
             break;
+#if defined(MIYOO_CUSTOM_MENU)
+         case FILE_TYPE_MIYOO_MENU:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_menu_return);
+            break;
+         case FILE_TYPE_MIYOO_RESUME:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_resume);
+            break;
+         case FILE_TYPE_MIYOO_SAVE_STATE:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_save_state);
+            break;
+         case FILE_TYPE_MIYOO_LOAD_STATE:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_load_state);
+            break;
+         case FILE_TYPE_MIYOO_SYNC_NOW:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_sync_now);
+            break;
+         case FILE_TYPE_MIYOO_CPU_CLOCK:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_clock);
+            break;
+         case FILE_TYPE_MIYOO_SAVE_CPU_CORE:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_save_cpu_core);
+            break;
+         case FILE_TYPE_MIYOO_SAVE_CPU_ROM:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_save_cpu_rom);
+            break;
+         case FILE_TYPE_MIYOO_NETPLAY_HOST:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_netplay_host);
+            break;
+         case FILE_TYPE_MIYOO_NETPLAY_CLIENT:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_netplay_client);
+            break;
+         case FILE_TYPE_MIYOO_QUICK_MENU:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_quick_menu);
+            break;
+         case FILE_TYPE_MIYOO_QUIT_RETROARCH:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_quit);
+            break;
+         case FILE_TYPE_MIYOO_STATE_SLOT_1:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot_1);
+            break;
+         case FILE_TYPE_MIYOO_STATE_SLOT_2:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot_2);
+            break;
+         case FILE_TYPE_MIYOO_STATE_SLOT_3:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot_3);
+            break;
+         case FILE_TYPE_MIYOO_STATE_BACK:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_state_back);
+            break;
+         case FILE_TYPE_MIYOO_CPU_200:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_200);
+            break;
+         case FILE_TYPE_MIYOO_CPU_300:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_300);
+            break;
+         case FILE_TYPE_MIYOO_CPU_400:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_400);
+            break;
+         case FILE_TYPE_MIYOO_CPU_500:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_500);
+            break;
+         case FILE_TYPE_MIYOO_CPU_600:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_600);
+            break;
+         case FILE_TYPE_MIYOO_CPU_700:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_700);
+            break;
+         case FILE_TYPE_MIYOO_CPU_800:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_800);
+            break;
+         case FILE_TYPE_MIYOO_CPU_900:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_900);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1000:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1000);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1100:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1100);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1200:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1200);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1300:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1300);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1400:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1400);
+            break;
+         case FILE_TYPE_MIYOO_CPU_BACK:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_back);
+            break;
+#endif
 #if defined(HAVE_LIBNX)
          case MENU_SET_SWITCH_CPU_PROFILE:
             BIND_ACTION_OK(cbs, action_ok_set_switch_cpu_profile);

@@ -119,6 +119,9 @@
 #include "../list_special.h"
 #include "../performance_counters.h"
 #include "../core_info.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../miyoo.h"
+#endif
 #include "../bluetooth/bluetooth_driver.h"
 #if defined(HAVE_NETWORKING) && defined(HAVE_WIFI)
 #include "../network/wifi_driver.h"
@@ -3659,6 +3662,120 @@ static int menu_displaylist_parse_load_content_settings(
       bool quickmenu_show_restart_content = settings->bools.quick_menu_show_restart_content;
       bool savestates_enabled             = core_info_current_supports_savestate();
       rarch_system_info_t *sys_info       = &runloop_state_get_ptr()->system;
+
+#if defined(MIYOO_CUSTOM_MENU)
+      if (   string_is_equal(settings->arrays.menu_driver, "rgui")
+          && miyoo_menu_context_active()
+          && !miyoo_menu_context_is_native_quickmenu())
+      {
+         int state_menu_mode = miyoo_menu_state_menu_get_mode();
+
+         if (miyoo_menu_cpu_menu_is_open())
+         {
+            static const int cpu_values_mhz[] = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400};
+            static const unsigned cpu_types[] = {
+               FILE_TYPE_MIYOO_CPU_200,
+               FILE_TYPE_MIYOO_CPU_300,
+               FILE_TYPE_MIYOO_CPU_400,
+               FILE_TYPE_MIYOO_CPU_500,
+               FILE_TYPE_MIYOO_CPU_600,
+               FILE_TYPE_MIYOO_CPU_700,
+               FILE_TYPE_MIYOO_CPU_800,
+               FILE_TYPE_MIYOO_CPU_900,
+               FILE_TYPE_MIYOO_CPU_1000,
+               FILE_TYPE_MIYOO_CPU_1100,
+               FILE_TYPE_MIYOO_CPU_1200,
+               FILE_TYPE_MIYOO_CPU_1300,
+               FILE_TYPE_MIYOO_CPU_1400
+            };
+            int i;
+            int cpu_idx = miyoo_menu_cpu_menu_get_index();
+            struct menu_state *menu_st = menu_state_get_ptr();
+
+            if (menu_st)
+               menu_st->selection_ptr = cpu_idx;
+
+            for (i = 0; i < (int)(sizeof(cpu_values_mhz) / sizeof(cpu_values_mhz[0])); i++)
+            {
+               char cpu_lbl[32];
+               snprintf(cpu_lbl, sizeof(cpu_lbl), "%d", cpu_values_mhz[i]);
+               if (menu_entries_append(list, cpu_lbl, "miyoo_cpu_value",
+                     MENU_ENUM_LABEL_NO_ITEMS, cpu_types[i], 0, 0, NULL))
+                  count++;
+            }
+
+            return count;
+         }
+
+         if (state_menu_mode == 1 || state_menu_mode == 2)
+         {
+            char slot_lbl[64];
+            struct menu_state *menu_st = menu_state_get_ptr();
+
+            if (menu_st)
+               menu_st->selection_ptr = 0;
+
+            miyoo_menu_state_slot_label(0, slot_lbl, sizeof(slot_lbl));
+            if (menu_entries_append(list, slot_lbl, "miyoo_slot_1",
+                  MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_STATE_SLOT_1, 0, 0, NULL))
+               count++;
+            miyoo_menu_state_slot_label(1, slot_lbl, sizeof(slot_lbl));
+            if (menu_entries_append(list, slot_lbl, "miyoo_slot_2",
+                  MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_STATE_SLOT_2, 0, 0, NULL))
+               count++;
+            miyoo_menu_state_slot_label(2, slot_lbl, sizeof(slot_lbl));
+            if (menu_entries_append(list, slot_lbl, "miyoo_slot_3",
+                  MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_STATE_SLOT_3, 0, 0, NULL))
+               count++;
+            return count;
+         }
+
+         if (menu_entries_append(list, "Resume", "miyoo_resume",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_RESUME, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Save State", "miyoo_save_state",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_SAVE_STATE, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Load State", "miyoo_load_state",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_LOAD_STATE, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Sincronizar Ahora", "miyoo_sync_now",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_SYNC_NOW, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Miyoo CPU Clock", "miyoo_cpu_clock",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_CPU_CLOCK, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Save CPU Clock (Core)", "miyoo_save_cpu_core",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_SAVE_CPU_CORE, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Save CPU Clock (ROM)", "miyoo_save_cpu_rom",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_SAVE_CPU_ROM, 0, 0, NULL))
+            count++;
+#ifdef HAVE_NETWORKING
+         if (menu_entries_append(list, "Activar Netplay (Servidor)", "miyoo_netplay_host",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_NETPLAY_HOST, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Netplay Host/LAN (Cliente)", "miyoo_netplay_client",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_NETPLAY_CLIENT, 0, 0, NULL))
+            count++;
+#endif
+         if (menu_entries_append(list, "Menu Rapido", "miyoo_quick_menu",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_QUICK_MENU, 0, 0, NULL))
+            count++;
+         if (menu_entries_append(list, "Cerrar RetroArch", "miyoo_quit",
+               MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_QUIT_RETROARCH, 0, 0, NULL))
+            count++;
+         return count;
+      }
+
+      if (miyoo_menu_context_is_native_quickmenu())
+         if (menu_entries_append(list,
+               "Menu Miyoo",
+               "miyoo_menu_return",
+               MENU_ENUM_LABEL_NO_ITEMS,
+               FILE_TYPE_MIYOO_MENU, 0, 0, NULL))
+            count++;
+#endif
 
       if (quickmenu_show_resume_content)
          if (menu_entries_append(list,

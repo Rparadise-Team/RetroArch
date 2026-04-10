@@ -46,6 +46,9 @@
 #endif
 #include "../../playlist.h"
 #include "../../manual_content_scan.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 #include "../misc/cpufreq/cpufreq.h"
 
 #ifndef BIND_ACTION_LEFT
@@ -973,6 +976,15 @@ static int action_left_replay_slot(unsigned type, const char *label,
    return 0;
 }
 
+#if defined(MIYOO_CUSTOM_MENU)
+static int action_left_miyoo_cpu_clock(unsigned type, const char *label,
+      bool wraparound)
+{
+   miyoo_menu_action_cpu_adjust(-100);
+   return 0;
+}
+#endif
+
 static int bind_left_generic(unsigned type, const char *label,
       bool wraparound)
 {
@@ -1246,6 +1258,11 @@ static int menu_cbs_init_bind_left_compare_type(menu_file_list_cbs_t *cbs,
          case MENU_SETTING_ACTION_HALTREPLAY:
             BIND_ACTION_LEFT(cbs, action_left_replay_slot);
             break;
+#if defined(MIYOO_CUSTOM_MENU)
+         case FILE_TYPE_MIYOO_CPU_CLOCK:
+            BIND_ACTION_LEFT(cbs, action_left_miyoo_cpu_clock);
+            break;
+#endif
          default:
             return -1;
       }

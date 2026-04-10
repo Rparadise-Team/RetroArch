@@ -53,6 +53,9 @@
 #include "../../file_path_special.h"
 #include "../../input/input_osk.h"
 #include "../../tasks/tasks_internal.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 
 #include "../../gfx/drivers_font_renderer/bitmap.h"
 #ifdef HAVE_LANGEXTRA
@@ -6898,6 +6901,9 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
    int state_slot       = settings->ints.state_slot;
    bool savestate_thumbnail_enable
                         = settings->bools.savestate_thumbnail_enable;
+#if defined(MIYOO_CUSTOM_MENU)
+   int miyoo_state_menu_mode = miyoo_menu_state_menu_get_mode();
+#endif
    if (!rgui)
       return;
 
@@ -6912,8 +6918,17 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
    /* Savestate thumbnails are only relevant
     * when viewing the running quick menu or state slots */
    if (!(   (rgui->flags & RGUI_FLAG_IS_QUICK_MENU && menu_is_running_quick_menu())
-         || (rgui->flags & RGUI_FLAG_IS_STATE_SLOT)))
+         || (rgui->flags & RGUI_FLAG_IS_STATE_SLOT)
+#if defined(MIYOO_CUSTOM_MENU)
+         || (miyoo_state_menu_mode != 0)
+#endif
+         ))
       return;
+
+#if defined(MIYOO_CUSTOM_MENU)
+   if (miyoo_state_menu_mode != 0)
+      savestate_thumbnail_enable = true;
+#endif
 
    if (savestate_thumbnail_enable)
    {
@@ -6925,17 +6940,44 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
 
       if (!string_is_empty(entry.label))
       {
+         bool is_miyoo_slot = false;
+
+#if defined(MIYOO_CUSTOM_MENU)
+         if (     entry.type == FILE_TYPE_MIYOO_STATE_SLOT_1
+               || entry.type == FILE_TYPE_MIYOO_STATE_SLOT_2
+               || entry.type == FILE_TYPE_MIYOO_STATE_SLOT_3)
+            is_miyoo_slot = true;
+#endif
+
          if (     string_to_unsigned(entry.label) == MENU_ENUM_LABEL_STATE_SLOT
                || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_STATE_SLOT))
                || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_LOAD_STATE))
-               || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_SAVE_STATE)))
+               || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_SAVE_STATE))
+               || is_miyoo_slot)
          {
             size_t _len;
             char path[PATH_MAX_LENGTH * 2];
             runloop_state_t *runloop_st = runloop_state_get_ptr();
 
             /* State slot dropdown */
-            if (string_to_unsigned(entry.label) == MENU_ENUM_LABEL_STATE_SLOT)
+            if (is_miyoo_slot)
+            {
+               switch (entry.type)
+               {
+                  case FILE_TYPE_MIYOO_STATE_SLOT_2:
+                     state_slot = 1;
+                     break;
+                  case FILE_TYPE_MIYOO_STATE_SLOT_3:
+                     state_slot = 2;
+                     break;
+                  case FILE_TYPE_MIYOO_STATE_SLOT_1:
+                  default:
+                     state_slot = 0;
+                     break;
+               }
+               rgui->flags |= RGUI_FLAG_IS_STATE_SLOT;
+            }
+            else if (string_to_unsigned(entry.label) == MENU_ENUM_LABEL_STATE_SLOT)
             {
                state_slot          = i - 1;
                rgui->flags        |= RGUI_FLAG_IS_STATE_SLOT;
@@ -7421,6 +7463,11 @@ static void rgui_populate_entries(
    else
       rgui->flags &= ~RGUI_FLAG_IS_QUICK_MENU;
 
+#if defined(MIYOO_CUSTOM_MENU)
+   if (miyoo_menu_context_active() && !miyoo_menu_context_is_native_quickmenu())
+      rgui->flags &= ~RGUI_FLAG_IS_QUICK_MENU;
+#endif
+
    if (string_to_unsigned(path) == MENU_ENUM_LABEL_STATE_SLOT)
       rgui->flags |=  RGUI_FLAG_IS_STATE_SLOT;
    else
@@ -7455,6 +7502,12 @@ static void rgui_populate_entries(
 
    /* Set menu title */
    menu_entries_get_title(rgui->menu_title, sizeof(rgui->menu_title));
+#if defined(MIYOO_CUSTOM_MENU)
+   if (   miyoo_menu_context_active()
+       && !miyoo_menu_context_is_native_quickmenu()
+       && string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_CONTENT_SETTINGS)))
+      strlcpy(rgui->menu_title, "MIYOO Menu", sizeof(rgui->menu_title));
+#endif
 
    /* If dynamic themes are enabled, update the theme path */
    if (rgui->color_theme == RGUI_THEME_DYNAMIC)
@@ -8273,6 +8326,14 @@ static enum menu_action rgui_parse_menu_entry_action(
          break;
       case MENU_ACTION_LEFT:
       case MENU_ACTION_RIGHT:
+#if defined(MIYOO_CUSTOM_MENU)
+         if (entry && entry->type == FILE_TYPE_MIYOO_CPU_CLOCK)
+         {
+            miyoo_menu_action_cpu_adjust((new_action == MENU_ACTION_RIGHT) ? 100 : -100);
+            new_action = MENU_ACTION_NOOP;
+            break;
+         }
+#endif
          if (      (rgui->flags & RGUI_FLAG_SHOW_FULLSCREEN_THUMBNAIL)
                && ((rgui->flags & RGUI_FLAG_IS_QUICK_MENU) && !menu_is_running_quick_menu()))
             new_action = MENU_ACTION_NOOP;

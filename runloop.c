@@ -207,6 +207,9 @@
 #include "core.h"
 #include "configuration.h"
 #include "list_special.h"
+#if defined(MIYOOMINI)
+#include "miyoo.h"
+#endif
 #include "core_option_manager.h"
 #ifdef HAVE_CHEATS
 #include "cheat_manager.h"
@@ -6010,14 +6013,29 @@ static enum runloop_state_enum runloop_check_state(
       if (pressed && !old_pressed)
       {
          bool core_is_running    = runloop_st->flags & RUNLOOP_FLAG_CORE_RUNNING;
+         bool miyoo_custom_rgui  = string_is_equal(settings->arrays.menu_driver, "rgui");
 
          if (menu_st->flags & MENU_ST_FLAG_ALIVE)
          {
             if (rarch_is_initialized && !core_type_is_dummy && core_is_running)
+            {
+#if defined(MIYOO_CUSTOM_MENU)
+               if (miyoo_custom_rgui)
+                  miyoo_menu_context_end();
+#endif
                retroarch_menu_running_finished(false);
+            }
          }
          else
+         {
             retroarch_menu_running();
+#if defined(MIYOO_CUSTOM_MENU)
+            if (miyoo_custom_rgui && !core_type_is_dummy && core_is_running)
+               miyoo_menu_context_begin();
+            else
+               miyoo_menu_context_end();
+#endif
+         }
       }
       /* Initial menu toggle on startup */
       else if (core_type_is_dummy && !(menu_st->flags & MENU_ST_FLAG_ALIVE))

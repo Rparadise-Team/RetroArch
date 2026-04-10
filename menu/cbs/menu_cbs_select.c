@@ -24,6 +24,9 @@
 #include "../menu_entries.h"
 #include "../menu_setting.h"
 #include "../../tasks/tasks_internal.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 
 #ifdef HAVE_NETWORKING
 #include "../../network/netplay/netplay.h"
@@ -124,6 +127,25 @@ static int action_select_core_setting(const char *path, const char *label, unsig
    return action_ok_core_option_dropdown_list(path, label, type, idx, 0);
 }
 
+#if defined(MIYOO_CUSTOM_MENU)
+static int action_select_miyoo_state_slot(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   settings_t *settings       = config_get_ptr();
+   int slot                   = 0;
+
+   if (type == FILE_TYPE_MIYOO_STATE_SLOT_2)
+      slot = 1;
+   else if (type == FILE_TYPE_MIYOO_STATE_SLOT_3)
+      slot = 2;
+
+   settings->ints.state_slot = slot;
+   miyoo_menu_update_savestate_thumbnail((unsigned)idx);
+
+   return 0;
+}
+#endif
+
 static int menu_cbs_init_bind_select_compare_type(
       menu_file_list_cbs_t *cbs, unsigned type)
 {
@@ -132,6 +154,13 @@ static int menu_cbs_init_bind_select_compare_type(
       case FILE_TYPE_USE_DIRECTORY:
          BIND_ACTION_SELECT(cbs, action_select_path_use_directory);
          break;
+#if defined(MIYOO_CUSTOM_MENU)
+      case FILE_TYPE_MIYOO_STATE_SLOT_1:
+      case FILE_TYPE_MIYOO_STATE_SLOT_2:
+      case FILE_TYPE_MIYOO_STATE_SLOT_3:
+         BIND_ACTION_SELECT(cbs, action_select_miyoo_state_slot);
+         break;
+#endif
       default:
          return -1;
    }

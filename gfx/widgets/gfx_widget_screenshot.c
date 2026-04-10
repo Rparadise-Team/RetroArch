@@ -247,6 +247,9 @@ static void gfx_widget_screenshot_frame(void* data, void *user_data)
    {
       char shotname[256];
       gfx_animation_ctx_ticker_t ticker;
+      float x_pos = (state->state_slot && video_width > state->width)
+            ? (float)(video_width - state->width)
+            : 0.0f;
 
       gfx_display_set_alpha(p_dispwidget->backdrop_orig, DEFAULT_BACKDROP);
 
@@ -254,7 +257,7 @@ static void gfx_widget_screenshot_frame(void* data, void *user_data)
             p_disp,
             userdata,
             video_width, video_height,
-            0, state->y,
+            x_pos, state->y,
             state->width, state->height,
             video_width, video_height,
             p_dispwidget->backdrop_orig,
@@ -275,7 +278,7 @@ static void gfx_widget_screenshot_frame(void* data, void *user_data)
                state->thumbnail_width,
                state->thumbnail_height,
                state->texture,
-               0,
+               x_pos,
                state->y,
                0.0f, /* rad */
                1.0f, /* cos(rad)   = cos(0)  = 1.0f */
@@ -298,7 +301,7 @@ static void gfx_widget_screenshot_frame(void* data, void *user_data)
                userdata,
                video_width,
                video_height,
-               0,
+               x_pos,
                state->y,
                state->thumbnail_width,
                state->thumbnail_height,
@@ -312,7 +315,7 @@ static void gfx_widget_screenshot_frame(void* data, void *user_data)
             (state->state_slot)
                   ? msg_hash_to_str(MSG_STATE_SLOT)
                   : msg_hash_to_str(MSG_SCREENSHOT_SAVED),
-            state->thumbnail_width + padding,
+            x_pos + state->thumbnail_width + padding,
             padding + font_regular->line_ascender + state->y,
             video_width, video_height,
             TEXT_COLOR_FAINT,
@@ -330,7 +333,7 @@ static void gfx_widget_screenshot_frame(void* data, void *user_data)
 
       gfx_widgets_draw_text(font_regular,
             shotname,
-            state->thumbnail_width + padding,
+            x_pos + state->thumbnail_width + padding,
             state->height - padding - font_regular->line_descender + state->y,
             video_width, video_height,
             TEXT_COLOR_INFO,
@@ -392,11 +395,14 @@ static void gfx_widget_screenshot_iterate(
             state->texture_width, state->texture_height
       );
 
-      /* State slot is double size and at the bottom */
+      /* State slot screenshot shown in lower-left as a 1/3 size panel */
       if (state->state_slot)
       {
-         state->height       *= 2;
-         state->scale_factor *= 2;
+         state->height        = height / 3;
+         state->width         = width / 3;
+         state->scale_factor  = gfx_widgets_get_thumbnail_scale_factor(
+               state->width, state->height,
+               state->texture_width, state->texture_height);
          state->y             = height - state->height;
       }
 
@@ -412,7 +418,10 @@ static void gfx_widget_screenshot_iterate(
          state->thumbnail_width = state->thumbnail_width / (thumbnail_aspect / core_aspect);
       }
 
-      state->shotname_length  = (width - state->thumbnail_width - padding*2) / font_regular->glyph_width;
+      if (state->width > (state->thumbnail_width + (padding * 2)) && font_regular->glyph_width > 0)
+         state->shotname_length = (state->width - state->thumbnail_width - padding * 2) / font_regular->glyph_width;
+      else
+         state->shotname_length = 1;
 
       timer.cb                = gfx_widget_screenshot_end;
       timer.userdata          = p_dispwidget;

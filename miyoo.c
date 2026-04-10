@@ -2,13 +2,20 @@
 
 #include "miyoo.h"
 #include "configuration.h"
+#include "command.h"
 #include "file/config_file.h"
+#include "file/file_path.h"
 #include "file_path_special.h"
+#include "gfx/gfx_widgets.h"
 #include "gfx/video_driver.h"
+#include "menu/menu_driver.h"
 #include "paths.h"
 #include "runloop.h"
+#include "streams/file_stream.h"
 #include "string/stdstring.h"
 #include "verbosity.h"
+#include <sys/stat.h>
+#include <time.h>
 
 /**
  * @brief Displays an on-screen notification of the current scaling option.
@@ -163,6 +170,694 @@ static bool write_core_override_aspect_scale(settings_t *settings)
 
     return ret;
 }
+
+#if defined(MIYOO_CUSTOM_MENU)
+static bool miyoo_menu_active            = false;
+static bool miyoo_native_quickmenu_open  = false;
+static int miyoo_state_menu_mode         = 0;
+static bool miyoo_cpu_menu_open          = false;
+static bool miyoo_netplay_menu_open      = false;
+int miyoo_gfx_apply_cpuclock(int clock);
+
+static bool miyoo_cpu_clock_build_core_path(char *out_path, size_t len, const char *file_name);
+static bool miyoo_cpu_clock_write(long clock_hz);
+static bool miyoo_cpu_clock_apply_target(long clock_hz);
+static bool miyoo_cpu_clock_read(long *clock_hz);
+static bool miyoo_cpu_clock_matches_target(long target_hz);
+static bool miyoo_cpu_clock_sync_initialized = false;
+
+void miyoo_menu_context_begin(void)
+{
+    bool flush_stack = true;
+    long clock_hz    = 0;
+
+    miyoo_menu_active           = true;
+    miyoo_native_quickmenu_open = false;
+    menu_driver_ctl(RARCH_MENU_CTL_SET_PENDING_QUICK_MENU, &flush_stack);
+
+    if (miyoo_cpu_clock_read(&clock_hz))
+       miyoo_cpu_clock_apply_target(clock_hz);
+}
+
+void miyoo_menu_context_end(void)
+{
+    long clock_hz = 0;
+
+    miyoo_menu_active           = false;
+    miyoo_native_quickmenu_open = false;
+    miyoo_state_menu_mode       = 0;
+    miyoo_cpu_menu_open         = false;
+    miyoo_netplay_menu_open     = false;
+
+    if (miyoo_cpu_clock_read(&clock_hz))
+       miyoo_cpu_clock_apply_target(clock_hz);
+}
+
+bool miyoo_menu_context_active(void)
+{
+    return miyoo_menu_active;
+}
+
+bool miyoo_menu_context_is_native_quickmenu(void)
+{
+    return miyoo_menu_active && miyoo_native_quickmenu_open;
+}
+
+void miyoo_menu_open_native_quickmenu(void)
+{
+    bool flush_stack = false;
+
+    if (!miyoo_menu_active || miyoo_native_quickmenu_open)
+        return;
+
+    menu_driver_ctl(RARCH_MENU_CTL_SET_PENDING_QUICK_MENU, &flush_stack);
+    miyoo_native_quickmenu_open = true;
+}
+
+void miyoo_menu_resume_from_native_quickmenu(void)
+{
+    if (!miyoo_menu_active)
+        return;
+
+    miyoo_native_quickmenu_open = false;
+}
+
+static bool miyoo_cpu_clock_build_core_path(char *out_path, size_t len, const char *file_name);
+static bool miyoo_cpu_clock_write(long clock_hz);
+static bool miyoo_cpu_clock_apply_target(long clock_hz);
+static bool miyoo_cpu_clock_read(long *clock_hz);
+
+static long miyoo_cpu_clock_cached_hz       = 0;
+static bool miyoo_cpu_clock_runtime_override = false;
+
+static bool miyoo_cpu_clock_read_from_file(const char *path, long *clock_hz)
+{
+    RFILE *fp    = NULL;
+    char buf[64] = {0};
+
+    if (string_is_empty(path) || !clock_hz)
+        return false;
+
+    fp = filestream_open(path, RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+    if (!fp)
+        return false;
+
+    if (filestream_gets(fp, buf, sizeof(buf)))
+        *clock_hz = strtol(buf, NULL, 10);
+    filestream_close(fp);
+
+    return (*clock_hz > 0);
+}
+
+static bool miyoo_cpu_clock_read_from_system(long *clock_hz)
+{
+    const char *clock_paths[] = {
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed",
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq"
+    };
+    size_t i;
+
+    if (!clock_hz)
+        return false;
+
+    for (i = 0; i < (sizeof(clock_paths) / sizeof(clock_paths[0])); i++)
+    {
+        if (miyoo_cpu_clock_read_from_file(clock_paths[i], clock_hz))
+            return true;
+    }
+
+    return (*clock_hz > 0);
+}
+
+static bool miyoo_cpu_clock_matches_target(long target_hz)
+{
+    long current_hz = 0;
+    long diff       = 0;
+
+    if (target_hz <= 0)
+        return false;
+
+    if (!miyoo_cpu_clock_read_from_system(&current_hz) || current_hz <= 0)
+        return false;
+
+    diff = current_hz - target_hz;
+    if (diff < 0)
+       diff = -diff;
+
+    return diff <= 50000;
+}
+
+static bool miyoo_cpu_clock_read(long *clock_hz)
+{
+    char path[PATH_MAX_LENGTH];
+    char rom_clock_file[PATH_MAX_LENGTH];
+    rarch_system_info_t *system            = &runloop_state_get_ptr()->system;
+    const char *core_name                  = system ? system->info.library_name : NULL;
+    const char *rarch_path_basename        = path_get(RARCH_PATH_BASENAME);
+    const char *rom_name                   = path_basename_nocompression(rarch_path_basename);
+    bool from_system                        = false;
+
+    if (!clock_hz)
+        return false;
+
+    if (miyoo_cpu_clock_runtime_override && miyoo_cpu_clock_cached_hz > 0)
+    {
+       *clock_hz = miyoo_cpu_clock_cached_hz;
+       return true;
+    }
+
+    *clock_hz = 0;
+
+    if (!string_is_empty(core_name))
+    {
+       if (!string_is_empty(rom_name))
+       {
+          snprintf(rom_clock_file, sizeof(rom_clock_file), "%s-cpu", rom_name);
+          if (miyoo_cpu_clock_build_core_path(path, sizeof(path), rom_clock_file)
+                && miyoo_cpu_clock_read_from_file(path, clock_hz))
+             goto found;
+       }
+
+       if (miyoo_cpu_clock_build_core_path(path, sizeof(path), "cpuclock")
+             && miyoo_cpu_clock_read_from_file(path, clock_hz))
+          goto found;
+    }
+
+    if (miyoo_cpu_clock_read_from_file("/mnt/SDCARD/.simplemenu/cpu.sav", clock_hz))
+       goto found;
+
+    if (!miyoo_cpu_clock_read_from_system(clock_hz))
+    {
+       if (miyoo_cpu_clock_cached_hz > 0)
+       {
+          *clock_hz = miyoo_cpu_clock_cached_hz;
+          return true;
+       }
+       return false;
+    }
+    from_system = true;
+
+found:
+    miyoo_cpu_clock_cached_hz = *clock_hz;
+
+    if (!from_system && !miyoo_cpu_clock_sync_initialized && *clock_hz > 0)
+    {
+       if (miyoo_gfx_apply_cpuclock((int)(*clock_hz)) != 0)
+          miyoo_cpu_clock_write(*clock_hz);
+       miyoo_cpu_clock_sync_initialized = true;
+    }
+
+    return (*clock_hz > 0);
+}
+
+static bool miyoo_cpu_clock_write(long clock_hz)
+{
+    const char *governor_paths[] = {
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor",
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    };
+    const char *clock_paths[] = {
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq",
+        "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq",
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq",
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed"
+    };
+    const char *userspace = "userspace";
+    char buf[64] = {0};
+    int n        = snprintf(buf, sizeof(buf), "%ld", clock_hz);
+    size_t i;
+    bool wrote_any = false;
+
+    if (n <= 0)
+        return false;
+
+    for (i = 0; i < (sizeof(governor_paths) / sizeof(governor_paths[0])); i++)
+    {
+        RFILE *fp = filestream_open(governor_paths[i], RETRO_VFS_FILE_ACCESS_WRITE,
+              RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+        if (!fp)
+            continue;
+
+        filestream_write(fp, userspace, strlen(userspace));
+        filestream_close(fp);
+    }
+
+    for (i = 0; i < (sizeof(clock_paths) / sizeof(clock_paths[0])); i++)
+    {
+        RFILE *fp = filestream_open(clock_paths[i], RETRO_VFS_FILE_ACCESS_WRITE,
+              RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+        if (!fp)
+            continue;
+
+        filestream_write(fp, buf, (size_t)n);
+        filestream_close(fp);
+        wrote_any = true;
+    }
+
+    if (wrote_any)
+       miyoo_cpu_clock_cached_hz = clock_hz;
+
+    return wrote_any;
+}
+
+static bool miyoo_cpu_clock_apply_target(long clock_hz)
+{
+    bool applied_runtime = false;
+    bool applied_sysfs   = false;
+
+    if (clock_hz <= 0)
+        return false;
+
+    if (miyoo_gfx_apply_cpuclock((int)clock_hz) == 0)
+       applied_runtime = miyoo_cpu_clock_matches_target(clock_hz);
+
+    applied_sysfs = miyoo_cpu_clock_write(clock_hz);
+
+    if (!applied_runtime && applied_sysfs)
+       applied_runtime = miyoo_cpu_clock_matches_target(clock_hz);
+
+    return applied_runtime || applied_sysfs;
+}
+
+bool miyoo_menu_cpu_clock_get_runtime_override(long *clock_hz)
+{
+    if (!clock_hz)
+        return false;
+    if (!miyoo_cpu_clock_runtime_override || miyoo_cpu_clock_cached_hz <= 0)
+        return false;
+
+    *clock_hz = miyoo_cpu_clock_cached_hz;
+    return true;
+}
+
+static bool miyoo_cpu_clock_build_core_path(char *out_path, size_t len, const char *file_name)
+{
+    char config_directory[PATH_MAX_LENGTH];
+    char core_directory[PATH_MAX_LENGTH];
+    rarch_system_info_t *system = &runloop_state_get_ptr()->system;
+    const char *core_name       = system ? system->info.library_name : NULL;
+
+    if (!out_path || string_is_empty(file_name) || string_is_empty(core_name))
+        return false;
+
+    fill_pathname_application_special(config_directory,
+                                      sizeof(config_directory),
+                                      APPLICATION_SPECIAL_DIRECTORY_CONFIG);
+
+    fill_pathname_join_special(core_directory, config_directory, core_name, sizeof(core_directory));
+    if (!path_is_directory(core_directory))
+       path_mkdir(core_directory);
+
+    fill_pathname_join_special_ext(out_path, config_directory, core_name,
+                                   file_name, ".txt", len);
+    return true;
+}
+
+static int miyoo_cpu_clock_save_to_file(const char *file_name)
+{
+    long clock_hz = 0;
+    char path[PATH_MAX_LENGTH];
+    char data[64] = {0};
+    RFILE *fp     = NULL;
+    int n         = 0;
+
+    if (!miyoo_cpu_clock_read(&clock_hz))
+        return -1;
+    if (!miyoo_cpu_clock_build_core_path(path, sizeof(path), file_name))
+        return -1;
+
+    n = snprintf(data, sizeof(data), "%ld\n", clock_hz);
+    if (n <= 0)
+        return -1;
+
+    fp = filestream_open(path, RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
+    if (!fp)
+        return -1;
+    filestream_write(fp, data, (size_t)n);
+    filestream_close(fp);
+    return 0;
+}
+
+static void miyoo_menu_notify(const char *msg)
+{
+    if (string_is_empty(msg))
+        return;
+    runloop_msg_queue_push(msg, strlen(msg), 1, 90, true, NULL,
+          MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
+}
+
+int miyoo_menu_action_resume(void)
+{
+    return command_event(CMD_EVENT_MENU_TOGGLE, NULL) ? 0 : -1;
+}
+
+int miyoo_menu_action_save_state(void)
+{
+    miyoo_menu_state_menu_open_save();
+    return 0;
+}
+
+int miyoo_menu_action_load_state(void)
+{
+    miyoo_menu_state_menu_open_load();
+    return 0;
+}
+
+int miyoo_menu_action_sync_now(void)
+{
+#ifdef HAVE_CLOUDSYNC
+    return command_event(CMD_EVENT_CLOUD_SYNC, NULL) ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+int miyoo_menu_action_cpu_adjust(int delta_mhz)
+{
+    long current = 0;
+    long target  = 0;
+
+    if (!miyoo_cpu_clock_read(&current))
+        return -1;
+
+    target = current + ((long)delta_mhz * 1000L);
+    if (target < 200000)
+        target = 200000;
+    else if (target > 1400000)
+        target = 1400000;
+
+    if (miyoo_cpu_clock_apply_target(target))
+    {
+        char msg[64];
+        miyoo_cpu_clock_cached_hz = target;
+        miyoo_cpu_clock_runtime_override = true;
+        snprintf(msg, sizeof(msg), "CPU: %ld MHz", target / 1000L);
+        miyoo_menu_notify(msg);
+        return 0;
+    }
+    return -1;
+}
+
+int miyoo_menu_action_set_cpu_clock(int mhz)
+{
+    long target = (long)mhz * 1000L;
+
+    if (target < 200000)
+        target = 200000;
+    else if (target > 1400000)
+        target = 1400000;
+
+    if (!miyoo_cpu_clock_apply_target(target))
+        return -1;
+    miyoo_cpu_clock_cached_hz = target;
+    miyoo_cpu_clock_runtime_override = true;
+
+    {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "CPU: %ld MHz", target / 1000L);
+        miyoo_menu_notify(msg);
+    }
+    return 0;
+}
+
+void miyoo_menu_cpu_menu_open(void)
+{
+    miyoo_cpu_menu_open = true;
+}
+
+void miyoo_menu_cpu_menu_close(void)
+{
+    miyoo_cpu_menu_open = false;
+}
+
+bool miyoo_menu_cpu_menu_is_open(void)
+{
+    return miyoo_cpu_menu_open;
+}
+
+int miyoo_menu_cpu_menu_get_index(void)
+{
+    static const int clocks_mhz[] = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400};
+    long hz = miyoo_menu_cpu_clock_get_hz();
+    int mhz = (int)(hz / 1000L);
+    int i;
+    int best_idx = 0;
+    int best_delta = 0x7fffffff;
+
+    for (i = 0; i < (int)(sizeof(clocks_mhz) / sizeof(clocks_mhz[0])); i++)
+    {
+        int delta = clocks_mhz[i] - mhz;
+        if (delta < 0)
+            delta = -delta;
+        if (delta < best_delta)
+        {
+            best_delta = delta;
+            best_idx   = i;
+        }
+    }
+
+    return best_idx;
+}
+
+long miyoo_menu_cpu_clock_get_hz(void)
+{
+    long current = 0;
+    if (!miyoo_cpu_clock_read(&current))
+        return 0;
+    return current;
+}
+
+int miyoo_menu_action_save_cpu_core(void)
+{
+    int ret = miyoo_cpu_clock_save_to_file("cpuclock");
+    if (ret == 0)
+        miyoo_menu_notify("CPU guardado (core)");
+    else
+        miyoo_menu_notify("Error al guardar CPU (core)");
+    return ret;
+}
+
+int miyoo_menu_action_save_cpu_rom(void)
+{
+    char rom_cpu_file[PATH_MAX_LENGTH];
+    const char *rarch_path_basename = path_get(RARCH_PATH_BASENAME);
+    const char *rom_name             = path_basename_nocompression(rarch_path_basename);
+
+    if (string_is_empty(rom_name))
+        return -1;
+
+    snprintf(rom_cpu_file, sizeof(rom_cpu_file), "%s-cpu", rom_name);
+    {
+        int ret = miyoo_cpu_clock_save_to_file(rom_cpu_file);
+        if (ret == 0)
+            miyoo_menu_notify("CPU guardado (ROM)");
+        else
+            miyoo_menu_notify("Error al guardar CPU (ROM)");
+        return ret;
+    }
+}
+
+int miyoo_menu_action_netplay_host(void)
+{
+#ifdef HAVE_NETWORKING
+    return command_event(CMD_EVENT_NETPLAY_ENABLE_HOST, NULL) ? 0 : -1;
+#else
+    return -1;
+#endif
+}
+
+int miyoo_menu_action_netplay_client(void)
+{
+    return -1;
+}
+
+void miyoo_menu_netplay_menu_open(void)
+{
+    miyoo_netplay_menu_open = true;
+}
+
+void miyoo_menu_netplay_menu_close(void)
+{
+    miyoo_netplay_menu_open = false;
+}
+
+bool miyoo_menu_netplay_menu_is_open(void)
+{
+    return miyoo_netplay_menu_open;
+}
+
+int miyoo_menu_action_open_quick_menu(void)
+{
+    miyoo_menu_open_native_quickmenu();
+    return 0;
+}
+
+int miyoo_menu_action_quit_retroarch(void)
+{
+    return command_event(CMD_EVENT_QUIT, NULL) ? 0 : -1;
+}
+
+void miyoo_menu_state_menu_open_save(void)
+{
+    miyoo_state_menu_mode = 1;
+}
+
+void miyoo_menu_state_menu_open_load(void)
+{
+    miyoo_state_menu_mode = 2;
+}
+
+void miyoo_menu_state_menu_close(void)
+{
+    miyoo_state_menu_mode = 0;
+}
+
+int miyoo_menu_state_menu_get_mode(void)
+{
+    return miyoo_state_menu_mode;
+}
+
+int miyoo_menu_action_state_slot(int slot)
+{
+    settings_t *settings = config_get_ptr();
+    int mode             = miyoo_state_menu_mode;
+    bool old_thumbnail   = false;
+    bool old_auto_index  = false;
+    bool command_ok      = false;
+    char shot_name[16]   = {0};
+    char state_path[PATH_MAX_LENGTH];
+
+    if (!settings || slot < 0 || slot > 2)
+        return -1;
+
+    configuration_set_int(settings, settings->ints.state_slot, slot);
+    old_auto_index = settings->bools.savestate_auto_index;
+    settings->bools.savestate_auto_index = false;
+
+    if (mode == 1)
+    {
+        old_thumbnail = settings->bools.savestate_thumbnail_enable;
+        settings->bools.savestate_thumbnail_enable = true;
+        command_ok = command_event(CMD_EVENT_SAVE_STATE, NULL);
+        settings->bools.savestate_thumbnail_enable = old_thumbnail;
+    }
+    else if (mode == 2)
+        command_ok = command_event(CMD_EVENT_LOAD_STATE, NULL);
+    else
+    {
+        settings->bools.savestate_auto_index = old_auto_index;
+        return -1;
+    }
+
+    settings->bools.savestate_auto_index = old_auto_index;
+    configuration_set_int(settings, settings->ints.state_slot, slot);
+
+    if (command_ok && dispwidget_get_ptr()->active && runloop_get_savestate_path(state_path, sizeof(state_path), slot))
+    {
+        size_t _len = strlen(state_path);
+        strlcpy(state_path + _len, FILE_PATH_PNG_EXTENSION, sizeof(state_path) - _len);
+        snprintf(shot_name, sizeof(shot_name), "%d", slot + 1);
+        gfx_widget_state_slot_show(dispwidget_get_ptr(), shot_name, state_path);
+    }
+
+    miyoo_state_menu_mode = 0;
+    return command_event(CMD_EVENT_MENU_TOGGLE, NULL) ? 0 : -1;
+}
+
+void miyoo_menu_update_savestate_thumbnail(unsigned selection)
+{
+    settings_t *settings        = config_get_ptr();
+    dispgfx_widget_t *widget_st = dispwidget_get_ptr();
+    struct menu_state *menu_st  = menu_state_get_ptr();
+    char shot_name[16]          = {0};
+    char state_path[PATH_MAX_LENGTH];
+    int slot                    = settings ? settings->ints.state_slot : -1;
+
+    (void)selection;
+
+    if (!widget_st || !widget_st->active)
+        return;
+
+    if (slot < 0 || slot > 999)
+    {
+        gfx_widget_state_slot_show(widget_st, NULL, NULL);
+        return;
+    }
+
+    if (!runloop_get_savestate_path(state_path, sizeof(state_path), slot))
+    {
+        gfx_widget_state_slot_show(widget_st, NULL, NULL);
+        return;
+    }
+
+    {
+        size_t _len = strlen(state_path);
+        strlcpy(state_path + _len, FILE_PATH_PNG_EXTENSION, sizeof(state_path) - _len);
+    }
+
+    if (!path_is_valid(state_path))
+    {
+        gfx_widget_state_slot_show(widget_st, NULL, NULL);
+        return;
+    }
+
+    snprintf(shot_name, sizeof(shot_name), "%d", slot + 1);
+    gfx_widget_state_slot_show(widget_st, shot_name, state_path);
+
+    if (!menu_st || !menu_st->driver_ctx)
+        return;
+
+    if (menu_st->driver_ctx->update_savestate_thumbnail_path)
+        menu_st->driver_ctx->update_savestate_thumbnail_path(
+              menu_st->userdata, selection);
+    if (menu_st->driver_ctx->update_savestate_thumbnail_image)
+        menu_st->driver_ctx->update_savestate_thumbnail_image(menu_st->userdata);
+}
+
+void miyoo_menu_state_slot_label(int slot, char *out, size_t len)
+{
+    char state_path[PATH_MAX_LENGTH];
+    char thumb_path[PATH_MAX_LENGTH * 2];
+    char date_buf[64] = {0};
+    struct stat st_state;
+    struct stat st_thumb;
+    bool has_thumb = false;
+
+    if (!out || len == 0)
+        return;
+
+    out[0] = '\0';
+    if (slot < 0 || slot > 2 || !runloop_get_savestate_path(state_path, sizeof(state_path), slot))
+    {
+        snprintf(out, len, "Slot %d - NO DATA", slot + 1);
+        return;
+    }
+
+    if (stat(state_path, &st_state) != 0)
+    {
+        snprintf(out, len, "Slot %d - NO DATA", slot + 1);
+        return;
+    }
+
+    strlcpy(thumb_path, state_path, sizeof(thumb_path));
+    strlcpy(thumb_path + strlen(thumb_path), FILE_PATH_PNG_EXTENSION,
+          sizeof(thumb_path) - strlen(thumb_path));
+    has_thumb = (stat(thumb_path, &st_thumb) == 0);
+
+    {
+       struct tm tm_buf;
+       localtime_r(&st_state.st_mtime, &tm_buf);
+       strftime(date_buf, sizeof(date_buf), "%Y-%m-%d %H:%M", &tm_buf);
+    }
+
+    (void)has_thumb;
+    snprintf(out, len, "Slot %d - %s", slot + 1, date_buf);
+}
+#endif
 
 /**
  * @brief Toggle scaling options.

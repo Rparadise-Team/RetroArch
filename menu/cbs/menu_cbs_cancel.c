@@ -21,6 +21,9 @@
 #include "../../audio/audio_driver.h"
 #include "../../configuration.h"
 #include "../../msg_hash.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 #ifdef HAVE_CHEATS
 #include "../../cheat_manager.h"
 #endif
@@ -46,7 +49,54 @@ int action_cancel_pop_default(const char *path,
       audio_driver_mixer_play_menu_sound(AUDIO_MIXER_SYSTEM_SLOT_CANCEL);
 #endif
 
+#if defined(MIYOO_CUSTOM_MENU)
    menu_entries_get_last_stack(NULL, &menu_label, &menu_type, NULL, NULL);
+
+   if (miyoo_menu_netplay_menu_is_open())
+   {
+      if (   string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_NETPLAY))
+          || string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_NETPLAY_TAB))
+          || string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_NETPLAY_SETTINGS)))
+      {
+         size_t new_selection_ptr = menu_st->selection_ptr;
+         miyoo_menu_netplay_menu_close();
+         menu_entries_pop_stack(&new_selection_ptr, 0, 1);
+         menu_st->selection_ptr = 8;
+         if (menu_st->driver_ctx->navigation_set)
+            menu_st->driver_ctx->navigation_set(menu_st->userdata, false);
+         menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+         return 0;
+      }
+   }
+
+   if (   miyoo_menu_context_active()
+       && !miyoo_menu_context_is_native_quickmenu()
+       && !miyoo_menu_netplay_menu_is_open())
+   {
+      bool handled_submenu = false;
+
+      if (miyoo_menu_cpu_menu_is_open())
+      {
+         miyoo_menu_cpu_menu_close();
+         menu_st->selection_ptr = 4;
+         handled_submenu = true;
+      }
+      if (miyoo_menu_state_menu_get_mode() != 0)
+      {
+         int state_menu_mode = miyoo_menu_state_menu_get_mode();
+         miyoo_menu_state_menu_close();
+         menu_st->selection_ptr = (state_menu_mode == 1) ? 1 : 2;
+         handled_submenu = true;
+      }
+
+      if (!handled_submenu)
+         menu_st->selection_ptr = 0;
+      if (menu_st->driver_ctx->navigation_set)
+         menu_st->driver_ctx->navigation_set(menu_st->userdata, false);
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+      return 0;
+   }
+#endif
 
    /* Check whether search terms have been set
     * > If so, check whether this is a menu list

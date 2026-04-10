@@ -60,6 +60,9 @@
 #include "../../paths.h"
 #include "../../retroarch.h"
 #include "../../runloop.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../../miyoo.h"
+#endif
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
@@ -926,6 +929,51 @@ static void set_cpuclock(int clock) {
 	close(fd_mem);
 }
 
+int miyoo_gfx_apply_cpuclock(int clock)
+{
+   const char *governor_paths[] = {
+      "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor",
+      "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+   };
+   const char *setspeed_paths[] = {
+      "/sys/devices/system/cpu/cpufreq/policy0/scaling_setspeed",
+      "/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+   };
+   char str[16];
+   bool wrote_any           = false;
+   size_t i;
+
+   if (clock < 200000)
+      clock = 200000;
+   else if (clock > 1400000)
+      clock = 1400000;
+
+   for (i = 0; i < (sizeof(governor_paths) / sizeof(governor_paths[0])); i++)
+   {
+      FILE *fp = fopen(governor_paths[i], "w");
+      if (!fp)
+         continue;
+      fwrite("userspace", 1, strlen("userspace"), fp);
+      fclose(fp);
+      wrote_any = true;
+   }
+
+   snprintf(str, sizeof(str), "%d", clock);
+   for (i = 0; i < (sizeof(setspeed_paths) / sizeof(setspeed_paths[0])); i++)
+   {
+      int fset = open(setspeed_paths[i], O_WRONLY);
+      if (fset < 0)
+         continue;
+      write(fset, str, strlen(str));
+      close(fset);
+      wrote_any = true;
+   }
+
+   sync();
+   set_cpuclock(clock);
+   return wrote_any ? 0 : -1;
+}
+
 static void print_clock(void) {
 	int fd_mem = open("/dev/mem", O_RDWR);
 	void* pll_map = mmap(0, PLL_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_mem, BASE_REG_MPLL_PA);
@@ -963,8 +1011,13 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
    FILE *fps = NULL;
    char config_directory[PATH_MAX_LENGTH];
    char cpuclock_config_path[PATH_MAX_LENGTH];
+   char rom_cpuclock_config_path[PATH_MAX_LENGTH];
+   char rom_cpu_file[PATH_MAX_LENGTH];
+   const char *clock_path_used = NULL;
    rarch_system_info_t *system = &runloop_state_get_ptr()->system;
    const char *core_name = system ? system->info.library_name : NULL;
+   const char *rarch_path_basename = path_get(RARCH_PATH_BASENAME);
+   const char *rom_name = path_basename_nocompression(rarch_path_basename);
 
    if (!minfreq) {
       /* save min_freq */
@@ -984,23 +1037,55 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 
    /* set cpu clock to value in cpuclock.txt */
    if (gov == PERFORMANCE) {
+#if defined(MIYOO_CUSTOM_MENU)
+      {
+         long runtime_clock = 0;
+         if (miyoo_menu_cpu_clock_get_runtime_override(&runtime_clock)
+               && runtime_clock >= 200000
+               && runtime_clock <= 1400000)
+         {
+            char str[16];
+            fp = fopen(fn_governor, "w");
+            if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
+            int fset = open(fn_setspeed, O_WRONLY);
+            snprintf(str, sizeof(str), "%ld", runtime_clock);
+            if (fset >= 0) { write(fset, str, strlen(str)); close(fset); }
+            set_cpuclock((int)runtime_clock);
+            RARCH_LOG("[CPU]: Runtime override clock: %ld MHz\n", runtime_clock / 1000);
+            print_clock();
+            return;
+         }
+      }
+#endif
 	   
 	  if (!string_is_empty(core_name)) {
       /* Get base config directory */
       fill_pathname_application_special(config_directory, sizeof(config_directory), APPLICATION_SPECIAL_DIRECTORY_CONFIG);
 
-      // Get core config path for cpuclock.txt
-      fill_pathname_join_special_ext(cpuclock_config_path, config_directory, core_name, "cpuclock", ".txt", PATH_MAX_LENGTH);
+      if (!string_is_empty(rom_name))
+      {
+         snprintf(rom_cpu_file, sizeof(rom_cpu_file), "%s-cpu", rom_name);
+         fill_pathname_join_special_ext(rom_cpuclock_config_path, config_directory, core_name, rom_cpu_file, ".txt", PATH_MAX_LENGTH);
+         fps = fopen(rom_cpuclock_config_path, "r");
+         clock_path_used = rom_cpuclock_config_path;
+         RARCH_LOG("[CPU]: ROM path %s: %s\n", fps ? "found" : "not found", rom_cpuclock_config_path);
+      }
 
-      fps = fopen(cpuclock_config_path, "r");
+      if (!fps)
+      {
+         /* Get core config path for cpuclock.txt */
+         fill_pathname_join_special_ext(cpuclock_config_path, config_directory, core_name, "cpuclock", ".txt", PATH_MAX_LENGTH);
+         fps = fopen(cpuclock_config_path, "r");
+         clock_path_used = cpuclock_config_path;
+      }
       }
 	   
       if (fps) {
          int cpuclock = 0;
 		 char str[16];
-		 RARCH_LOG("[CPU]: Path %s: %s\n", fps ? "found" : "not found", cpuclock_config_path);
+		 RARCH_LOG("[CPU]: Path %s: %s\n", fps ? "found" : "not found", clock_path_used ? clock_path_used : "unknown");
          fscanf(fps, "%d", &cpuclock); fclose(fps);
-         if ((cpuclock >= 400000)&&(cpuclock <= 1400000)) {
+         if ((cpuclock >= 200000)&&(cpuclock <= 1400000)) {
             fp = fopen(fn_governor, "w");
             if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
             int fset = open(fn_setspeed, O_WRONLY);
@@ -1015,7 +1100,8 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 			RARCH_LOG("[CPU]: invalid cpu config value\n");
 	        fps = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
 			RARCH_LOG("[CPU]: Path %s: ./cpu.sav\n", fps ? "found" : "not found");
-			fclose(fps);
+			if (fps)
+			   fclose(fps);
 			fp = fopen(fn_governor, "w");
             if (fp) { fprintf(fp, "%s", governor); fclose(fp); }
 			return;
@@ -1027,8 +1113,11 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 		 char *governor = "performance";
 		 fps = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
          RARCH_LOG("[CPU]: Path %s: ./cpu.sav\n", fps ? "found" : "not found");
-		 fscanf(fps, "%d", &cpuclock); fclose(fps);
-		 if ((cpuclock >= 400000)&&(cpuclock <= 1200000)) {
+		 if (fps) {
+		    fscanf(fps, "%d", &cpuclock);
+		    fclose(fps);
+         }
+		 if ((cpuclock >= 200000)&&(cpuclock <= 1400000)) {
 			fp = fopen(fn_governor, "w");
             if (fp) { fprintf(fp, "%s", governor); fclose(fp); }
             RARCH_LOG("[CPU]: Clock is: %d MHz\n", cpuclock / 1000);
@@ -1108,6 +1197,29 @@ static void sdl_miyoomini_gfx_free(void *data) {
 #endif
 
    free(vid);
+	
+   {
+      int restore_clock = 0;
+      FILE *fps = fopen("/mnt/SDCARD/.simplemenu/cpu.sav", "r");
+      if (fps) {
+         fscanf(fps, "%d", &restore_clock);
+         fclose(fps);
+      }
+      if (restore_clock >= 200000 && restore_clock <= 1200000) {
+         char str[32];
+         const char *clockpaths[] = {
+            "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
+            "/sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq"
+         };
+         snprintf(str, sizeof(str), "%d", restore_clock);
+         for (size_t i = 0; i < sizeof(clockpaths)/sizeof(clockpaths[0]); i++) {
+            FILE *fp = fopen(clockpaths[i], "w");
+            if (fp) { fputs(str, fp); fclose(fp); }
+         }
+         RARCH_LOG("[CPU]: Exit restore scaling_max_freq to cpu.sav: %d MHz\n",
+                   restore_clock / 1000);
+      }
+   }
 
    sdl_miyoomini_set_cpugovernor(ONDEMAND);
 }

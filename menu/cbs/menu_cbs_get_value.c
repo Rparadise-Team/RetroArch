@@ -46,6 +46,9 @@
 #endif
 #include "../../playlist.h"
 #include "../../manual_content_scan.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 #include "../misc/cpufreq/cpufreq.h"
 #include "../../audio/audio_driver.h"
 
@@ -1267,6 +1270,26 @@ static size_t menu_action_setting_disp_set_label_generic(
    return 0;
 }
 
+#if defined(MIYOO_CUSTOM_MENU)
+static size_t menu_action_setting_disp_set_label_miyoo_cpu_clock(
+      file_list_t *list,
+      unsigned *w, unsigned type, unsigned i,
+      const char *label,
+      char *s, size_t len,
+      const char *path,
+      char *s2, size_t len2)
+{
+   long hz = miyoo_menu_cpu_clock_get_hz();
+   int mhz = (int)(hz / 1000L);
+   *w = 19;
+   if (!string_is_empty(path))
+      strlcpy(s2, path, len2);
+   if (mhz <= 0)
+      return strlcpy(s, "N/A", len);
+   return snprintf(s, len, "%d MHz", mhz);
+}
+#endif
+
 static size_t menu_action_setting_disp_set_label_menu_file_carchive(
       file_list_t* list,
       unsigned *w, unsigned type, unsigned i,
@@ -2278,6 +2301,12 @@ static int menu_cbs_init_bind_get_string_representation_compare_type(
          BIND_ACTION_GET_VALUE(cbs,
                menu_action_setting_disp_set_label_menu_file_cheat);
          break;
+#if defined(MIYOO_CUSTOM_MENU)
+      case FILE_TYPE_MIYOO_CPU_CLOCK:
+         BIND_ACTION_GET_VALUE(cbs,
+               menu_action_setting_disp_set_label_miyoo_cpu_clock);
+         break;
+#endif
       case MENU_SETTINGS_CHEAT_MATCH:
 #ifdef HAVE_CHEATS
          BIND_ACTION_GET_VALUE(cbs,

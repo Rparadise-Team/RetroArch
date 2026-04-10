@@ -43,6 +43,9 @@
 #include "../../performance_counters.h"
 #include "../../playlist.h"
 #include "../../manual_content_scan.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 
 #include "../../audio/audio_driver.h"
 #include "../../input/input_remapping.h"
@@ -483,6 +486,26 @@ static int action_start_state_slot(
 
    return 0;
 }
+
+#if defined(MIYOO_CUSTOM_MENU)
+static int action_start_miyoo_state_slot(
+      const char *path, const char *label,
+      unsigned type, size_t idx, size_t entry_idx)
+{
+   settings_t *settings       = config_get_ptr();
+   int slot                   = 0;
+
+   if (type == FILE_TYPE_MIYOO_STATE_SLOT_2)
+      slot = 1;
+   else if (type == FILE_TYPE_MIYOO_STATE_SLOT_3)
+      slot = 2;
+
+   settings->ints.state_slot = slot;
+   miyoo_menu_update_savestate_thumbnail((unsigned)idx);
+
+   return 0;
+}
+#endif
 
 static int action_start_replay_slot(
       const char *path, const char *label,
@@ -961,6 +984,13 @@ static int menu_cbs_init_bind_start_compare_type(menu_file_list_cbs_t *cbs,
          case MENU_SETTING_ACTION_LOADSTATE:
             BIND_ACTION_START(cbs, action_start_state_slot);
             break;
+#if defined(MIYOO_CUSTOM_MENU)
+         case FILE_TYPE_MIYOO_STATE_SLOT_1:
+         case FILE_TYPE_MIYOO_STATE_SLOT_2:
+         case FILE_TYPE_MIYOO_STATE_SLOT_3:
+            BIND_ACTION_START(cbs, action_start_miyoo_state_slot);
+            break;
+#endif
          case MENU_SETTING_ACTION_PLAYREPLAY:
          case MENU_SETTING_ACTION_RECORDREPLAY:
          case MENU_SETTING_ACTION_HALTREPLAY:
