@@ -99,7 +99,7 @@ int setBrightnessMM()
     int brightness = getValueMM("brightness");
     int set = 0;
 	if (brightness == 0) {
-    	set = (brightness+3);
+    	set = (brightness+6);
 	} else {
 		set = (brightness*10);
 	}
