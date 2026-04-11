@@ -3739,9 +3739,11 @@ static int menu_displaylist_parse_load_content_settings(
          if (menu_entries_append(list, "Load State", "miyoo_load_state",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_LOAD_STATE, 0, 0, NULL))
             count++;
-         if (menu_entries_append(list, "Sincronizar Ahora", "miyoo_sync_now",
+#ifdef HAVE_NETWORKING		  
+         if (menu_entries_append(list, "Sync now", "miyoo_sync_now",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_SYNC_NOW, 0, 0, NULL))
             count++;
+#endif
          if (menu_entries_append(list, "Miyoo CPU Clock", "miyoo_cpu_clock",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_CPU_CLOCK, 0, 0, NULL))
             count++;
@@ -3752,17 +3754,17 @@ static int menu_displaylist_parse_load_content_settings(
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_SAVE_CPU_ROM, 0, 0, NULL))
             count++;
 #ifdef HAVE_NETWORKING
-         if (menu_entries_append(list, "Activar Netplay (Servidor)", "miyoo_netplay_host",
+         if (menu_entries_append(list, "Start Net-play (Server)", "miyoo_netplay_host",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_NETPLAY_HOST, 0, 0, NULL))
             count++;
-         if (menu_entries_append(list, "Netplay Host/LAN (Cliente)", "miyoo_netplay_client",
+         if (menu_entries_append(list, "Net-play Host/LAN (Client)", "miyoo_netplay_client",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_NETPLAY_CLIENT, 0, 0, NULL))
             count++;
 #endif
-         if (menu_entries_append(list, "Menu Rapido", "miyoo_quick_menu",
+         if (menu_entries_append(list, "Retroarch Settings", "miyoo_quick_menu",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_QUICK_MENU, 0, 0, NULL))
             count++;
-         if (menu_entries_append(list, "Cerrar RetroArch", "miyoo_quit",
+         if (menu_entries_append(list, "Close RetroArch", "miyoo_quit",
                MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_QUIT_RETROARCH, 0, 0, NULL))
             count++;
          return count;
