@@ -88,6 +88,16 @@ static int action_bind_label_playlist_collection_entry(
    return 0;
 }
 
+static int action_bind_label_content_settings(
+      file_list_t *list,
+      unsigned type, unsigned i,
+      const char *label, const char *path,
+      char *s, size_t len)
+{
+   strlcpy(s, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_CONTENT_SETTINGS), len);
+   return 0;
+}
+
 #ifdef HAVE_CHEATS
 static int action_bind_label_cheat_browse_address(
       file_list_t *list,
@@ -124,7 +134,7 @@ int menu_cbs_init_bind_label(menu_file_list_cbs_t *cbs,
             BIND_ACTION_LABEL(cbs, action_bind_label_playlist_collection_entry);
             break;
          case MENU_ENUM_LABEL_CONTENT_SETTINGS:
-            BIND_ACTION_LABEL(cbs, action_bind_label_playlist_collection_entry);
+            BIND_ACTION_LABEL(cbs, action_bind_label_content_settings);
             break;
          case MENU_ENUM_LABEL_CHEAT_BROWSE_MEMORY:
 #ifdef HAVE_CHEATS
