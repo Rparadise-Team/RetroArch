@@ -15922,3 +15922,110 @@ MSG_HASH(
    "Amosar a opción 'IA do xogo'."
    )
 #endif
+
+
+/* Miyoo Custom Menu */
+
+#if defined(MIYOO_CUSTOM_MENU)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "Miyoo Menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "Retomar"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "Gardar Estado"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "Estado de carga"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "Sync now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "Rendemento e potencia da CPU"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "Save CPU Clock (Core)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "Save CPU Clock (ROM)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "Comezar Servidor de Xogo en Rede"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "Conéctate ao Xogo en Rede do Anfitrión"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "Axustes"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "Saír"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "Menu Miyoo"
+   )
+
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "pecha o menú, volve ao xogo"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "Crea unha captura de pantalla gardada da rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "Cargar captura de pantalla gardada da rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "Sincroniza os ficheiros gardados na nube."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "Control de potencia da CPU en tempo real para Miyoo, de 200Mhz a 1400Mhz."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "garda a potencia da CPU seleccionada para o núcleo actual."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "garda a potencia da CPU seleccionada para a rom actual, esta ten prioridade sobre a velocidade do núcleo se se definiu previamente."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "A rede de arranque funciona como o reprodutor 1 nos núcleos compatibles."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "Menú de configuración de Net-play e lista de salas dispoñibles."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "Volve ao menú rápido retroarch xenérico e desactiva o menú Miyoo personalizado para obter unha configuración máis detallada."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "pechar retroarco."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "devolve o menú personalizado Miyoo, desactiva o menú rápido retroarch xenérico."
+   )
+#endif

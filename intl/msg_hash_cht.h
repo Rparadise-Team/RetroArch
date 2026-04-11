@@ -15102,3 +15102,110 @@ MSG_HASH(
 
 
 #endif
+
+
+/* Miyoo Custom Menu */
+
+#if defined(MIYOO_CUSTOM_MENU)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "Miyoo Menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "繼續"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "儲存即時存檔"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "載入即時存檔"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "Sync now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "CPU效能與功率"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "Save CPU Clock (Core)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "Save CPU Clock (ROM)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "建立連線主機"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "手動連線到主機"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "設定"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "結束復古電玩"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "Menu Miyoo"
+   )
+
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "關閉選單，返回遊戲"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "建立儲存 ROM 的螢幕截圖。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "載入已儲存的 ROM 螢幕截圖。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "將保存檔案同步到雲端。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "Miyoo的即時CPU電源控制，從200Mhz到1400Mhz。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "節省目前核心的選定 CPU 功率。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "為目前 ROM 儲存選定的 cpu 功率，如果先前已定義，則這優先於核心速度。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "在支援的核心上作為播放器 1 啟動網路功能。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "網路遊戲配置選單和可用房間列表。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "返回通用的 Retroarch 快捷選單並停用自訂 Miyoo 選單，以進行更深入的設定。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "關閉後弓。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "返回自訂選單Miyoo，停用通用retroarch快捷選單。"
+   )
+#endif

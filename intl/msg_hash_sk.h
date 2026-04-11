@@ -6854,3 +6854,110 @@ MSG_HASH(
 
 
 #endif
+
+
+/* Miyoo Custom Menu */
+
+#if defined(MIYOO_CUSTOM_MENU)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "Miyoo Menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "Pokračovať"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "Uložiť stav"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "Načítať stav"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "Sync now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "Miyoo CPU Clock"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "Save CPU Clock (Core)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "Save CPU Clock (ROM)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "Start Net-play (Server)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "Prihlásiť sa k hostiteľovi sieťovej hry"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "Nastavenia"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "Ukončiť"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "Menu Miyoo"
+   )
+
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "zatvorte menu, vráťte sa do hry"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "Vytvorte uloženú snímku obrazovky rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "Načítať uložiť snímku obrazovky rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "Synchronizujte uložené súbory do cloudu."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "Riadenie výkonu CPU pre Miyoo v reálnom čase, od 200 MHz do 1400 MHz."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "uloží zvolený výkon procesora pre aktuálne jadro."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "uloží zvolený výkon procesora pre aktuálnu ROM, má prednosť pred rýchlosťou jadra, ak bola predtým definovaná."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "Zavádza sieťové funkcie ako prehrávač 1 na podporovaných jadrách."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "Ponuka konfigurácie Net-play a zoznam dostupných miestností."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "Vráťte sa do všeobecného rýchleho menu retroarch a vypnite Custom Miyoo Menu pre podrobnejšie nastavenia."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "zavrieť retroarch."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "vrátiť vlastnú ponuku Miyoo, zakázať všeobecnú rýchlu ponuku retroarch."
+   )
+#endif

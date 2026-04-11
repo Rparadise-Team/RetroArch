@@ -16962,3 +16962,108 @@ MSG_HASH(
    "Show the 'Game AI' option."
    )
 #endif
+
+
+/* Miyoo Custom Menu */
+
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "Miyoo Menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "Resume"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "Save State"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "Load State"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "Sync Now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "CPU Performance and Power"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "Save CPU Clock (Core)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "Save CPU Clock (ROM)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "Start Netplay Host"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "Connect to Netplay Host"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "Settings"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "Quit"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "Menu Miyoo"
+   )
+
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "close menu, return to the game"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "Create save screenshot of the rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "Load save screenshot of the rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "Sync save files to the cloud."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "Real-time CPU power control for Miyoo, from 200Mhz to 1400Mhz."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "saves the selected cpu power for the current core."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "saves the selected cpu power for the current rom, this takes priority over the core speed if it has been previously defined."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "Boots networking functions as player 1 on supported cores."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "Net-play configuration menu and list of available rooms."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "Go back to the generic retroarch quick menu and disable Custom Miyoo Menu, for more in-depth settings."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "close retroarch."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "return the Custom Menu Miyoo, disable the generic retroarch quick menu."
+   )

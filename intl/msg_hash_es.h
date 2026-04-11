@@ -16132,3 +16132,110 @@ MSG_HASH(
    "Muestra la opción «IA de juego»."
    )
 #endif
+
+
+/* Miyoo Custom Menu */
+
+#if defined(MIYOO_CUSTOM_MENU)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "Miyoo Menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "Reanudar"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "Guardado rápido"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "Carga rápida"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "Sincronizar ahora"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "Rendimiento y potencia de la CPU"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "Save CPU Clock (Core)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "Save CPU Clock (ROM)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "Iniciar servidor de juego en red"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "Conectar a un servidor"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "Ajustes"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "Cerrar RetroArch"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "Menu Miyoo"
+   )
+
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "cierra menu, vuelve al juego"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "Crea captura de guardado de la rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "Carga captura de guardado de la rom."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "Sincroniza archivos de guardado en la nube."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "Control de la potencia de la cpu en tiempo real para Miyoo, desde 200Mhz a 1400Mhz."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "guarda la potencia de cpu seleccionado para el core actual."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "guarda la potencia de cpu seleccionado para la rom actual, esto tiene prioridad sobre la velocidad del core si se ha definido previamente."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "Arranca funciones de red como jugador 1 en cores compatibles."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "Menu de configuracion de Net-play y listado de salas disponibles."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "vuelve al quick menu generico de retroarch y deshabilita Custom Miyoo Menu, para configuraciones mas profundas."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "cierra retroarch."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "vuelva el Custom Menu Miyoo, deshabilita el quick menu generico de retroarch."
+   )
+#endif

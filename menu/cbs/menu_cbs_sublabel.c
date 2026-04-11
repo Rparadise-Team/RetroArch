@@ -212,6 +212,21 @@ static int menu_action_sublabel_achievement_pause_menu(file_list_t* list,
 }
 #endif
 
+#if defined(MIYOO_CUSTOM_MENU)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_resume, MENU_ENUM_SUBLABEL_MIYOO_RESUME)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_save_state, MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_load_state, MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_sync_now, MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_cpu_clock, MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_save_cpu_clock_core, MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_save_cpu_clock_rom, MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_netplay_host, MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_netplay_client, MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_retroarch_settings, MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_quit_retroarch, MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_menu_return, MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN)
+#endif
+
 #ifdef HAVE_AUDIOMIXER
 DEFAULT_SUBLABEL_MACRO(menu_action_sublabel_setting_audio_mixer_add_to_mixer_and_play,
       MENU_ENUM_SUBLABEL_ADD_TO_MIXER_AND_PLAY)
@@ -2570,6 +2585,44 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
          case MENU_ENUM_LABEL_QUICK_MENU_OVERRIDE_OPTIONS:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_quick_menu_override_options);
             break;
+#if defined(MIYOO_CUSTOM_MENU)
+         case MENU_ENUM_LABEL_MIYOO_RESUME:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_resume);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_SAVE_STATE:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_save_state);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_LOAD_STATE:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_load_state);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_SYNC_NOW:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_sync_now);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_CPU_CLOCK:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_cpu_clock);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_CORE:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_save_cpu_clock_core);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_ROM:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_save_cpu_clock_rom);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_NETPLAY_HOST:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_netplay_host);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_NETPLAY_CLIENT:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_netplay_client);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_RETROARCH_SETTINGS:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_retroarch_settings);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_QUIT_RETROARCH:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_quit_retroarch);
+            break;
+         case MENU_ENUM_LABEL_MIYOO_MENU_RETURN:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_menu_return);
+            break;
+#endif
          case MENU_ENUM_LABEL_CRT_SWITCH_RESOLUTION:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_crt_switchres);
             break;

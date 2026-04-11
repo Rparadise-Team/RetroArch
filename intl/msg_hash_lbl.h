@@ -4224,6 +4224,158 @@ MSG_HASH(
    )
 #endif
 #endif
+
+#if defined(MIYOO_CUSTOM_MENU)
+
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_RESUME,
+   "miyoo_resume"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "miyoo_save_state"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "miyoo_load_state"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SYNC_NOW,
+   "miyoo_sync_now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "miyoo_cpu_clock"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "miyoo_save_cpu_core"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "miyoo_save_cpu_rom"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_NETPLAY_HOST,
+   "miyoo_netplay_host"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_NETPLAY_CLIENT,
+   "miyoo_netplay_client"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_RETROARCH_SETTINGS,
+   "miyoo_quick_menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_QUIT_RETROARCH,
+   "miyoo_quit"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_MENU_RETURN,
+   "miyoo_menu_return"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "miyoo_resume"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "miyoo_save_state"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "miyoo_load_state"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "miyoo_sync_now"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "miyoo_cpu_clock"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "miyoo_save_cpu_core"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "miyoo_save_cpu_rom"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "miyoo_netplay_host"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "miyoo_netplay_client"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "miyoo_quick_menu"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "miyoo_quit"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "miyoo_menu_return"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "miyoo_menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "miyoo_resume"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "miyoo_save_state"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "miyoo_load_state"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "miyoo_sync_now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "miyoo_cpu_clock"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "miyoo_save_cpu_clock_core"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "miyoo_save_cpu_clock_rom"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "miyoo_netplay_host"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "miyoo_netplay_client"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "miyoo_retroarch_settings"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "miyoo_quit_retroarch"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "miyoo_menu_return"
+   )
+#endif
 MSG_HASH(
    MENU_ENUM_LABEL_VIDEO_BLACK_FRAME_INSERTION,
    "video_black_frame_insertion"

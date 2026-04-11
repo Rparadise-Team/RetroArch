@@ -878,3 +878,110 @@ MSG_HASH(
 
 
 #endif
+
+
+/* Miyoo Custom Menu */
+
+#if defined(MIYOO_CUSTOM_MENU)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
+   "Miyoo Menu"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
+   "Resume"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
+   "Save State"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
+   "Load State"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
+   "Sync now"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
+   "Miyoo CPU Clock"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "Save CPU Clock (Core)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "Save CPU Clock (ROM)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
+   "Start Net-play (Server)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
+   "Net-play Host/LAN (Client)"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
+   "ସେଟିଂ"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
+   "Close RetroArch"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
+   "Menu Miyoo"
+   )
+
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RESUME,
+   "ମେନୁ ବନ୍ଦ କରନ୍ତୁ, ଖେଳକୁ ଫେରନ୍ତୁ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE,
+   "ରୋମର ସେଭ୍ ସ୍କ୍ରିନସଟ୍ ସୃଷ୍ଟି କରନ୍ତୁ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE,
+   "ରୋମର ସେଭ୍ ସ୍କ୍ରିନ୍ ସଟ୍ ଲୋଡ୍ କରନ୍ତୁ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW,
+   "କ୍ଲାଉଡ୍ ରେ ଫାଇଲ୍ ସେଭ୍ କରନ୍ତୁ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
+   "ମିୟୋ ପାଇଁ ରିଅଲ୍-ଟାଇମ୍ CPU ଶକ୍ତି ନିୟନ୍ତ୍ରଣ, 200Mhz ରୁ 1400Mhz ପର୍ଯ୍ୟନ୍ତ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
+   "ସାମ୍ପ୍ରତିକ କୋର୍ ପାଇଁ ମନୋନୀତ cpu ଶକ୍ତି ସଞ୍ଚୟ କରେ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
+   "ସାମ୍ପ୍ରତିକ ରୋମ୍ ପାଇଁ ମନୋନୀତ cpu ଶକ୍ତି ସଞ୍ଚୟ କରେ, ଯଦି ଏହା ପୂର୍ବରୁ ବ୍ୟାଖ୍ୟା କରାଯାଇଥାଏ ତେବେ ଏହା ମୂଳ ଗତି ଉପରେ ପ୍ରାଧାନ୍ୟ ଦେଇଥାଏ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
+   "ସମର୍ଥିତ କୋରଗୁଡ଼ିକରେ ପ୍ଲେୟାର 1 ଭାବରେ ନେଟୱର୍କିଙ୍ଗ କାର୍ଯ୍ୟ କରିଥାଏ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT,
+   "ନେଟ-ପ୍ଲେ ବିନ୍ୟାସ ତାଲିକା ଏବଂ ଉପଲବ୍ଧ କୋଠରୀଗୁଡ଼ିକର ତାଲିକା |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS,
+   "ଜେନେରିକ୍ ରିଟ୍ରୋଚ୍ ଶୀଘ୍ର ମେନୁକୁ ଯାଆନ୍ତୁ ଏବଂ ଅଧିକ ଗଭୀର ସେଟିଂ ପାଇଁ କଷ୍ଟମ୍ ମିୟୋ ମେନୁ ଅକ୍ଷମ କରନ୍ତୁ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH,
+   "ବନ୍ଦ ରିଟ୍ରୋଚ୍ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
+   "କଷ୍ଟମ୍ ମେନୁ ମିୟୋ ଫେରସ୍ତ କରନ୍ତୁ, ଜେନେରିକ୍ ରିଟ୍ରୋଚ୍ ଶୀଘ୍ର ମେନୁକୁ ଅକ୍ଷମ କରନ୍ତୁ |"
+   )
+#endif
