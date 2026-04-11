@@ -99,7 +99,15 @@ int setBrightnessMM()
     int brightness = getValueMM("brightness");
     int set = 0;
 	if (brightness == 0) {
+#ifdef NO_MMP
+#ifdef MMIYOOV4
+    	set = (brightness+3);
+#else
     	set = (brightness+6);
+#endif
+#else
+    	set = (brightness+3);
+#endif
 	} else {
 		set = (brightness*10);
 	}
