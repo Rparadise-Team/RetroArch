@@ -320,6 +320,8 @@ typedef struct
 
    unsigned mini_thumbnail_max_width;
    unsigned mini_thumbnail_max_height;
+   unsigned savestate_thumbnail_max_width;
+   unsigned savestate_thumbnail_max_height;
    unsigned mini_thumbnail_delay;
    unsigned last_width;
    unsigned last_height;
@@ -2701,6 +2703,11 @@ static void rgui_render_background(
       for (i = 0; i < frame_buf->width * frame_buf->height; i++)
          *(frame_buf_ptr++) = ss_bg_color;
    }
+   /* Miyoo Menu: skip wallpaper/background copy so gameplay can be seen
+    * behind the menu via texture alpha blending */
+   else if (string_is_equal(rgui->menu_title, "MIYOO Menu"))
+      memset(frame_buf->data, 0,
+            (size_t)frame_buf->width * (size_t)frame_buf->height * sizeof(uint16_t));
    /* Otherwise copy background to framebuffer */
    else if (background_buf->data)
       memcpy(frame_buf->data, background_buf->data,
@@ -6429,6 +6436,18 @@ static bool rgui_set_aspect_ratio(
       mini_thumbnail_term_width         = 19;
    rgui->mini_thumbnail_max_width       = mini_thumbnail_term_width * rgui->font_width_stride;
    rgui->mini_thumbnail_max_height      = (unsigned)((rgui->term_layout.height * rgui->font_height_stride) * 0.5f) - 2;
+   rgui->savestate_thumbnail_max_width  = (rgui->mini_thumbnail_max_width * 3) / 2;
+   rgui->savestate_thumbnail_max_height = (rgui->mini_thumbnail_max_height * 3) / 2;
+
+   {
+      unsigned term_width_px  = (rgui->term_layout.width * rgui->font_width_stride);
+      unsigned term_height_px = (rgui->term_layout.height * rgui->font_height_stride);
+
+      if (rgui->savestate_thumbnail_max_width > term_width_px)
+         rgui->savestate_thumbnail_max_width = term_width_px;
+      if (rgui->savestate_thumbnail_max_height > term_height_px)
+         rgui->savestate_thumbnail_max_height = term_height_px;
+   }
 
    rgui->mini_thumbnail.max_width       = rgui->mini_thumbnail_max_width;
    rgui->mini_thumbnail.max_height      = rgui->mini_thumbnail_max_height;
@@ -6441,7 +6460,7 @@ static bool rgui_set_aspect_ratio(
    rgui->mini_left_thumbnail.max_width  = rgui->mini_thumbnail_max_width;
    rgui->mini_left_thumbnail.max_height = rgui->mini_thumbnail_max_height;
    rgui->mini_left_thumbnail.data       = (uint16_t*)calloc(
-         rgui->mini_left_thumbnail.max_width * rgui->mini_left_thumbnail.max_height, sizeof(uint16_t));
+         rgui->savestate_thumbnail_max_width * rgui->savestate_thumbnail_max_height, sizeof(uint16_t));
 
    if (!rgui->mini_left_thumbnail.data)
       return false;
@@ -6690,10 +6709,14 @@ static void rgui_set_texture(void *data)
    unsigned internal_upscale_level = settings->uints.menu_rgui_internal_upscale_level;
 #endif
    rgui_t *rgui                    = (rgui_t*)data;
+   float texture_alpha             = 1.0f;
 
    /* Framebuffer is dirty and needs to be updated? */
    if (!rgui || !(p_disp->flags & GFX_DISP_FLAG_FB_DIRTY))
       return;
+
+   if (string_is_equal(rgui->menu_title, "MIYOO Menu"))
+      texture_alpha                = 0.82f;
 
    fb_width               = p_disp->framebuf_width;
    fb_height              = p_disp->framebuf_height;
@@ -6702,7 +6725,7 @@ static void rgui_set_texture(void *data)
 
    if (internal_upscale_level == RGUI_UPSCALE_NONE)
       rgui_set_texture_frame(video_st, rgui->frame_buf.data,
-            false, fb_width, fb_height, 1.0f);
+            false, fb_width, fb_height, texture_alpha);
    else
    {
       struct video_viewport vp;
@@ -6714,7 +6737,7 @@ static void rgui_set_texture(void *data)
        * than the menu framebuffer, no scaling is required */
       if ((vp.width <= fb_width) && (vp.height <= fb_height))
          rgui_set_texture_frame(video_st, rgui->frame_buf.data,
-               false, fb_width, fb_height, 1.0f);
+               false, fb_width, fb_height, texture_alpha);
       else
       {
          unsigned out_width;
@@ -6761,7 +6784,7 @@ static void rgui_set_texture(void *data)
                      settings->uints.menu_rgui_internal_upscale_level,
                      RGUI_UPSCALE_NONE);
                rgui_set_texture_frame(video_st, frame_buf->data,
-                     false, fb_width, fb_height, 1.0f);
+                     false, fb_width, fb_height, texture_alpha);
                return;
             }
          }
@@ -6784,7 +6807,7 @@ static void rgui_set_texture(void *data)
 
          /* Draw upscaled texture */
          rgui_set_texture_frame(video_st, upscale_buf->data,
-            false, out_width, out_height, 1.0f);
+            false, out_width, out_height, texture_alpha);
       }
    }
 }
@@ -7027,6 +7050,9 @@ static void rgui_reset_savestate_thumbnail(void *data)
 
    rgui->flags &= ~RGUI_FLAG_ENTRY_HAS_THUMBNAIL;
    rgui->flags &= ~RGUI_FLAG_ENTRY_HAS_LEFT_THUMBNAIL;
+
+   rgui->mini_left_thumbnail.max_width  = rgui->mini_thumbnail_max_width;
+   rgui->mini_left_thumbnail.max_height = rgui->mini_thumbnail_max_height;
 }
 
 static void rgui_update_savestate_thumbnail_image(void *data)
@@ -7043,6 +7069,8 @@ static void rgui_update_savestate_thumbnail_image(void *data)
    {
       bool thumbnails_missing        = false;
       rgui->flags &= ~RGUI_FLAG_ENTRY_HAS_LEFT_THUMBNAIL;
+      rgui->mini_left_thumbnail.max_width  = rgui->savestate_thumbnail_max_width;
+      rgui->mini_left_thumbnail.max_height = rgui->savestate_thumbnail_max_height;
 
       if (rgui_request_thumbnail(
             &rgui->mini_left_thumbnail,
@@ -7069,6 +7097,8 @@ static void rgui_scan_selected_entry_thumbnail(rgui_t *rgui, bool force_load)
                                        | RGUI_FLAG_ENTRY_HAS_THUMBNAIL
                                        | RGUI_FLAG_ENTRY_HAS_LEFT_THUMBNAIL
                                         );
+   rgui->mini_left_thumbnail.max_width  = rgui->mini_thumbnail_max_width;
+   rgui->mini_left_thumbnail.max_height = rgui->mini_thumbnail_max_height;
 
    /* Update thumbnail content/path */
    if (     (rgui->flags & RGUI_FLAG_IS_PLAYLIST)

@@ -109,6 +109,10 @@ struct sdl_miyoomini_video
    uint32_t font_colour32;
    SDL_Surface *menuscreen;
    SDL_Surface *menuscreen_rgui;
+   uint16_t menu_bg_texture[RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT];
+   uint16_t menu_composite_texture[RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT];
+   float menu_texture_alpha;
+   bool menu_bg_valid;
 #ifdef HAVE_OVERLAY
    SDL_Surface *overlay_surface;
 #endif
@@ -135,6 +139,75 @@ struct sdl_miyoomini_video
    char cheevos_badge_pending[32];
 #endif
 };
+
+static INLINE uint16_t sdl_miyoomini_blend_565(uint16_t bg, uint16_t fg, uint8_t alpha)
+{
+   uint32_t inv_alpha = 255 - alpha;
+   uint32_t bg_r      = (bg >> 11) & 0x1F;
+   uint32_t bg_g      = (bg >> 5)  & 0x3F;
+   uint32_t bg_b      = bg & 0x1F;
+   uint32_t fg_r      = (fg >> 11) & 0x1F;
+   uint32_t fg_g      = (fg >> 5)  & 0x3F;
+   uint32_t fg_b      = fg & 0x1F;
+   uint32_t out_r     = ((fg_r * alpha) + (bg_r * inv_alpha) + 127) / 255;
+   uint32_t out_g     = ((fg_g * alpha) + (bg_g * inv_alpha) + 127) / 255;
+   uint32_t out_b     = ((fg_b * alpha) + (bg_b * inv_alpha) + 127) / 255;
+
+   return (uint16_t)((out_r << 11) | (out_g << 5) | out_b);
+}
+
+static uint16_t sdl_miyoomini_surface_read_pixel565(
+      const SDL_Surface *surface, unsigned x, unsigned y)
+{
+   const SDL_PixelFormat *fmt = surface->format;
+   const uint8_t *row         = (const uint8_t*)surface->pixels + (y * surface->pitch);
+   const uint8_t *src         = row + (x * fmt->BytesPerPixel);
+
+   switch (fmt->BytesPerPixel)
+   {
+      case 2:
+         return *(const uint16_t*)src;
+      case 4:
+      {
+         uint32_t pixel = *(const uint32_t*)src;
+         uint8_t r, g, b;
+         SDL_GetRGB(pixel, (SDL_PixelFormat*)fmt, &r, &g, &b);
+         return (uint16_t)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
+      }
+      default:
+         break;
+   }
+
+   return 0;
+}
+
+static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
+{
+   unsigned x, y;
+   SDL_Surface *screen = vid->screen;
+
+   if (!screen || !screen->pixels || !screen->w || !screen->h)
+      return;
+
+   if (SDL_MUSTLOCK(screen))
+      SDL_LockSurface(screen);
+
+   for (y = 0; y < RGUI_MENU_HEIGHT; y++)
+   {
+      unsigned src_y = (y * (unsigned)screen->h) / RGUI_MENU_HEIGHT;
+      for (x = 0; x < RGUI_MENU_WIDTH; x++)
+      {
+         unsigned src_x = (x * (unsigned)screen->w) / RGUI_MENU_WIDTH;
+         vid->menu_bg_texture[(y * RGUI_MENU_WIDTH) + x] =
+               sdl_miyoomini_surface_read_pixel565(screen, src_x, src_y);
+      }
+   }
+
+   if (SDL_MUSTLOCK(screen))
+      SDL_UnlockSurface(screen);
+
+   vid->menu_bg_valid = true;
+}
 
 #ifdef HAVE_CHEEVOS
 static bool sdl_miyoomini_load_png_argb(const char *path, uint32_t **data,
@@ -1457,6 +1530,8 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->filter_type       = (enum dingux_ipu_filter_type)settings->uints.video_dingux_ipu_filter_type;
    vid->menu_active       = false;
    vid->was_in_menu       = false;
+   vid->menu_texture_alpha = 1.0f;
+   vid->menu_bg_valid     = false;
    vid->quitting          = false;
    vid->ff_frame_time_min = 16667;
 
@@ -1656,7 +1731,29 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
       vid->screen_fence[vid->screen_index] = flipFence;
    } else {
-      scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels, RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0,0);
+      if ((vid->menu_texture_alpha < 0.999f) && vid->menu_bg_valid)
+      {
+         unsigned i;
+         uint8_t alpha_u8 = (uint8_t)(vid->menu_texture_alpha * 255.0f);
+         uint16_t *menu_rgui_src = (uint16_t*)vid->menuscreen_rgui->pixels;
+
+         for (i = 0; i < (RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT); i++)
+         {
+            uint16_t fg      = menu_rgui_src[i];
+            vid->menu_composite_texture[i] = (fg != 0)
+                  ? fg
+                  : sdl_miyoomini_blend_565(
+                        vid->menu_bg_texture[i],
+                        fg,
+                        alpha_u8);
+         }
+
+         scale2x2_n16(vid->menu_composite_texture, vid->menuscreen->pixels,
+               RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0, 0);
+      }
+      else
+         scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels,
+               RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0, 0);
       stOpt.eRotate = E_MI_GFX_ROTATE_180;
       GFX_Flip(vid->menuscreen);
       stOpt.eRotate = vid->rotate;
@@ -1674,8 +1771,12 @@ static void sdl_miyoomini_set_texture_enable(void *data, bool state, bool full_s
    sdl_miyoomini_toggle_powersave(state);
 
   if (state) {
+     sdl_miyoomini_capture_menu_background(vid);
   //    system("playActivity stop_all &");
      vid->was_in_menu = true;
+  }
+  else {
+     vid->menu_bg_valid = false;
   }
   // else {
   //   system("playActivity resume &");
@@ -1688,6 +1789,7 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
 
    if (unlikely( !vid || rgb32 || (width != RGUI_MENU_WIDTH) || (height != RGUI_MENU_HEIGHT))) return;
 
+   vid->menu_texture_alpha = alpha;
    memcpy_neon(vid->menuscreen_rgui->pixels, (void*)frame,
       RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT * sizeof(uint16_t));
 }
