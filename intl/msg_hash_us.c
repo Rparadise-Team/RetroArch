@@ -549,10 +549,50 @@ static const char *menu_hash_to_str_us_label_enum(enum msg_hash_enums msg)
 const char *msg_hash_to_str_us(enum msg_hash_enums msg)
 {
 #ifdef HAVE_MENU
+#if defined(MIYOO_CUSTOM_MENU)
+    switch (msg)
+    {
+       case MENU_ENUM_LABEL_VALUE_MIYOO_MENU:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_RESUME:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH:
+       case MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN:
+       case MENU_ENUM_SUBLABEL_MIYOO_RESUME:
+       case MENU_ENUM_SUBLABEL_MIYOO_SAVE_STATE:
+       case MENU_ENUM_SUBLABEL_MIYOO_LOAD_STATE:
+       case MENU_ENUM_SUBLABEL_MIYOO_SYNC_NOW:
+       case MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK:
+       case MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE:
+       case MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM:
+       case MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST:
+       case MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT:
+       case MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS:
+       case MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH:
+       case MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN:
+          break;
+       default:
+          {
+             const char *ret = menu_hash_to_str_us_label_enum(msg);
+
+             if (ret && !string_is_equal(ret, "null"))
+                return ret;
+          }
+          break;
+    }
+#else
     const char *ret = menu_hash_to_str_us_label_enum(msg);
 
     if (ret && !string_is_equal(ret, "null"))
        return ret;
+#endif
 #endif
 
     switch (msg)
