@@ -1530,7 +1530,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "CPU-strømstyring i realtid til Miyoo, fra 200Mhz til 1400Mhz."
+   "CPU-strømstyring i realtid til Miyoo, fra 200Mhz til 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

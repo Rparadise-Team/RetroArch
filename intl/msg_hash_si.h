@@ -634,7 +634,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Miyoo සඳහා තත්‍ය කාලීන CPU බල පාලනය, 200Mhz සිට 1400Mhz දක්වා."
+   "Miyoo සඳහා තත්‍ය කාලීන CPU බල පාලනය, 200Mhz සිට 1600Mhz දක්වා."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

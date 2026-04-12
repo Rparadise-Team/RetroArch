@@ -4402,7 +4402,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Kontrol daya CPU waktu nyata untuk Miyoo, dari 200Mhz hingga 1400Mhz."
+   "Kontrol daya CPU waktu nyata untuk Miyoo, dari 200Mhz hingga 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

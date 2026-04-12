@@ -16336,7 +16336,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "200Mhz에서 1400Mhz까지 Miyoo의 실시간 CPU 전력 제어."
+   "200Mhz에서 1600Mhz까지 Miyoo의 실시간 CPU 전력 제어."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

@@ -1286,7 +1286,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Realtempa CPU-potenckontrolo por Miyoo, de 200Mhz ĝis 1400Mhz."
+   "Realtempa CPU-potenckontrolo por Miyoo, de 200Mhz ĝis 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

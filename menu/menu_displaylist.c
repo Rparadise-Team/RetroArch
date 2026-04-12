@@ -3672,7 +3672,7 @@ static int menu_displaylist_parse_load_content_settings(
 
          if (miyoo_menu_cpu_menu_is_open())
          {
-            static const int cpu_values_mhz[] = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400};
+            static const int cpu_values_mhz[] = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600};
             static const unsigned cpu_types[] = {
                FILE_TYPE_MIYOO_CPU_200,
                FILE_TYPE_MIYOO_CPU_300,
@@ -3686,7 +3686,9 @@ static int menu_displaylist_parse_load_content_settings(
                FILE_TYPE_MIYOO_CPU_1100,
                FILE_TYPE_MIYOO_CPU_1200,
                FILE_TYPE_MIYOO_CPU_1300,
-               FILE_TYPE_MIYOO_CPU_1400
+               FILE_TYPE_MIYOO_CPU_1400,
+               FILE_TYPE_MIYOO_CPU_1500,
+               FILE_TYPE_MIYOO_CPU_1600
             };
             int i;
             int cpu_idx = miyoo_menu_cpu_menu_get_index();

@@ -14242,7 +14242,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Reaaliaikainen prosessorin tehonsäätö Miyoolle, 200Mhz - 1400Mhz."
+   "Reaaliaikainen prosessorin tehonsäätö Miyoolle, 200Mhz - 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

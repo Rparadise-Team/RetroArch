@@ -16988,7 +16988,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
-   "CPU Performance and Power"
+   "Miyoo CPU Clock"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
@@ -17037,7 +17037,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Real-time CPU power control for Miyoo, from 200Mhz to 1400Mhz."
+   "Real-time CPU power control for Miyoo, from 200Mhz to 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

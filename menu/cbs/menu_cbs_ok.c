@@ -5937,6 +5937,18 @@ static int action_ok_miyoo_cpu_1400(const char *path,
    return action_ok_miyoo_cpu_value_internal(1400);
 }
 
+static int action_ok_miyoo_cpu_1500(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1500);
+}
+
+static int action_ok_miyoo_cpu_1600(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   return action_ok_miyoo_cpu_value_internal(1600);
+}
+
 static int action_ok_miyoo_cpu_back(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
@@ -9982,6 +9994,12 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
             break;
          case FILE_TYPE_MIYOO_CPU_1400:
             BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1400);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1500:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1500);
+            break;
+         case FILE_TYPE_MIYOO_CPU_1600:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_1600);
             break;
          case FILE_TYPE_MIYOO_CPU_BACK:
             BIND_ACTION_OK(cbs, action_ok_miyoo_cpu_back);

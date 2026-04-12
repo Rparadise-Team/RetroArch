@@ -6710,7 +6710,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Realtime CPU-vermogensregeling voor Miyoo, van 200 MHz tot 1400 MHz."
+   "Realtime CPU-vermogensregeling voor Miyoo, van 200 MHz tot 1600 MHz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

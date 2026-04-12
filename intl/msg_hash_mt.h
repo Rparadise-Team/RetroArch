@@ -542,7 +542,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Kontroll tal-qawwa tas-CPU f'ħin reali għal Miyoo, minn 200Mhz sa 1400Mhz."
+   "Kontroll tal-qawwa tas-CPU f'ħin reali għal Miyoo, minn 200Mhz sa 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

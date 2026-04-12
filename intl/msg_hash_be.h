@@ -15826,7 +15826,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Кантроль магутнасці працэсара ў рэжыме рэальнага часу для Miyoo, ад 200 МГц да 1400 МГц."
+   "Кантроль магутнасці працэсара ў рэжыме рэальнага часу для Miyoo, ад 200 МГц да 1600 МГц."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

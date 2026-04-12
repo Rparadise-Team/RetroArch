@@ -2462,7 +2462,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Контрола снаге ЦПУ-а у реалном времену за Мииоо, од 200 МХз до 1400 МХз."
+   "Контрола снаге ЦПУ-а у реалном времену за Мииоо, од 200 МХз до 1600 МХз."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

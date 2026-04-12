@@ -15242,7 +15242,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Miyoo のリアルタイム CPU 電力制御 (200Mhz から 1400Mhz)。"
+   "Miyoo のリアルタイム CPU 電力制御 (200Mhz から 1600Mhz)。"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

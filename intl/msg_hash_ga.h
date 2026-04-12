@@ -16292,7 +16292,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Rialú cumhachta LAP fíor-ama do Miyoo, ó 200Mhz go 1400Mhz."
+   "Rialú cumhachta LAP fíor-ama do Miyoo, ó 200Mhz go 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

@@ -15856,7 +15856,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Echtzeit-CPU-Leistungssteuerung für Miyoo, von 200 MHz bis 1400 MHz."
+   "Echtzeit-CPU-Leistungssteuerung für Miyoo, von 200 MHz bis 1600 MHz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

@@ -16270,7 +16270,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Miyoo için 200MHz'den 1400MHz'e kadar gerçek zamanlı CPU güç kontrolü."
+   "Miyoo için 200MHz'den 1600MHz'e kadar gerçek zamanlı CPU güç kontrolü."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

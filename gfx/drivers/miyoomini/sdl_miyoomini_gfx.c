@@ -1012,8 +1012,8 @@ int miyoo_gfx_apply_cpuclock(int clock)
 
    if (clock < 200000)
       clock = 200000;
-   else if (clock > 1400000)
-      clock = 1400000;
+   else if (clock > 1600000)
+      clock = 1600000;
 
    for (i = 0; i < (sizeof(governor_paths) / sizeof(governor_paths[0])); i++)
    {
@@ -1109,7 +1109,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
          long runtime_clock = 0;
          if (miyoo_menu_cpu_clock_get_runtime_override(&runtime_clock)
                && runtime_clock >= 200000
-               && runtime_clock <= 1400000)
+               && runtime_clock <= 1600000)
          {
             char str[16];
             fp = fopen(fn_governor, "w");
@@ -1152,7 +1152,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 		 char str[16];
 		 RARCH_LOG("[CPU]: Path %s: %s\n", fps ? "found" : "not found", clock_path_used ? clock_path_used : "unknown");
          fscanf(fps, "%d", &cpuclock); fclose(fps);
-         if ((cpuclock >= 200000)&&(cpuclock <= 1400000)) {
+         if ((cpuclock >= 200000)&&(cpuclock <= 1600000)) {
             fp = fopen(fn_governor, "w");
             if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
             int fset = open(fn_setspeed, O_WRONLY);
@@ -1184,7 +1184,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 		    fscanf(fps, "%d", &cpuclock);
 		    fclose(fps);
          }
-		 if ((cpuclock >= 200000)&&(cpuclock <= 1400000)) {
+		 if ((cpuclock >= 200000)&&(cpuclock <= 1600000)) {
 			fp = fopen(fn_governor, "w");
             if (fp) { fprintf(fp, "%s", governor); fclose(fp); }
             RARCH_LOG("[CPU]: Clock is: %d MHz\n", cpuclock / 1000);

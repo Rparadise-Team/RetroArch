@@ -15964,7 +15964,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Valós idejű CPU teljesítményszabályozás a Miyoo számára, 200 MHz-től 1400 MHz-ig."
+   "Valós idejű CPU teljesítményszabályozás a Miyoo számára, 200 MHz-től 1600 MHz-ig."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

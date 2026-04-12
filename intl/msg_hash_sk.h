@@ -6930,7 +6930,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Riadenie výkonu CPU pre Miyoo v reálnom čase, od 200 MHz do 1400 MHz."
+   "Riadenie výkonu CPU pre Miyoo v reálnom čase, od 200 MHz do 1600 MHz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

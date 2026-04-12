@@ -1822,7 +1822,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Rheolaeth pŵer CPU amser real ar gyfer Miyoo, o 200Mhz i 1400Mhz."
+   "Rheolaeth pŵer CPU amser real ar gyfer Miyoo, o 200Mhz i 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

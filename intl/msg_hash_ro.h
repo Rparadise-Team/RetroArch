@@ -542,7 +542,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Control în timp real al puterii procesorului pentru Miyoo, de la 200Mhz la 1400Mhz."
+   "Control în timp real al puterii procesorului pentru Miyoo, de la 200Mhz la 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

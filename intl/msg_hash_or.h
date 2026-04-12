@@ -954,7 +954,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "ମିୟୋ ପାଇଁ ରିଅଲ୍-ଟାଇମ୍ CPU ଶକ୍ତି ନିୟନ୍ତ୍ରଣ, 200Mhz ରୁ 1400Mhz ପର୍ଯ୍ୟନ୍ତ |"
+   "ମିୟୋ ପାଇଁ ରିଅଲ୍-ଟାଇମ୍ CPU ଶକ୍ତି ନିୟନ୍ତ୍ରଣ, 200Mhz ରୁ 1600Mhz ପର୍ଯ୍ୟନ୍ତ |"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

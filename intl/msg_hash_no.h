@@ -5422,7 +5422,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "Sanntids CPU-strømkontroll for Miyoo, fra 200Mhz til 1400Mhz."
+   "Sanntids CPU-strømkontroll for Miyoo, fra 200Mhz til 1600Mhz."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,

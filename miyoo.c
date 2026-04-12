@@ -547,8 +547,8 @@ int miyoo_menu_action_cpu_adjust(int delta_mhz)
     target = current + ((long)delta_mhz * 1000L);
     if (target < 200000)
         target = 200000;
-    else if (target > 1400000)
-        target = 1400000;
+    else if (target > 1600000)
+        target = 1600000;
 
     if (miyoo_cpu_clock_apply_target(target))
     {
@@ -568,8 +568,8 @@ int miyoo_menu_action_set_cpu_clock(int mhz)
 
     if (target < 200000)
         target = 200000;
-    else if (target > 1400000)
-        target = 1400000;
+    else if (target > 1600000)
+        target = 1600000;
 
     if (!miyoo_cpu_clock_apply_target(target))
         return -1;
@@ -601,7 +601,7 @@ bool miyoo_menu_cpu_menu_is_open(void)
 
 int miyoo_menu_cpu_menu_get_index(void)
 {
-    static const int clocks_mhz[] = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400};
+    static const int clocks_mhz[] = {200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600};
     long hz = miyoo_menu_cpu_clock_get_hz();
     int mhz = (int)(hz / 1000L);
     int i;

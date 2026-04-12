@@ -9922,7 +9922,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_CPU_CLOCK,
-   "التحكم في طاقة وحدة المعالجة المركزية في الوقت الحقيقي لـ Miyoo، من 200 ميجا هرتز إلى 1400 ميجا هرتز."
+   "التحكم في طاقة وحدة المعالجة المركزية في الوقت الحقيقي لـ Miyoo، من 200 ميجا هرتز إلى 1600 ميجا هرتز."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_CORE,
