@@ -4981,6 +4981,67 @@ static enum rgui_entry_value_type rgui_get_entry_value_type(
    return RGUI_ENTRY_VALUE_NONE;
 }
 
+#if defined(MIYOO_CUSTOM_MENU)
+static uint8_t rgui_lerp_u8(uint8_t a, uint8_t b, float t)
+{
+   if (t <= 0.0f)
+      return a;
+   if (t >= 1.0f)
+      return b;
+   return (uint8_t)(a + ((b - a) * t));
+}
+
+static uint32_t rgui_miyoo_color_lerp(uint32_t color_a, uint32_t color_b, float t)
+{
+   uint8_t ar = (uint8_t)((color_a >> 16) & 0xFF);
+   uint8_t ag = (uint8_t)((color_a >> 8)  & 0xFF);
+   uint8_t ab = (uint8_t)(color_a & 0xFF);
+   uint8_t br = (uint8_t)((color_b >> 16) & 0xFF);
+   uint8_t bg = (uint8_t)((color_b >> 8)  & 0xFF);
+   uint8_t bb = (uint8_t)(color_b & 0xFF);
+
+   return 0xFF000000
+         | (rgui_lerp_u8(ar, br, t) << 16)
+         | (rgui_lerp_u8(ag, bg, t) << 8)
+         | rgui_lerp_u8(ab, bb, t);
+}
+
+static uint16_t rgui_get_miyoo_cpu_value_color(unsigned entry_type,
+      const char *entry_value, uint16_t fallback_color)
+{
+   unsigned long mhz = 0;
+   char *end         = NULL;
+   uint32_t argb32   = 0;
+
+   if (   entry_type != FILE_TYPE_MIYOO_SAVE_CPU_CORE
+       && entry_type != FILE_TYPE_MIYOO_SAVE_CPU_ROM)
+      return fallback_color;
+
+   if (string_is_empty(entry_value))
+      return fallback_color;
+
+   mhz = strtoul(entry_value, &end, 10);
+   if (end == entry_value || mhz == 0)
+      return fallback_color;
+
+   if (mhz <= 1200)
+   {
+      if (mhz <= 600)
+         argb32 = rgui_miyoo_color_lerp(0xFF00FFFF, 0xFF00FF00, (float)(mhz - 200) / 400.0f);
+      else if (mhz <= 900)
+         argb32 = rgui_miyoo_color_lerp(0xFF00FF00, 0xFFFFFF00, (float)(mhz - 600) / 300.0f);
+      else
+         argb32 = rgui_miyoo_color_lerp(0xFFFFFF00, 0xFFFFA500, (float)(mhz - 900) / 300.0f);
+   }
+   else if (mhz < 1500)
+      argb32 = rgui_miyoo_color_lerp(0xFFFF4500, 0xFFFF0000, (float)(mhz - 1300) / 200.0f);
+   else
+      argb32 = 0xFFFF0000;
+
+   return argb32_to_pixel_platform_format(argb32);
+}
+#endif
+
 #if defined(GEKKO)
 /* Need to forward declare this for the Wii build
  * (I'm not going to reorder the functions and mess
@@ -5682,9 +5743,15 @@ static void rgui_render(void *data, unsigned width, unsigned height,
                {
                   uint16_t entry_value_color = entry_color;
 
+#if defined(MIYOO_CUSTOM_MENU)
+                  if (!entry_selected)
+                     entry_value_color = rgui_get_miyoo_cpu_value_color(
+                           entry.type, entry_value, entry_value_color);
+#endif
                   if (!entry_selected &&
                         (     string_is_equal(entry_value, "null")
                            || string_is_equal(entry_value, "OFF")
+                           || string_is_equal(entry_value, "N/D")
                            || string_is_equal(entry_value, "...")))
                      entry_value_color = rgui->colors.disabled_color;
 

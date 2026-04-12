@@ -32,6 +32,17 @@
 #define BIND_ACTION_CANCEL(cbs, name) (cbs)->action_cancel = (name)
 #endif
 
+#if defined(MIYOO_CUSTOM_MENU)
+static size_t miyoo_cpu_clock_menu_index(void)
+{
+#ifdef HAVE_NETWORKING
+   return 4;
+#else
+   return 3;
+#endif
+}
+#endif
+
 /* Clicks the back button */
 int action_cancel_pop_default(const char *path,
       const char *label, unsigned type, size_t idx)
@@ -78,7 +89,7 @@ int action_cancel_pop_default(const char *path,
       if (miyoo_menu_cpu_menu_is_open())
       {
          miyoo_menu_cpu_menu_close();
-         menu_st->selection_ptr = 4;
+         menu_st->selection_ptr = miyoo_cpu_clock_menu_index();
          handled_submenu = true;
       }
       if (miyoo_menu_state_menu_get_mode() != 0)

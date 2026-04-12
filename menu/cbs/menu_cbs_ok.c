@@ -5790,6 +5790,15 @@ int action_ok_close_content(const char *path, const char *label, unsigned type, 
 }
 
 #if defined(MIYOO_CUSTOM_MENU)
+static size_t miyoo_cpu_clock_menu_index(void)
+{
+#ifdef HAVE_NETWORKING
+   return 4;
+#else
+   return 3;
+#endif
+}
+
 static int action_ok_miyoo_menu_return(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
@@ -5855,7 +5864,10 @@ static int action_ok_miyoo_cpu_value_internal(int mhz)
 
    miyoo_menu_cpu_menu_close();
    if (menu_st)
+   {
+      menu_st->selection_ptr = miyoo_cpu_clock_menu_index();
       menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   }
    return ret;
 }
 
@@ -5955,7 +5967,10 @@ static int action_ok_miyoo_cpu_back(const char *path,
    struct menu_state *menu_st = menu_state_get_ptr();
    miyoo_menu_cpu_menu_close();
    if (menu_st)
+   {
+      menu_st->selection_ptr = miyoo_cpu_clock_menu_index();
       menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   }
    return 0;
 }
 

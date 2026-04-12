@@ -27,6 +27,8 @@ bool miyoo_menu_cpu_menu_is_open(void);
 int miyoo_menu_cpu_menu_get_index(void);
 int miyoo_menu_action_save_cpu_core(void);
 int miyoo_menu_action_save_cpu_rom(void);
+bool miyoo_menu_cpu_saved_clock_get_core(long *clock_hz);
+bool miyoo_menu_cpu_saved_clock_get_rom(long *clock_hz);
 int miyoo_menu_action_netplay_host(void);
 int miyoo_menu_action_netplay_client(void);
 void miyoo_menu_netplay_menu_open(void);

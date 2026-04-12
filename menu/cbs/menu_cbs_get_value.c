@@ -1015,6 +1015,39 @@ static size_t menu_action_setting_disp_set_label_menu_more(
    return _len;
 }
 
+#if defined(MIYOO_CUSTOM_MENU)
+static size_t menu_action_setting_disp_set_label_miyoo_saved_cpu_clock(
+      file_list_t* list,
+      unsigned *w, unsigned type, unsigned i,
+      const char *label,
+      char *s, size_t len,
+      const char *path,
+      char *s2, size_t len2)
+{
+   long clock_hz  = 0;
+   long clock_mhz = 0;
+   bool has_value = false;
+
+   if (type == FILE_TYPE_MIYOO_SAVE_CPU_CORE)
+      has_value = miyoo_menu_cpu_saved_clock_get_core(&clock_hz);
+   else if (type == FILE_TYPE_MIYOO_SAVE_CPU_ROM)
+      has_value = miyoo_menu_cpu_saved_clock_get_rom(&clock_hz);
+
+   *w = 19;
+   if (!string_is_empty(path))
+      strlcpy(s2, path, len2);
+
+   if (!has_value || clock_hz <= 0)
+      return strlcpy(s, "N/D", len);
+
+   clock_mhz = clock_hz / 1000L;
+   if (clock_mhz <= 0)
+      return strlcpy(s, "N/D", len);
+
+   return (size_t)snprintf(s, len, "%ld MHz", clock_mhz);
+}
+#endif
+
 static size_t menu_action_setting_disp_set_label_db_entry(
       file_list_t* list,
       unsigned *w, unsigned type, unsigned i,
@@ -2055,12 +2088,25 @@ static int menu_cbs_init_bind_get_string_representation_compare_label(
          case MENU_ENUM_LABEL_SYSTEM_INFORMATION:
          case MENU_ENUM_LABEL_ACHIEVEMENT_LIST:
          case MENU_ENUM_LABEL_ACHIEVEMENT_LIST_HARDCORE:
+#if defined(MIYOO_CUSTOM_MENU)
+         case MENU_ENUM_LABEL_MIYOO_SAVE_STATE:
+         case MENU_ENUM_LABEL_MIYOO_LOAD_STATE:
+         case MENU_ENUM_LABEL_MIYOO_NETPLAY_CLIENT:
+         case MENU_ENUM_LABEL_MIYOO_RETROARCH_SETTINGS:
+#endif
          #ifdef HAVE_GAME_AI
          case MENU_ENUM_LABEL_CORE_GAME_AI_OPTIONS:
          #endif
             BIND_ACTION_GET_VALUE(cbs,
                   menu_action_setting_disp_set_label_menu_more);
             break;
+#if defined(MIYOO_CUSTOM_MENU)
+         case MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_CORE:
+         case MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_ROM:
+            BIND_ACTION_GET_VALUE(cbs,
+                  menu_action_setting_disp_set_label_miyoo_saved_cpu_clock);
+            break;
+#endif
          case MENU_ENUM_LABEL_PLAYLIST_MANAGER_DEFAULT_CORE:
             BIND_ACTION_GET_VALUE(cbs,
                   menu_action_setting_disp_set_label_playlist_associations);

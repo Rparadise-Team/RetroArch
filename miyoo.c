@@ -9,6 +9,7 @@
 #include "gfx/gfx_widgets.h"
 #include "gfx/video_driver.h"
 #include "menu/menu_driver.h"
+#include "msg_hash.h"
 #include "paths.h"
 #include "runloop.h"
 #include "streams/file_stream.h"
@@ -225,7 +226,7 @@ bool miyoo_menu_context_is_native_quickmenu(void)
 
 void miyoo_menu_open_native_quickmenu(void)
 {
-    bool flush_stack         = false;
+    bool flush_stack         = true;
     struct menu_state *menu_st = menu_state_get_ptr();
 
     if (!miyoo_menu_active || miyoo_native_quickmenu_open)
@@ -641,10 +642,64 @@ int miyoo_menu_action_save_cpu_core(void)
 {
     int ret = miyoo_cpu_clock_save_to_file("cpuclock");
     if (ret == 0)
-        miyoo_menu_notify("CPU guardado (core)");
+    {
+        long clock_hz                  = miyoo_menu_cpu_clock_get_hz();
+        long clock_mhz                 = (clock_hz > 0) ? (clock_hz / 1000L) : 0;
+        rarch_system_info_t *system    = &runloop_state_get_ptr()->system;
+        const char *saved_label        = msg_hash_to_str(MSG_SAVED_SUCCESSFULLY_TO);
+        const char *core_name          = (system && !string_is_empty(system->info.library_name))
+              ? system->info.library_name
+              : msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NOT_AVAILABLE);
+        char msg[256];
+
+        if (clock_mhz > 0)
+            snprintf(msg, sizeof(msg), "%s %s (%ld MHz)", saved_label, core_name, clock_mhz);
+        else
+            snprintf(msg, sizeof(msg), "%s %s", saved_label, core_name);
+        miyoo_menu_notify(msg);
+    }
     else
-        miyoo_menu_notify("Error al guardar CPU (core)");
+    {
+        rarch_system_info_t *system = &runloop_state_get_ptr()->system;
+        const char *error_label      = msg_hash_to_str(MSG_ERROR);
+        const char *core_name        = (system && !string_is_empty(system->info.library_name))
+              ? system->info.library_name
+              : msg_hash_to_str(MENU_ENUM_LABEL_VALUE_NOT_AVAILABLE);
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s: %s (N/D)", error_label, core_name);
+        miyoo_menu_notify(msg);
+    }
     return ret;
+}
+
+bool miyoo_menu_cpu_saved_clock_get_core(long *clock_hz)
+{
+    char path[PATH_MAX_LENGTH];
+
+    if (!clock_hz)
+        return false;
+    if (!miyoo_cpu_clock_build_core_path(path, sizeof(path), "cpuclock"))
+        return false;
+
+    return miyoo_cpu_clock_read_from_file(path, clock_hz);
+}
+
+bool miyoo_menu_cpu_saved_clock_get_rom(long *clock_hz)
+{
+    char path[PATH_MAX_LENGTH];
+    char rom_cpu_file[PATH_MAX_LENGTH];
+    const char *rarch_path_basename = path_get(RARCH_PATH_BASENAME);
+    const char *rom_name             = path_basename_nocompression(rarch_path_basename);
+
+    if (!clock_hz || string_is_empty(rom_name))
+        return false;
+
+    snprintf(rom_cpu_file, sizeof(rom_cpu_file), "%s-cpu", rom_name);
+
+    if (!miyoo_cpu_clock_build_core_path(path, sizeof(path), rom_cpu_file))
+        return false;
+
+    return miyoo_cpu_clock_read_from_file(path, clock_hz);
 }
 
 int miyoo_menu_action_save_cpu_rom(void)
@@ -660,9 +715,25 @@ int miyoo_menu_action_save_cpu_rom(void)
     {
         int ret = miyoo_cpu_clock_save_to_file(rom_cpu_file);
         if (ret == 0)
-            miyoo_menu_notify("CPU guardado (ROM)");
+        {
+            long clock_hz  = miyoo_menu_cpu_clock_get_hz();
+            long clock_mhz = (clock_hz > 0) ? (clock_hz / 1000L) : 0;
+            const char *saved_label = msg_hash_to_str(MSG_SAVED_SUCCESSFULLY_TO);
+            char msg[256];
+
+            if (clock_mhz > 0)
+                snprintf(msg, sizeof(msg), "%s %s (%ld MHz)", saved_label, rom_name, clock_mhz);
+            else
+                snprintf(msg, sizeof(msg), "%s %s", saved_label, rom_name);
+            miyoo_menu_notify(msg);
+        }
         else
-            miyoo_menu_notify("Error al guardar CPU (ROM)");
+        {
+            const char *error_label = msg_hash_to_str(MSG_ERROR);
+            char msg[128];
+            snprintf(msg, sizeof(msg), "%s: %s (N/D)", error_label, rom_name);
+            miyoo_menu_notify(msg);
+        }
         return ret;
     }
 }
