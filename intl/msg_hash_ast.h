@@ -4637,7 +4637,7 @@ MSG_HASH(
 #if defined(MIYOO_CUSTOM_MENU)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
-   "Miyoo Menu"
+   "Menú Miyoo"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
@@ -4645,35 +4645,35 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
-   "Save State"
+   "Guardáu rápidu"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
-   "Load State"
+   "Cargáu rápidu"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
-   "Sync now"
+   "Sincronizar agora"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
-   "Rindimientu ya potencia de la CPU"
+   "Afitar la velocidá del relóx de CPU de Miyoo"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
-   "Save CPU Clock (Core)"
+   "Guardar relóx de CPU (núcleu)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
-   "Save CPU Clock (ROM)"
+   "Guardar relóx de CPU (ROM)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
-   "Agospiar"
+   "Aniciar xuegu en rede (servidor)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
-   "Net-play Host/LAN (Client)"
+   "Servidor/LAN de xuegu en rede (veceru)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
@@ -4685,7 +4685,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
-   "Menu Miyoo"
+   "Menú Miyoo"
    )
 
 MSG_HASH(

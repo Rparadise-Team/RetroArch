@@ -225,13 +225,19 @@ bool miyoo_menu_context_is_native_quickmenu(void)
 
 void miyoo_menu_open_native_quickmenu(void)
 {
-    bool flush_stack = false;
+    bool flush_stack         = false;
+    struct menu_state *menu_st = menu_state_get_ptr();
 
     if (!miyoo_menu_active || miyoo_native_quickmenu_open)
         return;
 
     menu_driver_ctl(RARCH_MENU_CTL_SET_PENDING_QUICK_MENU, &flush_stack);
     miyoo_native_quickmenu_open = true;
+
+    /* Ensure menu loop is running immediately so quick menu
+     * is rendered/interactable without requiring extra input. */
+    if (!menu_st || !(menu_st->flags & MENU_ST_FLAG_ALIVE))
+        command_event(CMD_EVENT_MENU_TOGGLE, NULL);
 }
 
 void miyoo_menu_resume_from_native_quickmenu(void)

@@ -1461,43 +1461,43 @@ MSG_HASH(
 #if defined(MIYOO_CUSTOM_MENU)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
-   "Miyoo Menu"
+   "Miyoo-menu"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
-   "Resume"
+   "Genoptag"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
-   "Save State"
+   "Hurtig gem"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
-   "Load State"
+   "Hurtig indlæs"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
-   "Sync now"
+   "Synkroniser nu"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
-   "Miyoo CPU Clock"
+   "Indstil Miyoo CPU-clockhastighed"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
-   "Save CPU Clock (Core)"
+   "Gem CPU-clock (kerne)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
-   "Save CPU Clock (ROM)"
+   "Gem CPU-clock (ROM)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
-   "Start Net-play (Server)"
+   "Start Netplay (server)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
-   "Net-play Host/LAN (Client)"
+   "Netplay-vært/LAN (klient)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
@@ -1509,7 +1509,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
-   "Menu Miyoo"
+   "Miyoo-menu"
    )
 
 MSG_HASH(

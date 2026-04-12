@@ -565,43 +565,43 @@ MSG_HASH(
 #if defined(MIYOO_CUSTOM_MENU)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
-   "Miyoo Menu"
+   "Miyoo මෙනුව"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
-   "Resume"
+   "නැවත ආරම්භ"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
-   "Save State"
+   "ඉක්මන් සුරැකීම"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
-   "Load State"
+   "ඉක්මන් පූරණය"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
-   "Sync now"
+   "දැන් සමමුහුර්ත කරන්න"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
-   "Miyoo CPU Clock"
+   "Miyoo CPU ක්ලොක් වේගය සකසන්න"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
-   "Save CPU Clock (Core)"
+   "CPU ක්ලොක් සුරකින්න (කෝර්)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
-   "Save CPU Clock (ROM)"
+   "CPU ක්ලොක් සුරකින්න (ROM)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
-   "Start Net-play (Server)"
+   "Net-play අරඹන්න (සේවාදායකය)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
-   "Net-play Host/LAN (Client)"
+   "Net-play Host/LAN (ක්ලයින්ට්)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
@@ -609,11 +609,11 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
-   "Close RetroArch"
+   "RetroArch වලින් පිටවන්න"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
-   "Menu Miyoo"
+   "Miyoo මෙනුව"
    )
 
 MSG_HASH(

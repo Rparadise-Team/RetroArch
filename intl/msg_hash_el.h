@@ -6105,7 +6105,7 @@ MSG_HASH(
 #if defined(MIYOO_CUSTOM_MENU)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
-   "Miyoo Menu"
+   "Μενού Miyoo"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
@@ -6121,19 +6121,19 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
-   "Sync now"
+   "Συγχρονισμός τώρα"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
-   "Miyoo CPU Clock"
+   "Ορισμός ταχύτητας ρολογιού CPU Miyoo"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
-   "Save CPU Clock (Core)"
+   "Αποθήκευση ρολογιού CPU (πυρήνας)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
-   "Save CPU Clock (ROM)"
+   "Αποθήκευση ρολογιού CPU (ROM)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
@@ -6153,7 +6153,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
-   "Menu Miyoo"
+   "Μενού Miyoo"
    )
 
 MSG_HASH(

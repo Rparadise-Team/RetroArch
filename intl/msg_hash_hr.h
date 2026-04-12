@@ -1649,43 +1649,43 @@ MSG_HASH(
 #if defined(MIYOO_CUSTOM_MENU)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU,
-   "Miyoo Menu"
+   "Miyoo izbornik"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RESUME,
-   "Resume"
+   "Nastavi"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
-   "Save State"
+   "Brzo spremanje"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_LOAD_STATE,
-   "Load State"
+   "Brzo učitavanje"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SYNC_NOW,
-   "Sync now"
+   "Sinkroniziraj sada"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_CPU_CLOCK,
-   "Miyoo CPU Clock"
+   "Postavi brzinu takta Miyoo CPU-a"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_CORE,
-   "Save CPU Clock (Core)"
+   "Spremi takt CPU-a (jezgra)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
-   "Save CPU Clock (ROM)"
+   "Spremi takt CPU-a (ROM)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
-   "Start Net-play (Server)"
+   "Pokreni Net-play (poslužitelj)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_CLIENT,
-   "Net-play Host/LAN (Client)"
+   "Net-play host/LAN (klijent)"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
@@ -1697,7 +1697,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_MENU_RETURN,
-   "Menu Miyoo"
+   "Miyoo izbornik"
    )
 
 MSG_HASH(
