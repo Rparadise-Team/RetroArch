@@ -740,6 +740,21 @@ int miyoo_menu_action_state_slot(int slot)
 
     if (mode == 1)
     {
+        if (runloop_get_savestate_path(state_path, sizeof(state_path), slot))
+        {
+            if (path_is_valid(state_path) && !path_is_directory(state_path))
+                filestream_delete(state_path);
+
+            {
+                size_t _len = strlen(state_path);
+                strlcpy(state_path + _len, FILE_PATH_PNG_EXTENSION,
+                      sizeof(state_path) - _len);
+
+                if (path_is_valid(state_path) && !path_is_directory(state_path))
+                    filestream_delete(state_path);
+            }
+        }
+
         old_thumbnail = settings->bools.savestate_thumbnail_enable;
         settings->bools.savestate_thumbnail_enable = true;
         command_ok = command_event(CMD_EVENT_SAVE_STATE, NULL);
