@@ -5630,6 +5630,9 @@ unsigned menu_event(
    else
    {
       static size_t ok_enum_idx = 0;
+#if defined(MIYOO_CUSTOM_MENU)
+      static unsigned ok_type   = 0;
+#endif
       static uint8_t switch_old = 0;
       static bool keydown[RARCH_FIRST_CUSTOM_BIND] = {false};
       unsigned onkeyup          =
@@ -5654,20 +5657,42 @@ unsigned menu_event(
          /* Due to navigation animations changing current entry between
           * keypress, require OK trigger enum match for release action */
          if (ok_trigger)
+         {
             ok_enum_idx = entry.enum_idx;
+#if defined(MIYOO_CUSTOM_MENU)
+            ok_type     = entry.type;
+#endif
+         }
 
          /* Single-click playlist entries */
          if (     settings->bools.input_menu_singleclick_playlists
                && (  entry.enum_idx == MENU_ENUM_LABEL_RUN
-                  || entry.enum_idx == MENU_ENUM_LABEL_RESUME_CONTENT)
+                  || entry.enum_idx == MENU_ENUM_LABEL_RESUME_CONTENT
+#if defined(MIYOO_CUSTOM_MENU)
+                  || entry.enum_idx == MENU_ENUM_LABEL_MIYOO_RESUME
+#endif
+                  )
                && (  ok_enum_idx == MENU_ENUM_LABEL_PLAYLIST_ENTRY
                   || ok_enum_idx == MENU_ENUM_LABEL_EXPLORE_ITEM))
             ok_trigger = ok_trigger_release;
 
          /* Resume */
-         if (     ok_enum_idx == MENU_ENUM_LABEL_RESUME_CONTENT
+         if (  (  ok_enum_idx == MENU_ENUM_LABEL_RESUME_CONTENT
+#if defined(MIYOO_CUSTOM_MENU)
+               || ok_enum_idx == MENU_ENUM_LABEL_MIYOO_RESUME
+#endif
+               )
                && ok_enum_idx == entry.enum_idx)
             ok_trigger = ok_trigger_release;
+
+#if defined(MIYOO_CUSTOM_MENU)
+         /* Miyoo save/load state slot resume */
+         if (  (  ok_type == FILE_TYPE_MIYOO_STATE_SLOT_1
+               || ok_type == FILE_TYPE_MIYOO_STATE_SLOT_2
+               || ok_type == FILE_TYPE_MIYOO_STATE_SLOT_3)
+               && ok_type == entry.type)
+            ok_trigger = ok_trigger_release;
+#endif
 
          /* Save state resume */
          if (     settings->bools.menu_savestate_resume
