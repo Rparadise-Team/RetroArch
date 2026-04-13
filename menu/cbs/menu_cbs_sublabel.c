@@ -55,6 +55,9 @@
 
 #include "../../playlist.h"
 #include "../../runtime_file.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 
 #ifndef BIND_ACTION_SUBLABEL
 #define BIND_ACTION_SUBLABEL(cbs, name) (cbs)->action_sublabel = (name)
@@ -225,6 +228,29 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_netplay_client, MENU_ENUM_SUBL
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_retroarch_settings, MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_quit_retroarch, MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_menu_return, MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN)
+
+static int action_bind_sublabel_miyoo_state_slot(
+      file_list_t *list, unsigned type, unsigned i,
+      const char *label, const char *path,
+      char *s, size_t len)
+{
+   int slot = -1;
+
+   (void)list;
+   (void)i;
+   (void)label;
+   (void)path;
+
+   if (type >= FILE_TYPE_MIYOO_STATE_SLOT_1
+         && type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
+      slot = (int)(type - FILE_TYPE_MIYOO_STATE_SLOT_1);
+
+   if (slot < 0)
+      return 0;
+
+   miyoo_menu_state_slot_metadata(slot, s, len);
+   return 1;
+}
 #endif
 
 #ifdef HAVE_AUDIOMIXER
@@ -2332,6 +2358,15 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
       BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_input_remap_port);
       return 0;
    }
+
+#if defined(MIYOO_CUSTOM_MENU)
+   if (   type >= FILE_TYPE_MIYOO_STATE_SLOT_1
+       && type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
+   {
+      BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_state_slot);
+      return 0;
+   }
+#endif
 
    /* Hotkey binds require special handling */
    if ((cbs->enum_idx >= MENU_ENUM_LABEL_INPUT_HOTKEY_BIND_BEGIN) &&

@@ -3712,23 +3712,39 @@ static int menu_displaylist_parse_load_content_settings(
          if (state_menu_mode == 1 || state_menu_mode == 2)
          {
             char slot_lbl[64];
+            int i;
+            settings_t *state_settings = config_get_ptr();
+            static const unsigned slot_types[] = {
+               FILE_TYPE_MIYOO_STATE_SLOT_1,
+               FILE_TYPE_MIYOO_STATE_SLOT_2,
+               FILE_TYPE_MIYOO_STATE_SLOT_3,
+               FILE_TYPE_MIYOO_STATE_SLOT_4,
+               FILE_TYPE_MIYOO_STATE_SLOT_5,
+               FILE_TYPE_MIYOO_STATE_SLOT_6,
+               FILE_TYPE_MIYOO_STATE_SLOT_7,
+               FILE_TYPE_MIYOO_STATE_SLOT_8,
+               FILE_TYPE_MIYOO_STATE_SLOT_9,
+               FILE_TYPE_MIYOO_STATE_SLOT_10
+            };
             struct menu_state *menu_st = menu_state_get_ptr();
 
             if (menu_st)
-               menu_st->selection_ptr = 0;
+               menu_st->selection_ptr = (state_settings
+                     && state_settings->ints.state_slot >= 0
+                     && state_settings->ints.state_slot < (int)(sizeof(slot_types) / sizeof(slot_types[0])))
+                     ? (size_t)state_settings->ints.state_slot : 0;
 
-            miyoo_menu_state_slot_label(0, slot_lbl, sizeof(slot_lbl));
-            if (menu_entries_append(list, slot_lbl, "miyoo_slot_1",
-                  MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_STATE_SLOT_1, 0, 0, NULL))
-               count++;
-            miyoo_menu_state_slot_label(1, slot_lbl, sizeof(slot_lbl));
-            if (menu_entries_append(list, slot_lbl, "miyoo_slot_2",
-                  MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_STATE_SLOT_2, 0, 0, NULL))
-               count++;
-            miyoo_menu_state_slot_label(2, slot_lbl, sizeof(slot_lbl));
-            if (menu_entries_append(list, slot_lbl, "miyoo_slot_3",
-                  MENU_ENUM_LABEL_NO_ITEMS, FILE_TYPE_MIYOO_STATE_SLOT_3, 0, 0, NULL))
-               count++;
+            for (i = 0; i < (int)(sizeof(slot_types) / sizeof(slot_types[0])); i++)
+            {
+               char slot_path[16];
+
+               miyoo_menu_state_slot_label(i, slot_lbl, sizeof(slot_lbl));
+               snprintf(slot_path, sizeof(slot_path), "miyoo_slot_%d", i + 1);
+
+               if (menu_entries_append(list, slot_lbl, slot_path,
+                     MENU_ENUM_LABEL_NO_ITEMS, slot_types[i], 0, 0, NULL))
+                  count++;
+            }
             return count;
          }
 

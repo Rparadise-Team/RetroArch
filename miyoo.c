@@ -173,6 +173,8 @@ static bool write_core_override_aspect_scale(settings_t *settings)
 }
 
 #if defined(MIYOO_CUSTOM_MENU)
+#define MIYOO_STATE_SLOT_COUNT 10
+
 static bool miyoo_menu_active            = false;
 static bool miyoo_native_quickmenu_open  = false;
 static int miyoo_state_menu_mode         = 0;
@@ -798,6 +800,15 @@ int miyoo_menu_state_menu_get_mode(void)
     return miyoo_state_menu_mode;
 }
 
+int miyoo_menu_state_parent_index(int mode)
+{
+    if (mode == 1)
+        return 1;
+    if (mode == 2)
+        return 2;
+    return 0;
+}
+
 int miyoo_menu_action_state_slot(int slot)
 {
     settings_t *settings = config_get_ptr();
@@ -808,7 +819,7 @@ int miyoo_menu_action_state_slot(int slot)
     char shot_name[16]   = {0};
     char state_path[PATH_MAX_LENGTH];
 
-    if (!settings || slot < 0 || slot > 2)
+    if (!settings || slot < 0 || slot >= MIYOO_STATE_SLOT_COUNT)
         return -1;
 
     configuration_set_int(settings, settings->ints.state_slot, slot);
@@ -923,7 +934,8 @@ void miyoo_menu_state_slot_label(int slot, char *out, size_t len)
         return;
 
     out[0] = '\0';
-    if (slot < 0 || slot > 2 || !runloop_get_savestate_path(state_path, sizeof(state_path), slot))
+    if (slot < 0 || slot >= MIYOO_STATE_SLOT_COUNT
+          || !runloop_get_savestate_path(state_path, sizeof(state_path), slot))
     {
         snprintf(out, len, "Slot %d - NO DATA", slot + 1);
         return;
@@ -948,6 +960,29 @@ void miyoo_menu_state_slot_label(int slot, char *out, size_t len)
 
     (void)has_thumb;
     snprintf(out, len, "Slot %d - %s", slot + 1, date_buf);
+}
+
+void miyoo_menu_state_slot_metadata(int slot, char *out, size_t len)
+{
+    char full_label[64];
+
+    if (!out || len == 0)
+        return;
+
+    miyoo_menu_state_slot_label(slot, full_label, sizeof(full_label));
+
+    out[0] = '\0';
+    if (string_starts_with_size(full_label, "Slot ", STRLEN_CONST("Slot ")))
+    {
+        char *sep = strstr(full_label, " - ");
+        if (sep)
+        {
+            strlcpy(out, sep + 3, len);
+            return;
+        }
+    }
+
+    strlcpy(out, full_label, len);
 }
 #endif
 

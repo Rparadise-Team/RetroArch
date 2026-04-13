@@ -5687,9 +5687,8 @@ unsigned menu_event(
 
 #if defined(MIYOO_CUSTOM_MENU)
          /* Miyoo save/load state slot resume */
-         if (  (  ok_type == FILE_TYPE_MIYOO_STATE_SLOT_1
-               || ok_type == FILE_TYPE_MIYOO_STATE_SLOT_2
-               || ok_type == FILE_TYPE_MIYOO_STATE_SLOT_3)
+         if (  (  ok_type >= FILE_TYPE_MIYOO_STATE_SLOT_1
+               && ok_type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
                && ok_type == entry.type)
             ok_trigger = ok_trigger_release;
 #endif

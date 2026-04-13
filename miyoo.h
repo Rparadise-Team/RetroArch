@@ -40,8 +40,10 @@ void miyoo_menu_state_menu_open_save(void);
 void miyoo_menu_state_menu_open_load(void);
 void miyoo_menu_state_menu_close(void);
 int miyoo_menu_state_menu_get_mode(void);
+int miyoo_menu_state_parent_index(int mode);
 int miyoo_menu_action_state_slot(int slot);
 void miyoo_menu_state_slot_label(int slot, char *out, size_t len);
+void miyoo_menu_state_slot_metadata(int slot, char *out, size_t len);
 void miyoo_menu_update_savestate_thumbnail(unsigned selection);
 #endif
 

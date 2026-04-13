@@ -96,7 +96,7 @@ int action_cancel_pop_default(const char *path,
       {
          int state_menu_mode = miyoo_menu_state_menu_get_mode();
          miyoo_menu_state_menu_close();
-         menu_st->selection_ptr = (state_menu_mode == 1) ? 1 : 2;
+         menu_st->selection_ptr = (size_t)miyoo_menu_state_parent_index(state_menu_mode);
          handled_submenu = true;
       }
 

@@ -6023,22 +6023,13 @@ static int action_ok_miyoo_quit(const char *path,
    return miyoo_menu_action_quit_retroarch();
 }
 
-static int action_ok_miyoo_state_slot_1(const char *path,
+static int action_ok_miyoo_state_slot(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
-   return miyoo_menu_action_state_slot(0);
-}
-
-static int action_ok_miyoo_state_slot_2(const char *path,
-      const char *label, unsigned type, size_t idx, size_t entry_idx)
-{
-   return miyoo_menu_action_state_slot(1);
-}
-
-static int action_ok_miyoo_state_slot_3(const char *path,
-      const char *label, unsigned type, size_t idx, size_t entry_idx)
-{
-   return miyoo_menu_action_state_slot(2);
+   if (type >= FILE_TYPE_MIYOO_STATE_SLOT_1
+         && type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
+      return miyoo_menu_action_state_slot((int)(type - FILE_TYPE_MIYOO_STATE_SLOT_1));
+   return -1;
 }
 
 static int action_ok_miyoo_state_back(const char *path,
@@ -9960,13 +9951,16 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
             BIND_ACTION_OK(cbs, action_ok_miyoo_quit);
             break;
          case FILE_TYPE_MIYOO_STATE_SLOT_1:
-            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot_1);
-            break;
          case FILE_TYPE_MIYOO_STATE_SLOT_2:
-            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot_2);
-            break;
          case FILE_TYPE_MIYOO_STATE_SLOT_3:
-            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot_3);
+         case FILE_TYPE_MIYOO_STATE_SLOT_4:
+         case FILE_TYPE_MIYOO_STATE_SLOT_5:
+         case FILE_TYPE_MIYOO_STATE_SLOT_6:
+         case FILE_TYPE_MIYOO_STATE_SLOT_7:
+         case FILE_TYPE_MIYOO_STATE_SLOT_8:
+         case FILE_TYPE_MIYOO_STATE_SLOT_9:
+         case FILE_TYPE_MIYOO_STATE_SLOT_10:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_state_slot);
             break;
          case FILE_TYPE_MIYOO_STATE_BACK:
             BIND_ACTION_OK(cbs, action_ok_miyoo_state_back);
