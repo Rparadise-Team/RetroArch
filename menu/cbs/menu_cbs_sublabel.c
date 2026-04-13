@@ -241,9 +241,9 @@ static int action_bind_sublabel_miyoo_state_slot(
    (void)label;
    (void)path;
 
-   if (type >= FILE_TYPE_MIYOO_STATE_SLOT_1
-         && type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
-      slot = (int)(type - FILE_TYPE_MIYOO_STATE_SLOT_1);
+   if (type >= FILE_TYPE_MIYOO_STATE_SLOT_0
+         && type <= FILE_TYPE_MIYOO_STATE_SLOT_9)
+      slot = (int)(type - FILE_TYPE_MIYOO_STATE_SLOT_0);
 
    if (slot < 0)
       return 0;
@@ -2360,8 +2360,8 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
    }
 
 #if defined(MIYOO_CUSTOM_MENU)
-   if (   type >= FILE_TYPE_MIYOO_STATE_SLOT_1
-       && type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
+   if (   type >= FILE_TYPE_MIYOO_STATE_SLOT_0
+       && type <= FILE_TYPE_MIYOO_STATE_SLOT_9)
    {
       BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_state_slot);
       return 0;

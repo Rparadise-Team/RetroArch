@@ -3715,6 +3715,7 @@ static int menu_displaylist_parse_load_content_settings(
             int i;
             settings_t *state_settings = config_get_ptr();
             static const unsigned slot_types[] = {
+               FILE_TYPE_MIYOO_STATE_SLOT_0,
                FILE_TYPE_MIYOO_STATE_SLOT_1,
                FILE_TYPE_MIYOO_STATE_SLOT_2,
                FILE_TYPE_MIYOO_STATE_SLOT_3,
@@ -3723,8 +3724,8 @@ static int menu_displaylist_parse_load_content_settings(
                FILE_TYPE_MIYOO_STATE_SLOT_6,
                FILE_TYPE_MIYOO_STATE_SLOT_7,
                FILE_TYPE_MIYOO_STATE_SLOT_8,
-               FILE_TYPE_MIYOO_STATE_SLOT_9,
-               FILE_TYPE_MIYOO_STATE_SLOT_10
+               FILE_TYPE_MIYOO_STATE_SLOT_9
+               
             };
             struct menu_state *menu_st = menu_state_get_ptr();
 

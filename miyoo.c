@@ -937,13 +937,13 @@ void miyoo_menu_state_slot_label(int slot, char *out, size_t len)
     if (slot < 0 || slot >= MIYOO_STATE_SLOT_COUNT
           || !runloop_get_savestate_path(state_path, sizeof(state_path), slot))
     {
-        snprintf(out, len, "Slot %d - NO DATA", slot + 1);
+        snprintf(out, len, "Slot %d - NO DATA", slot);
         return;
     }
 
     if (stat(state_path, &st_state) != 0)
     {
-        snprintf(out, len, "Slot %d - NO DATA", slot + 1);
+        snprintf(out, len, "Slot %d - NO DATA", slot);
         return;
     }
 
@@ -959,7 +959,7 @@ void miyoo_menu_state_slot_label(int slot, char *out, size_t len)
     }
 
     (void)has_thumb;
-    snprintf(out, len, "Slot %d - %s", slot + 1, date_buf);
+    snprintf(out, len, "Slot %d - %s", slot, date_buf);
 }
 
 void miyoo_menu_state_slot_metadata(int slot, char *out, size_t len)

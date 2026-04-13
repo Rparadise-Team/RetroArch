@@ -495,9 +495,9 @@ static int action_start_miyoo_state_slot(
    settings_t *settings       = config_get_ptr();
    int slot                   = -1;
 
-   if (type >= FILE_TYPE_MIYOO_STATE_SLOT_1
-         && type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
-      slot = (int)(type - FILE_TYPE_MIYOO_STATE_SLOT_1);
+   if (type >= FILE_TYPE_MIYOO_STATE_SLOT_0
+         && type <= FILE_TYPE_MIYOO_STATE_SLOT_9)
+      slot = (int)(type - FILE_TYPE_MIYOO_STATE_SLOT_0);
 
    if (slot < 0)
       return -1;
@@ -987,6 +987,7 @@ static int menu_cbs_init_bind_start_compare_type(menu_file_list_cbs_t *cbs,
             BIND_ACTION_START(cbs, action_start_state_slot);
             break;
 #if defined(MIYOO_CUSTOM_MENU)
+         case FILE_TYPE_MIYOO_STATE_SLOT_0:
          case FILE_TYPE_MIYOO_STATE_SLOT_1:
          case FILE_TYPE_MIYOO_STATE_SLOT_2:
          case FILE_TYPE_MIYOO_STATE_SLOT_3:
@@ -996,7 +997,6 @@ static int menu_cbs_init_bind_start_compare_type(menu_file_list_cbs_t *cbs,
          case FILE_TYPE_MIYOO_STATE_SLOT_7:
          case FILE_TYPE_MIYOO_STATE_SLOT_8:
          case FILE_TYPE_MIYOO_STATE_SLOT_9:
-         case FILE_TYPE_MIYOO_STATE_SLOT_10:
             BIND_ACTION_START(cbs, action_start_miyoo_state_slot);
             break;
 #endif

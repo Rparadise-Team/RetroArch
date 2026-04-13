@@ -7033,8 +7033,8 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
          bool is_miyoo_slot = false;
 
 #if defined(MIYOO_CUSTOM_MENU)
-         if (     entry.type >= FILE_TYPE_MIYOO_STATE_SLOT_1
-               && entry.type <= FILE_TYPE_MIYOO_STATE_SLOT_10)
+         if (     entry.type >= FILE_TYPE_MIYOO_STATE_SLOT_0
+               && entry.type <= FILE_TYPE_MIYOO_STATE_SLOT_9)
             is_miyoo_slot = true;
 #endif
 
@@ -7051,7 +7051,7 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
             /* State slot dropdown */
             if (is_miyoo_slot)
             {
-               state_slot = (int)(entry.type - FILE_TYPE_MIYOO_STATE_SLOT_1);
+               state_slot = (int)(entry.type - FILE_TYPE_MIYOO_STATE_SLOT_0);
                rgui->flags |= RGUI_FLAG_IS_STATE_SLOT;
             }
             else if (string_to_unsigned(entry.label) == MENU_ENUM_LABEL_STATE_SLOT)
