@@ -3749,6 +3749,23 @@ static int menu_displaylist_parse_load_content_settings(
             return count;
          }
 
+#ifdef HAVE_CHEEVOS
+         if (miyoo_menu_achievements_menu_is_open())
+         {
+            size_t list_size_before = list->size;
+            menu_displaylist_info_t miyoo_achievements_info;
+            memset(&miyoo_achievements_info, 0, sizeof(miyoo_achievements_info));
+            miyoo_achievements_info.list = list;
+
+            rcheevos_menu_populate_miyoo(&miyoo_achievements_info, settings->bools.cheevos_enable,
+                  settings->bools.cheevos_hardcore_mode_enable);
+
+            if (list->size > list_size_before)
+               count += (unsigned)(list->size - list_size_before);
+            return count;
+         }
+#endif
+
          if (menu_entries_append(list,
 			   msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_RESUME),
                msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_RESUME),
@@ -3787,6 +3804,15 @@ static int menu_displaylist_parse_load_content_settings(
                MENU_ENUM_LABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
 			   FILE_TYPE_MIYOO_SAVE_CPU_ROM, 0, 0, NULL))
             count++;
+#ifdef HAVE_CHEEVOS
+         if (settings->bools.cheevos_enable)
+            if (menu_entries_append(list,
+                  msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS),
+                  msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS),
+                  MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+                  FILE_TYPE_MIYOO_ACHIEVEMENTS, 0, 0, NULL))
+               count++;
+#endif
 #ifdef HAVE_NETWORKING
          if (menu_entries_append(list,
 			   msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST),

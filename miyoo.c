@@ -180,6 +180,8 @@ static bool miyoo_native_quickmenu_open  = false;
 static int miyoo_state_menu_mode         = 0;
 static bool miyoo_cpu_menu_open          = false;
 static bool miyoo_netplay_menu_open      = false;
+static bool miyoo_achievements_menu_open = false;
+static size_t miyoo_achievements_parent  = 0;
 int miyoo_gfx_apply_cpuclock(int clock);
 
 static bool miyoo_cpu_clock_build_core_path(char *out_path, size_t len, const char *file_name);
@@ -211,6 +213,8 @@ void miyoo_menu_context_end(void)
     miyoo_state_menu_mode       = 0;
     miyoo_cpu_menu_open         = false;
     miyoo_netplay_menu_open     = false;
+    miyoo_achievements_menu_open = false;
+    miyoo_achievements_parent    = 0;
 
     if (miyoo_cpu_clock_read(&clock_hz))
        miyoo_cpu_clock_apply_target(clock_hz);
@@ -767,6 +771,27 @@ void miyoo_menu_netplay_menu_close(void)
 bool miyoo_menu_netplay_menu_is_open(void)
 {
     return miyoo_netplay_menu_open;
+}
+
+void miyoo_menu_achievements_menu_open(size_t parent_index)
+{
+    miyoo_achievements_menu_open = true;
+    miyoo_achievements_parent    = parent_index;
+}
+
+void miyoo_menu_achievements_menu_close(void)
+{
+    miyoo_achievements_menu_open = false;
+}
+
+bool miyoo_menu_achievements_menu_is_open(void)
+{
+    return miyoo_achievements_menu_open;
+}
+
+size_t miyoo_menu_achievements_parent_index(void)
+{
+    return miyoo_achievements_parent;
 }
 
 int miyoo_menu_action_open_quick_menu(void)

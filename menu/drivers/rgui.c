@@ -56,6 +56,9 @@
 #if defined(MIYOO_CUSTOM_MENU)
 #include "../../miyoo.h"
 #endif
+#ifdef HAVE_CHEEVOS
+#include "../../cheevos/cheevos_menu.h"
+#endif
 
 #include "../../gfx/drivers_font_renderer/bitmap.h"
 #ifdef HAVE_LANGEXTRA
@@ -280,7 +283,8 @@ enum rgui_flags
    RGUI_FLAG_SHOW_FULLSCREEN_THUMBNAIL = (1 << 23),
    RGUI_FLAG_IS_PLAYLISTS_TAB          = (1 << 24),
    RGUI_FLAG_IS_QUICK_MENU             = (1 << 25),
-   RGUI_FLAG_DRAW_ENTRY_SKIP           = (1 << 26)
+   RGUI_FLAG_DRAW_ENTRY_SKIP           = (1 << 26),
+   RGUI_FLAG_IS_MIYOO_ACHIEVEMENTS     = (1 << 27)
 };
 
 typedef struct
@@ -2905,6 +2909,71 @@ static void rgui_render_mini_thumbnail(
    }
 }
 
+#ifdef HAVE_CHEEVOS
+static void rgui_draw_miyoo_achievement_badge(
+      rgui_t *rgui,
+      const char *badge_path,
+      unsigned x,
+      unsigned y,
+      unsigned size,
+      unsigned fb_width,
+      unsigned fb_height)
+{
+   struct texture_image img = {0};
+   unsigned draw_w;
+   unsigned draw_h;
+   unsigned i;
+   unsigned j;
+
+   if (string_is_empty(badge_path) || !path_is_valid(badge_path) || !rgui || !rgui->frame_buf.data)
+      return;
+
+   if (!image_texture_load(&img, badge_path) || !img.pixels || img.width == 0 || img.height == 0)
+      return;
+
+   draw_w = size;
+   draw_h = size;
+
+   if (img.width > img.height)
+      draw_h = (unsigned)(((uint64_t)size * img.height) / img.width);
+   else if (img.height > img.width)
+      draw_w = (unsigned)(((uint64_t)size * img.width) / img.height);
+
+   if (draw_w == 0)
+      draw_w = 1;
+   if (draw_h == 0)
+      draw_h = 1;
+
+   for (j = 0; j < draw_h; j++)
+   {
+      unsigned src_y = (unsigned)(((uint64_t)j * img.height) / draw_h);
+      unsigned dst_y = y + ((size - draw_h) >> 1) + j;
+
+      if (dst_y >= fb_height)
+         continue;
+
+      for (i = 0; i < draw_w; i++)
+      {
+         unsigned src_x = (unsigned)(((uint64_t)i * img.width) / draw_w);
+         unsigned dst_x = x + ((size - draw_w) >> 1) + i;
+         uint32_t pixel;
+
+         if (dst_x >= fb_width)
+            continue;
+
+         pixel = img.pixels[src_x + (src_y * img.width)];
+         if ((pixel >> 24) == 0)
+            continue;
+
+         rgui->frame_buf.data[dst_x + (dst_y * fb_width)] =
+               argb32_to_pixel_platform_format(pixel);
+      }
+   }
+
+   image_texture_free(&img);
+}
+#endif
+
 static const rgui_theme_t *rgui_get_theme(rgui_t *rgui)
 {
    bool transparent = (rgui->flags & RGUI_FLAG_TRANSPARENCY_SUPPORTED)
@@ -5387,7 +5456,8 @@ static void rgui_render(void *data, unsigned width, unsigned height,
       bool show_left_thumbnail       = false;
       bool show_savestate_thumbnail  = (!string_is_empty(rgui->savestate_thumbnail_file_path)
             && (   (rgui->flags & RGUI_FLAG_IS_STATE_SLOT)
-               || ((rgui->flags & RGUI_FLAG_IS_QUICK_MENU) && menu_is_running_quick_menu())));
+               || ((rgui->flags & RGUI_FLAG_IS_QUICK_MENU) && menu_is_running_quick_menu())
+               || (rgui->flags & RGUI_FLAG_IS_MIYOO_ACHIEVEMENTS)));
       unsigned thumbnail_panel_width = 0;
       unsigned term_mid_point        = 0;
       size_t powerstate_len          = 0;
@@ -5572,6 +5642,7 @@ static void rgui_render(void *data, unsigned width, unsigned height,
          size_t entry_title_max_len                  = 0;
          unsigned entry_value_len                    = 0;
          enum rgui_entry_value_type entry_value_type = RGUI_ENTRY_VALUE_NONE;
+         bool miyoo_achievement_entry                = false;
          bool entry_selected                         = (i == selection);
          uint16_t entry_color                        = entry_selected
                ? rgui->colors.hover_color
@@ -5593,6 +5664,12 @@ static void rgui_render(void *data, unsigned width, unsigned height,
             entry_value      = entry.password_value;
          else
             entry_value      = entry.value;
+
+#if defined(MIYOO_CUSTOM_MENU) && defined(HAVE_CHEEVOS)
+         if (   (rgui->flags & RGUI_FLAG_IS_MIYOO_ACHIEVEMENTS)
+             && entry.type >= MENU_SETTINGS_CHEEVOS_START)
+            miyoo_achievement_entry = true;
+#endif
 
          /* Get base length of entry title field */
          entry_title_max_len = rgui->term_layout.width - (1 + 2);
@@ -5634,12 +5711,25 @@ static void rgui_render(void *data, unsigned width, unsigned height,
             entry_title_max_len -= (thumbnail_width / rgui->font_width_stride);
          }
 
-         /* Get 'type' of entry value component */
-         entry_value_type = rgui_get_entry_value_type(
-               entry_value,
-               entry.setting_type,
-               (entry.flags & MENU_ENTRY_FLAG_CHECKED) ? true : false,
-               rgui_switch_icons);
+#if defined(MIYOO_CUSTOM_MENU) && defined(HAVE_CHEEVOS)
+         if (miyoo_achievement_entry)
+         {
+            unsigned icon_size    = rgui->font_height_stride + (rgui->font_height_stride >> 1);
+            unsigned icon_columns = (icon_size / rgui->font_width_stride) + 2;
+            if (entry_title_max_len > icon_columns)
+               entry_title_max_len -= icon_columns;
+            entry_value_type = RGUI_ENTRY_VALUE_NONE;
+         }
+         else
+#endif
+         {
+            /* Get 'type' of entry value component */
+            entry_value_type = rgui_get_entry_value_type(
+                  entry_value,
+                  entry.setting_type,
+                  (entry.flags & MENU_ENTRY_FLAG_CHECKED) ? true : false,
+                  rgui_switch_icons);
+         }
 
          switch (entry_value_type)
          {
@@ -5805,6 +5895,22 @@ static void rgui_render(void *data, unsigned width, unsigned height,
          if (entry_selected)
             rgui_blit_line(rgui, fb_width, x, y, ">",
                   entry_color, rgui->colors.shadow_color);
+
+#if defined(MIYOO_CUSTOM_MENU) && defined(HAVE_CHEEVOS)
+         if (miyoo_achievement_entry)
+         {
+            char badge_path[PATH_MAX_LENGTH];
+            unsigned icon_size = rgui->font_height_stride * 2;
+            unsigned icon_x    = term_end_x - icon_size - rgui->font_width_stride;
+            unsigned icon_y    = y;
+
+            rcheevos_menu_get_badge_path(
+                  (unsigned)(entry.type - MENU_SETTINGS_CHEEVOS_START),
+                  badge_path, sizeof(badge_path));
+            rgui_draw_miyoo_achievement_badge(rgui, badge_path,
+                  icon_x, icon_y, icon_size, fb_width, fb_height);
+         }
+#endif
       }
 
       /* Draw mini thumbnails, if required */
@@ -6997,6 +7103,8 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
    if (!rgui)
       return;
 
+   rgui->flags &= ~RGUI_FLAG_IS_MIYOO_ACHIEVEMENTS;
+
    /* Cache previous savestate thumbnail path */
    strlcpy(
          rgui->prev_savestate_thumbnail_file_path,
@@ -7011,6 +7119,9 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
          || (rgui->flags & RGUI_FLAG_IS_STATE_SLOT)
 #if defined(MIYOO_CUSTOM_MENU)
          || (miyoo_state_menu_mode != 0)
+#ifdef HAVE_CHEEVOS
+         || (miyoo_menu_context_active() && !miyoo_menu_context_is_native_quickmenu())
+#endif
 #endif
          ))
       return;
@@ -7018,6 +7129,10 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
 #if defined(MIYOO_CUSTOM_MENU)
    if (miyoo_state_menu_mode != 0)
       savestate_thumbnail_enable = true;
+#ifdef HAVE_CHEEVOS
+   if (miyoo_menu_achievements_menu_is_open())
+      savestate_thumbnail_enable = true;
+#endif
 #endif
 
    if (savestate_thumbnail_enable)
@@ -7031,14 +7146,40 @@ static void rgui_update_savestate_thumbnail_path(void *data, unsigned i)
       if (!string_is_empty(entry.label))
       {
          bool is_miyoo_slot = false;
+         bool is_miyoo_achievements_entry = false;
+         bool is_miyoo_achievements_menu  = false;
 
 #if defined(MIYOO_CUSTOM_MENU)
          if (     entry.type >= FILE_TYPE_MIYOO_STATE_SLOT_0
                && entry.type <= FILE_TYPE_MIYOO_STATE_SLOT_9)
             is_miyoo_slot = true;
+#ifdef HAVE_CHEEVOS
+         if (   miyoo_menu_context_active()
+             && !miyoo_menu_context_is_native_quickmenu()
+             && miyoo_menu_achievements_menu_is_open())
+         {
+            is_miyoo_achievements_menu = true;
+            rgui->flags |= RGUI_FLAG_IS_MIYOO_ACHIEVEMENTS;
+            if (entry.type >= MENU_SETTINGS_CHEEVOS_START)
+               is_miyoo_achievements_entry = true;
+         }
+#endif
 #endif
 
-         if (     string_to_unsigned(entry.label) == MENU_ENUM_LABEL_STATE_SLOT
+         if (is_miyoo_achievements_menu && !is_miyoo_achievements_entry)
+         {
+            rgui->savestate_thumbnail_file_path[0] = '\0';
+         }
+         else if (is_miyoo_achievements_entry)
+         {
+#ifdef HAVE_CHEEVOS
+            rcheevos_menu_get_badge_path(
+                  (unsigned)(entry.type - MENU_SETTINGS_CHEEVOS_START),
+                  rgui->savestate_thumbnail_file_path,
+                  sizeof(rgui->savestate_thumbnail_file_path));
+#endif
+         }
+         else if (     string_to_unsigned(entry.label) == MENU_ENUM_LABEL_STATE_SLOT
                || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_STATE_SLOT))
                || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_LOAD_STATE))
                || string_is_equal(entry.label, msg_hash_to_str(MENU_ENUM_LABEL_SAVE_STATE))
@@ -7123,8 +7264,22 @@ static void rgui_update_savestate_thumbnail_image(void *data)
    {
       bool thumbnails_missing        = false;
       rgui->flags &= ~RGUI_FLAG_ENTRY_HAS_LEFT_THUMBNAIL;
-      rgui->mini_left_thumbnail.max_width  = rgui->savestate_thumbnail_max_width;
-      rgui->mini_left_thumbnail.max_height = rgui->savestate_thumbnail_max_height;
+      if (rgui->flags & RGUI_FLAG_IS_MIYOO_ACHIEVEMENTS)
+      {
+         /* Keep achievement badges compact on 640x480 / 752x560 class displays. */
+         unsigned badge_max = rgui->font_height_stride * 4;
+         if (badge_max < 36)
+            badge_max = 36;
+         if (badge_max > 56)
+            badge_max = 56;
+         rgui->mini_left_thumbnail.max_width  = badge_max;
+         rgui->mini_left_thumbnail.max_height = badge_max;
+      }
+      else
+      {
+         rgui->mini_left_thumbnail.max_width  = rgui->savestate_thumbnail_max_width;
+         rgui->mini_left_thumbnail.max_height = rgui->savestate_thumbnail_max_height;
+      }
 
       if (rgui_request_thumbnail(
             &rgui->mini_left_thumbnail,

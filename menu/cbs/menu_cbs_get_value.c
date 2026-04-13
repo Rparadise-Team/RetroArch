@@ -138,6 +138,14 @@ static size_t menu_action_setting_disp_set_label_cheevos_entry(
    *w = 19;
    if (!string_is_empty(path))
       strlcpy(s2, path, len2);
+#if defined(MIYOO_CUSTOM_MENU)
+   if (miyoo_menu_achievements_menu_is_open())
+   {
+      if (s && len)
+         s[0] = '\0';
+      return 0;
+   }
+#endif
    return rcheevos_menu_get_state(type - MENU_SETTINGS_CHEEVOS_START, s, len);
 }
 #endif
@@ -2091,6 +2099,7 @@ static int menu_cbs_init_bind_get_string_representation_compare_label(
 #if defined(MIYOO_CUSTOM_MENU)
          case MENU_ENUM_LABEL_MIYOO_SAVE_STATE:
          case MENU_ENUM_LABEL_MIYOO_LOAD_STATE:
+         case MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS:
          case MENU_ENUM_LABEL_MIYOO_NETPLAY_CLIENT:
          case MENU_ENUM_LABEL_MIYOO_RETROARCH_SETTINGS:
 #endif

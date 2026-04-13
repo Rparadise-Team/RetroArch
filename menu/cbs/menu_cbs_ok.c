@@ -5992,6 +5992,21 @@ static int action_ok_miyoo_netplay_host(const char *path,
    return miyoo_menu_action_netplay_host();
 }
 
+#ifdef HAVE_CHEEVOS
+static int action_ok_miyoo_achievements(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   struct menu_state *menu_st = menu_state_get_ptr();
+   miyoo_menu_achievements_menu_open(idx);
+   if (menu_st)
+   {
+      menu_st->selection_ptr = 0;
+      menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   }
+   return 0;
+}
+#endif
+
 static int action_ok_miyoo_netplay_client(const char *path,
       const char *label, unsigned type, size_t idx, size_t entry_idx)
 {
@@ -9938,6 +9953,11 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
          case FILE_TYPE_MIYOO_SAVE_CPU_ROM:
             BIND_ACTION_OK(cbs, action_ok_miyoo_save_cpu_rom);
             break;
+#ifdef HAVE_CHEEVOS
+         case FILE_TYPE_MIYOO_ACHIEVEMENTS:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_achievements);
+            break;
+#endif
          case FILE_TYPE_MIYOO_NETPLAY_HOST:
             BIND_ACTION_OK(cbs, action_ok_miyoo_netplay_host);
             break;
