@@ -756,9 +756,10 @@ static void rcheevos_client_download_achievement_badge(const char* badge_name, b
          {
             snprintf(locked_badge_name, sizeof(locked_badge_name), "%s_lock", badge_name);
             badge_name = locked_badge_name;
+            rcheevos_client_download_badge_from_url(url, badge_name);
          }
-
-         rcheevos_client_download_badge_from_url(url, badge_name);
+         else
+            rcheevos_client_download_badge_from_url_prioritized(url, badge_name);
       }
 
       rc_client_destroy_achievement_list(list);

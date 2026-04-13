@@ -75,6 +75,7 @@
 #include "../runtime_file.h"
 #include "../core.h"
 #include "../core_option_manager.h"
+#include "../miyoo.h"
 
 #include "../tasks/tasks_internal.h"
 
@@ -330,6 +331,8 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
          _len += strlcpy(buffer + _len, ": ", sizeof(buffer) - _len);
          _len += strlcpy(buffer + _len, cheevo->title, sizeof(buffer) - _len);
 
+         if (!string_is_empty(cheevo->badge_url))
+            rcheevos_client_download_badge_from_url_prioritized(cheevo->badge_url, cheevo->badge_name);
          rcheevos_get_badge_texture(cheevo->badge_name, false, true);
          strlcpy(badge_title, cheevo->badge_name, sizeof(badge_title));
 
@@ -1772,6 +1775,11 @@ bool rcheevos_load(const void *data)
    settings_t *settings               = config_get_ptr();
    bool cheevos_enable                = settings
       && settings->bools.cheevos_enable;
+
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+   if (miyoo_menu_netplay_cheevos_suspended())
+      cheevos_enable = false;
+#endif
 
 #ifdef HAVE_THREADS
    rcheevos_locals.queued_command = CMD_EVENT_NONE;

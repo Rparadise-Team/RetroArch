@@ -6018,7 +6018,9 @@ static int action_ok_miyoo_netplay_client(const char *path,
    if (ret == 0)
       miyoo_menu_netplay_menu_open();
    else
+   {
       miyoo_menu_netplay_menu_close();
+   }
 
    return ret;
 #else

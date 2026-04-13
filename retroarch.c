@@ -4901,6 +4901,10 @@ bool command_event(enum event_command cmd, void *data)
             char netplay_server[256];
             char netplay_session[256];
             unsigned netplay_port = 0;
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+            if (miyoo_menu_action_netplay_client() != 0)
+               return false;
+#endif
 
             command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
 
@@ -4918,6 +4922,9 @@ bool command_event(enum event_command cmd, void *data)
             if (!init_netplay(netplay_server, netplay_port, netplay_session))
             {
                command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+               miyoo_menu_netplay_on_stopped();
+#endif
                return false;
             }
 
@@ -4938,6 +4945,10 @@ bool command_event(enum event_command cmd, void *data)
             char netplay_server[256];
             char netplay_session[256];
             unsigned netplay_port = 0;
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+            if (miyoo_menu_action_netplay_client() != 0)
+               return false;
+#endif
 
             command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
 
@@ -4955,6 +4966,9 @@ bool command_event(enum event_command cmd, void *data)
             if (!init_netplay_deferred(netplay_server, netplay_port, netplay_session))
             {
                command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+               miyoo_menu_netplay_on_stopped();
+#endif
                return false;
             }
 
@@ -5015,6 +5029,9 @@ bool command_event(enum event_command cmd, void *data)
 #endif
             if (autosave_interval != 0)
                command_event(CMD_EVENT_AUTOSAVE_INIT, NULL);
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+            miyoo_menu_netplay_on_stopped();
+#endif
          }
          break;
       case CMD_EVENT_NETPLAY_HOST_TOGGLE:

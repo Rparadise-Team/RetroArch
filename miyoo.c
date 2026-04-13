@@ -15,6 +15,10 @@
 #include "streams/file_stream.h"
 #include "string/stdstring.h"
 #include "verbosity.h"
+#ifdef HAVE_CHEEVOS
+#include "cheevos/cheevos.h"
+#endif
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
 
@@ -180,6 +184,10 @@ static bool miyoo_native_quickmenu_open  = false;
 static int miyoo_state_menu_mode         = 0;
 static bool miyoo_cpu_menu_open          = false;
 static bool miyoo_netplay_menu_open      = false;
+static bool miyoo_netplay_saved_cheevos_valid  = false;
+static bool miyoo_netplay_saved_cheevos_enable = false;
+static bool miyoo_netplay_cheevos_suspended    = false;
+static char miyoo_netplay_cfg_path[PATH_MAX_LENGTH] = {0};
 static bool miyoo_achievements_menu_open = false;
 static size_t miyoo_achievements_parent  = 0;
 int miyoo_gfx_apply_cpuclock(int clock);
@@ -523,6 +531,91 @@ static void miyoo_menu_notify(const char *msg)
           MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
 }
 
+static bool miyoo_shell_escape_single_quotes(const char *in, char *out, size_t out_size)
+{
+    size_t in_pos = 0;
+    size_t out_pos = 0;
+
+    if (string_is_empty(in) || !out || out_size < 3)
+       return false;
+
+    out[out_pos++] = '\'';
+
+    while (in[in_pos] != '\0')
+    {
+       if (out_pos + 6 >= out_size)
+          return false;
+
+       if (in[in_pos] == '\'')
+       {
+          out[out_pos++] = '\'';
+          out[out_pos++] = '\\';
+          out[out_pos++] = '\'';
+          out[out_pos++] = '\'';
+       }
+       else
+          out[out_pos++] = in[in_pos];
+
+       in_pos++;
+    }
+
+    out[out_pos++] = '\'';
+    out[out_pos] = '\0';
+    return true;
+}
+
+static void miyoo_netplay_update_cheevos_cfg_file(const char *cfg_path, bool enable, bool append_if_missing)
+{
+    char escaped_cfg_path[(PATH_MAX_LENGTH * 2) + 8];
+    char cmd[(PATH_MAX_LENGTH * 3) + 256];
+    const char *value = enable ? "true" : "false";
+
+    if (!miyoo_shell_escape_single_quotes(cfg_path, escaped_cfg_path, sizeof(escaped_cfg_path)))
+       return;
+
+    if (append_if_missing)
+       snprintf(cmd, sizeof(cmd),
+             "sed -i 's/^[[:space:]]*cheevos_enable[[:space:]]*=.*/cheevos_enable = \"%s\"/' %s; "
+             "grep -q '^[[:space:]]*cheevos_enable[[:space:]]*=' %s || echo 'cheevos_enable = \"%s\"' >> %s",
+             value, escaped_cfg_path, escaped_cfg_path, value, escaped_cfg_path);
+    else
+       snprintf(cmd, sizeof(cmd),
+             "sed -i 's/^[[:space:]]*cheevos_enable[[:space:]]*=.*/cheevos_enable = \"%s\"/' %s",
+             value, escaped_cfg_path);
+
+    system(cmd);
+}
+
+static void miyoo_netplay_update_cheevos_cfg(bool enable)
+{
+    const char *cfg_path = path_get(RARCH_PATH_CONFIG);
+    char core_cfg_path[PATH_MAX_LENGTH] = {0};
+    rarch_system_info_t *system         = &runloop_state_get_ptr()->system;
+    const char *core_name               = system ? system->info.library_name : NULL;
+    char config_directory[PATH_MAX_LENGTH];
+
+    if (string_is_empty(cfg_path))
+       cfg_path = miyoo_netplay_cfg_path;
+    else
+       strlcpy(miyoo_netplay_cfg_path, cfg_path, sizeof(miyoo_netplay_cfg_path));
+
+    if (!string_is_empty(cfg_path))
+       miyoo_netplay_update_cheevos_cfg_file(cfg_path, enable, true);
+
+    if (string_is_empty(core_name))
+       return;
+
+    fill_pathname_application_special(config_directory, sizeof(config_directory),
+          APPLICATION_SPECIAL_DIRECTORY_CONFIG);
+    fill_pathname_join_special(core_cfg_path, config_directory, core_name, sizeof(core_cfg_path));
+    fill_pathname_slash(core_cfg_path, sizeof(core_cfg_path));
+    strlcat(core_cfg_path, core_name, sizeof(core_cfg_path));
+    strlcat(core_cfg_path, ".cfg", sizeof(core_cfg_path));
+
+    if (path_is_valid(core_cfg_path))
+       miyoo_netplay_update_cheevos_cfg_file(core_cfg_path, enable, false);
+}
+
 int miyoo_menu_action_resume(void)
 {
     return command_event(CMD_EVENT_MENU_TOGGLE, NULL) ? 0 : -1;
@@ -747,7 +840,45 @@ int miyoo_menu_action_save_cpu_rom(void)
 int miyoo_menu_action_netplay_host(void)
 {
 #ifdef HAVE_NETWORKING
-    return command_event(CMD_EVENT_NETPLAY_ENABLE_HOST, NULL) ? 0 : -1;
+    settings_t *settings = config_get_ptr();
+
+    if (!settings)
+       return -1;
+
+    if (!miyoo_netplay_saved_cheevos_valid)
+    {
+       miyoo_netplay_saved_cheevos_enable = settings->bools.cheevos_enable;
+       miyoo_netplay_saved_cheevos_valid  = true;
+       miyoo_netplay_cheevos_suspended    = false;
+    }
+
+    settings->bools.cheevos_enable = false;
+    miyoo_netplay_update_cheevos_cfg(false);
+    RARCH_LOG("[MIYOO][Netplay] Forcing cheevos_enable=false before netplay start.\n");
+#ifdef HAVE_CHEEVOS
+    rcheevos_unload();
+    rcheevos_hardcore_enabled_changed();
+#endif
+
+    if (command_event(CMD_EVENT_NETPLAY_ENABLE_HOST, NULL))
+    {
+       miyoo_netplay_cheevos_suspended = true;
+       return 0;
+    }
+
+    if (miyoo_netplay_saved_cheevos_valid)
+    {
+       settings->bools.cheevos_enable = miyoo_netplay_saved_cheevos_enable;
+       miyoo_netplay_update_cheevos_cfg(miyoo_netplay_saved_cheevos_enable);
+       RARCH_LOG("[MIYOO][Netplay] Netplay start failed, restoring cheevos_enable=%s.\n",
+             miyoo_netplay_saved_cheevos_enable ? "true" : "false");
+#ifdef HAVE_CHEEVOS
+       rcheevos_hardcore_enabled_changed();
+#endif
+       miyoo_netplay_saved_cheevos_valid = false;
+       miyoo_netplay_cheevos_suspended   = false;
+    }
+    return -1;
 #else
     return -1;
 #endif
@@ -755,7 +886,32 @@ int miyoo_menu_action_netplay_host(void)
 
 int miyoo_menu_action_netplay_client(void)
 {
+#ifdef HAVE_NETWORKING
+    settings_t *settings = config_get_ptr();
+
+    if (!settings)
+       return -1;
+
+    if (!miyoo_netplay_saved_cheevos_valid)
+    {
+       miyoo_netplay_saved_cheevos_enable = settings->bools.cheevos_enable;
+       miyoo_netplay_saved_cheevos_valid  = true;
+       miyoo_netplay_cheevos_suspended    = false;
+    }
+
+    settings->bools.cheevos_enable = false;
+    miyoo_netplay_update_cheevos_cfg(false);
+    RARCH_LOG("[MIYOO][Netplay] Forcing cheevos_enable=false before netplay client flow.\n");
+#ifdef HAVE_CHEEVOS
+    rcheevos_unload();
+    rcheevos_hardcore_enabled_changed();
+#endif
+
+    miyoo_netplay_cheevos_suspended = true;
+    return 0;
+#else
     return -1;
+#endif
 }
 
 void miyoo_menu_netplay_menu_open(void)
@@ -771,6 +927,31 @@ void miyoo_menu_netplay_menu_close(void)
 bool miyoo_menu_netplay_menu_is_open(void)
 {
     return miyoo_netplay_menu_open;
+}
+
+bool miyoo_menu_netplay_cheevos_suspended(void)
+{
+    return miyoo_netplay_cheevos_suspended;
+}
+
+void miyoo_menu_netplay_on_stopped(void)
+{
+    settings_t *settings = config_get_ptr();
+
+    if (    !settings
+         || !miyoo_netplay_saved_cheevos_valid
+         || !miyoo_netplay_cheevos_suspended)
+       return;
+
+    settings->bools.cheevos_enable = miyoo_netplay_saved_cheevos_enable;
+    miyoo_netplay_update_cheevos_cfg(miyoo_netplay_saved_cheevos_enable);
+    RARCH_LOG("[MIYOO][Netplay] Netplay stopped, restoring cheevos_enable=%s.\n",
+          miyoo_netplay_saved_cheevos_enable ? "true" : "false");
+#ifdef HAVE_CHEEVOS
+    rcheevos_hardcore_enabled_changed();
+#endif
+    miyoo_netplay_saved_cheevos_valid = false;
+    miyoo_netplay_cheevos_suspended   = false;
 }
 
 void miyoo_menu_achievements_menu_open(size_t parent_index)
@@ -802,6 +983,7 @@ int miyoo_menu_action_open_quick_menu(void)
 
 int miyoo_menu_action_quit_retroarch(void)
 {
+    miyoo_menu_netplay_on_stopped();
     return command_event(CMD_EVENT_QUIT, NULL) ? 0 : -1;
 }
 

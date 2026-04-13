@@ -17,7 +17,6 @@
 
 #include "cheevos.h"
 
-#include <features/features_cpu.h>
 #include <file/file_path.h>
 #include <streams/file_stream.h>
 #include <string/stdstring.h>
@@ -55,11 +54,7 @@
 /* Define this macro to log downloaded badge images. */
 #undef CHEEVOS_LOG_BADGES
 
-#ifdef HAVE_THREADS
-#define RCHEEVOS_CONCURRENT_BADGE_DOWNLOADS 2
-#else
 #define RCHEEVOS_CONCURRENT_BADGE_DOWNLOADS 1
-#endif
 
 /****************************
  * user agent construction  *
@@ -387,6 +382,11 @@ typedef struct rc_client_download_task_data_t
    char badge_name[32];
 } rc_client_download_task_data_t;
 
+static rc_client_download_queue_t *rcheevos_active_badge_queue = NULL;
+static bool rcheevos_priority_badge_pending = false;
+static char rcheevos_priority_badge_url[512];
+static char rcheevos_priority_badge_name[32];
+
 static void rcheevos_client_download_task_callback(retro_task_t* task,
    void* task_data, void* user_data, const char* error)
 {
@@ -460,9 +460,14 @@ bool rcheevos_client_download_badge(rc_client_download_queue_t* queue,
    strlcpy(taskdata->badge_fullpath, badge_fullpath, sizeof(taskdata->badge_fullpath));
    strlcpy(taskdata->badge_name, badge_name, sizeof(taskdata->badge_name));
 
-   task_push_http_transfer_with_user_agent(url,
+   retro_task_t *task = (retro_task_t*)task_push_http_transfer_with_user_agent(url,
       true, "GET", rcheevos_locals->user_agent_core,
       rcheevos_client_download_task_callback, taskdata);
+   if (!task)
+   {
+      free(taskdata);
+      return false;
+   }
 
    return true;
 }
@@ -472,27 +477,52 @@ void rcheevos_client_download_badge_from_url(const char* url, const char* badge_
    rcheevos_client_download_badge(NULL, url, badge_name);
 }
 
+void rcheevos_client_download_badge_from_url_prioritized(const char* url, const char* badge_name)
+{
+   if (rcheevos_active_badge_queue)
+   {
+      strlcpy(rcheevos_priority_badge_url, url, sizeof(rcheevos_priority_badge_url));
+      strlcpy(rcheevos_priority_badge_name, badge_name, sizeof(rcheevos_priority_badge_name));
+      rcheevos_priority_badge_pending = true;
+      return;
+   }
+
+   rcheevos_client_download_badge(NULL, url, badge_name);
+}
+
 static void rcheevos_client_fetch_next_badge(rc_client_download_queue_t* queue)
 {
    char badge_name[32];
+   char prioritized_badge_name[32];
+   char prioritized_badge_url[512];
    const char* next_badge;
    const rc_client_achievement_bucket_t *bucket;
    const rc_client_achievement_t *achievement;
    const char *url = NULL;
    bool done       = false;
+   bool use_prioritized_badge = false;
 
    do
    {
       next_badge = NULL;
+      use_prioritized_badge = false;
 
 #ifdef HAVE_THREADS
       slock_lock(queue->lock);
 #endif
+      if (rcheevos_priority_badge_pending)
+      {
+         strlcpy(prioritized_badge_url, rcheevos_priority_badge_url, sizeof(prioritized_badge_url));
+         strlcpy(prioritized_badge_name, rcheevos_priority_badge_name, sizeof(prioritized_badge_name));
+         rcheevos_priority_badge_pending = false;
+         use_prioritized_badge           = true;
+      }
+
       /* if the game is no longer loaded, stop processing the queue */
       if (queue->game != rc_client_get_game_info(queue->client))
          queue->pass = 2;
 	   
-      while (queue->pass < 2)
+      while (!use_prioritized_badge && queue->pass < 2)
       {
          if (queue->bucket_index >= queue->list->num_buckets)
          {
@@ -548,12 +578,17 @@ static void rcheevos_client_fetch_next_badge(rc_client_download_queue_t* queue)
       /* If the badge already exists (download_badge returns false), continue
        * looping to the next item. otherwise, a download was queued, so break
        * out of the loop. */
-      if (next_badge)
+      if (use_prioritized_badge)
+      {
+         if (rcheevos_client_download_badge(queue, prioritized_badge_url, prioritized_badge_name))
+            break;
+      }
+      else if (next_badge)
       {
          if (rcheevos_client_download_badge(queue, url, next_badge))
             break;
       }
-   } while (next_badge);
+   } while (next_badge || use_prioritized_badge);
 
    if (done)
    {
@@ -567,6 +602,9 @@ static void rcheevos_client_fetch_next_badge(rc_client_download_queue_t* queue)
 #ifdef HAVE_THREADS
       slock_free(queue->lock);
 #endif
+      if (rcheevos_active_badge_queue == queue)
+         rcheevos_active_badge_queue = NULL;
+      rcheevos_priority_badge_pending = false;
 
       free(queue);
    }
@@ -604,6 +642,7 @@ void rcheevos_client_download_achievement_badges(rc_client_t* client)
       RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE_AND_UNOFFICIAL,
       RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_PROGRESS);
    queue->outstanding_requests = RCHEEVOS_CONCURRENT_BADGE_DOWNLOADS;
+   rcheevos_active_badge_queue = queue;
 
 #ifdef HAVE_THREADS
    queue->lock = slock_new();
@@ -614,6 +653,3 @@ void rcheevos_client_download_achievement_badges(rc_client_t* client)
 }
 
 #undef RCHEEVOS_CONCURRENT_BADGE_DOWNLOADS
-
-
-
