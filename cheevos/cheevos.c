@@ -333,7 +333,9 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
 
          if (!string_is_empty(cheevo->badge_url))
             rcheevos_client_download_badge_from_url_prioritized(cheevo->badge_url, cheevo->badge_name);
+         rcheevos_menu_set_suppress_badge_download_notification(true);
          rcheevos_get_badge_texture(cheevo->badge_name, false, true);
+         rcheevos_menu_set_suppress_badge_download_notification(false);
          strlcpy(badge_title, cheevo->badge_name, sizeof(badge_title));
 
          /* Construimos la ruta para comprobar si el archivo ya existe */

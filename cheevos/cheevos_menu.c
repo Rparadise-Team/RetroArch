@@ -46,6 +46,7 @@
   * frames since the last time we checked for the file. When the counter reaches this value, we'll
   * check for the file again. */
 #define MENU_BADGE_RETRY_RELOAD_FRAMES 64
+static bool rcheevos_suppress_badge_download_notification = false;
 
 #if HAVE_MENU
 
@@ -110,6 +111,11 @@ void rcheevos_menu_reset_badges(void)
       }
       ++menuitem;
    }
+}
+
+void rcheevos_menu_set_suppress_badge_download_notification(bool suppress)
+{
+   rcheevos_suppress_badge_download_notification = suppress;
 }
 
 static rcheevos_menuitem_t* rcheevos_menu_allocate(
@@ -801,7 +807,8 @@ uintptr_t rcheevos_get_badge_texture(const char* badge, bool locked, bool downlo
          static bool badge_download_notification_shown = false;
          const rcheevos_locals_t* rcheevos_locals = get_rcheevos_locals();
 
-         if (!badge_download_notification_shown)
+         if (    !rcheevos_suppress_badge_download_notification
+               && !badge_download_notification_shown)
          {
             const char *msg = "Downloading achievements badges...";
             runloop_msg_queue_push(msg, strlen(msg), 1, 180, true, NULL,

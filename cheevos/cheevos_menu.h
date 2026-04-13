@@ -38,6 +38,7 @@ size_t rcheevos_menu_get_sublabel(unsigned menu_offset, char *s, size_t len);
 uintptr_t rcheevos_menu_get_badge_texture(unsigned menu_offset);
 size_t rcheevos_menu_get_badge_path(unsigned menu_offset, char *s, size_t len);
 void rcheevos_menu_reset_badges(void);
+void rcheevos_menu_set_suppress_badge_download_notification(bool suppress);
 
 RETRO_END_DECLS
 

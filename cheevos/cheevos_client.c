@@ -54,7 +54,11 @@
 /* Define this macro to log downloaded badge images. */
 #undef CHEEVOS_LOG_BADGES
 
+#ifdef HAVE_THREADS
+#define RCHEEVOS_CONCURRENT_BADGE_DOWNLOADS 2
+#else
 #define RCHEEVOS_CONCURRENT_BADGE_DOWNLOADS 1
+#endif
 
 /****************************
  * user agent construction  *
