@@ -16198,6 +16198,18 @@ MSG_HASH(
    "Продолжить"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Выберите слот для сохранения."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Выберите слот для загрузки."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Выберите МГц для процессора MIYOO."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Сохранить"
    )

@@ -9860,6 +9860,18 @@ MSG_HASH(
    "استئناف"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "حدد فتحة للحفظ."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "حدد فتحة للتحميل."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "حدد ميغاهيرتز لوحدة المعالجة المركزية MIYOO."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "حفظ الحالة"
    )

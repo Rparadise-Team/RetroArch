@@ -6112,6 +6112,18 @@ MSG_HASH(
    "Συνέχιση"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Επιλέξτε υποδοχή για αποθήκευση."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Επιλέξτε υποδοχή για φόρτωση."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Επιλέξτε MHz για CPU MIYOO."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "ποθήκευση Κατάστασης"
    )

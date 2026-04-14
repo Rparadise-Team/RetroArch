@@ -15902,6 +15902,18 @@ MSG_HASH(
    "Folytatás"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Válassza ki a mentéshez szükséges helyet."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Válassza ki a betöltendő helyet."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Válassza a MHz-et a MIYOO CPU-hoz."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Játékállás elmentése"
    )

@@ -1760,6 +1760,18 @@ MSG_HASH(
    "Ailddechrau"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Dewiswch slot i arbed."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Dewiswch slot i'w lwytho."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Dewiswch MHz ar gyfer CPU MIYOO."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Cadw cyflym"
    )

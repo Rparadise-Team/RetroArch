@@ -15116,6 +15116,18 @@ MSG_HASH(
    "繼續"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "選擇要儲存的插槽。"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "選擇要載入的插槽。"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "MIYOO CPU 選擇 MHz。"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "儲存即時存檔"
    )

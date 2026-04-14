@@ -16274,6 +16274,18 @@ MSG_HASH(
    "이어하기"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "저장할 슬롯을 선택하세요."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "로드할 슬롯을 선택하세요."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "MIYOO CPU의 경우 MHz를 선택하세요."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "상태저장"
    )

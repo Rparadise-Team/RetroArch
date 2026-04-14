@@ -15794,6 +15794,18 @@ MSG_HASH(
    "Fortsetzen"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Wählen Sie den Steckplatz zum Speichern aus."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Wählen Sie den Slot zum Laden aus."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Wählen Sie MHz für die MIYOO-CPU."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Aktuellen Zustand speichern"
    )

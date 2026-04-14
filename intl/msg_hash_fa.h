@@ -3780,6 +3780,18 @@ MSG_HASH(
    "ادامه"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "اسلات را برای ذخیره انتخاب کنید."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "اسلات را برای بارگیری انتخاب کنید."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "MHz را برای CPU MIYOO انتخاب کنید."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "ذخیرهٔ وضعیت"
    )

@@ -2709,7 +2709,12 @@ static void rgui_render_background(
    }
    /* Miyoo Menu: skip wallpaper/background copy so gameplay can be seen
     * behind the menu via texture alpha blending */
-   else if (string_is_equal(rgui->menu_title, "MIYOO Menu"))
+#if defined(MIYOO_CUSTOM_MENU)
+   else if (   miyoo_menu_context_active()
+            && !miyoo_menu_context_is_native_quickmenu())
+#else
+   else if (string_is_equal(rgui->menu_title, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_MENU)))
+#endif
       memset(frame_buf->data, 0,
             (size_t)frame_buf->width * (size_t)frame_buf->height * sizeof(uint16_t));
    /* Otherwise copy background to framebuffer */
@@ -6888,7 +6893,14 @@ static void rgui_set_texture(void *data)
    if (!rgui || !(p_disp->flags & GFX_DISP_FLAG_FB_DIRTY))
       return;
 
-   if (string_is_equal(rgui->menu_title, "MIYOO Menu"))
+   if (
+#if defined(MIYOO_CUSTOM_MENU)
+         (   miyoo_menu_context_active()
+          && !miyoo_menu_context_is_native_quickmenu())
+#else
+         string_is_equal(rgui->menu_title, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_MENU))
+#endif
+      )
       texture_alpha                = 0.82f;
 
    fb_width               = p_disp->framebuf_width;
@@ -7745,7 +7757,23 @@ static void rgui_populate_entries(
    if (   miyoo_menu_context_active()
        && !miyoo_menu_context_is_native_quickmenu()
        && string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_CONTENT_SETTINGS)))
-      strlcpy(rgui->menu_title, "MIYOO Menu", sizeof(rgui->menu_title));
+   {
+      int state_menu_mode = miyoo_menu_state_menu_get_mode();
+      enum msg_hash_enums miyoo_menu_title = MENU_ENUM_LABEL_VALUE_MIYOO_MENU;
+
+      if (miyoo_menu_cpu_menu_is_open())
+         miyoo_menu_title = MENU_ENUM_LABEL_MIYOO_CPU_CLOCK;
+      else if (state_menu_mode == 1)
+         miyoo_menu_title = MENU_ENUM_LABEL_MIYOO_SAVE_STATE;
+      else if (state_menu_mode == 2)
+         miyoo_menu_title = MENU_ENUM_LABEL_MIYOO_LOAD_STATE;
+#ifdef HAVE_CHEEVOS
+      else if (miyoo_menu_achievements_menu_is_open())
+         miyoo_menu_title = MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS;
+#endif
+
+      strlcpy(rgui->menu_title, msg_hash_to_str(miyoo_menu_title), sizeof(rgui->menu_title));
+   }
 #endif
 
    /* If dynamic themes are enabled, update the theme path */

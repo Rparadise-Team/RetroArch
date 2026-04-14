@@ -16230,6 +16230,18 @@ MSG_HASH(
    "Atosú"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Roghnaigh sliotán le sábháil."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Roghnaigh sliotán le luchtú."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Roghnaigh MHz le haghaidh LAP MIYOO."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Sábháil Stát"
    )

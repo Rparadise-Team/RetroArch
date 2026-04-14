@@ -752,6 +752,18 @@ MSG_HASH(
    "Дәвам итү"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Саклау өчен уяны сайлагыз."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Йөкләү өчен уяны сайлагыз."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "MIYOO үзәк эшкәрткеч җайланмасы өчен МГцны сайлагыз."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Тиз саклау"
    )

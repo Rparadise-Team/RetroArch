@@ -724,6 +724,18 @@ MSG_HASH(
    "Reprene"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_SAVE_STATE,
+   "Sélectionnez l'emplacement à enregistrer."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_LOAD_STATE,
+   "Sélectionnez l'emplacement à charger."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CPU_CLOCK,
+   "Sélectionnez MHz pour le processeur MIYOO."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Salvagarda rapida"
    )
