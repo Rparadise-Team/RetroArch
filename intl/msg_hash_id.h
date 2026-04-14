@@ -4364,6 +4364,10 @@ MSG_HASH(
    "Simpan clock CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Capaian"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Mulai Net-play (server)"
    )
@@ -4411,6 +4415,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "menghemat daya cpu yang dipilih untuk rom saat ini, ini lebih diprioritaskan daripada kecepatan inti jika sudah ditentukan sebelumnya."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Tampilkan pencapaian dengan pratinjau lencana di menu ini."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

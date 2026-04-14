@@ -4304,6 +4304,10 @@ MSG_HASH(
    "miyoo_save_cpu_rom"
    )
 MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "miyoo_achievements"
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
    "miyoo_netplay_host"
    )
@@ -4354,6 +4358,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_CPU_CLOCK_ROM,
    "miyoo_save_cpu_clock_rom"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "miyoo_achievements"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,

@@ -4668,6 +4668,10 @@ MSG_HASH(
    "Guardar relóx de CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Llogros"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Aniciar xuegu en rede (servidor)"
    )
@@ -4715,6 +4719,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "guarda la potencia de cpu seleccionado para la rom actual, esto tiene prioridad sobre la velocidad del core si se ha definido previamente."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Amuesa los llogros con vista previa de les insinies nesti menú."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

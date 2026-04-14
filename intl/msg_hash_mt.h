@@ -504,6 +504,10 @@ MSG_HASH(
    "Issejvja arloġġ tas-CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Kisbiet"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Ibda Net-play (server)"
    )
@@ -513,7 +517,7 @@ MSG_HASH(
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS,
-   "Settings"
+   "Settings tal-RetroArch"
    )
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_QUIT_RETROARCH,
@@ -551,6 +555,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "jiffranka l-qawwa tas-cpu magħżula għar-rom kurrenti, dan jieħu prijorità fuq il-veloċità tal-qalba jekk tkun ġiet definita qabel."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Uri kisbiet bi previżjoni tal-badges f’dan il-menu."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

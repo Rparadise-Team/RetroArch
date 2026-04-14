@@ -1248,6 +1248,10 @@ MSG_HASH(
    "Konservi CPU-horloĝon (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Enable Achievements"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Komenci retludon (servilo)"
    )
@@ -1295,6 +1299,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "ŝparas la elektitan CPU-potencon por la nuna rom, ĉi tio havas prioritaton super la kernrapideco se ĝi estis antaŭe difinita."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Montru atingaĵojn kun antaŭrigardo de insignoj en ĉi tiu menuo."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

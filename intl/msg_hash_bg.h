@@ -1596,6 +1596,10 @@ MSG_HASH(
    "Запази CPU часовник (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Постижения"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Стартирай Netplay (сървър)"
    )
@@ -1643,6 +1647,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "запазва избраната мощност на процесора за текущия rom, това има приоритет пред скоростта на ядрото, ако е била дефинирана преди това."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Показване на постижения с визуализация на значките в това меню."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

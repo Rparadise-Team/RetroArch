@@ -6672,6 +6672,10 @@ MSG_HASH(
    "CPU-klok opslaan (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Achievements Lijst"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Netplay starten (server)"
    )
@@ -6719,6 +6723,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "slaat het geselecteerde CPU-vermogen op voor de huidige rom, dit heeft voorrang op de kernsnelheid als deze eerder is gedefinieerd."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Toon prestaties met badgevoorbeelden in dit menu."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

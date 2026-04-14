@@ -916,6 +916,10 @@ MSG_HASH(
    "CPU ଘଡ଼ି ସେଭ୍ କରନ୍ତୁ (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "ସଫଳତାଗୁଡ଼ିକ"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Net-play ଆରମ୍ଭ କରନ୍ତୁ (ସର୍ଭର)"
    )
@@ -963,6 +967,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "ସାମ୍ପ୍ରତିକ ରୋମ୍ ପାଇଁ ମନୋନୀତ cpu ଶକ୍ତି ସଞ୍ଚୟ କରେ, ଯଦି ଏହା ପୂର୍ବରୁ ବ୍ୟାଖ୍ୟା କରାଯାଇଥାଏ ତେବେ ଏହା ମୂଳ ଗତି ଉପରେ ପ୍ରାଧାନ୍ୟ ଦେଇଥାଏ |"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "ଏହି ମେନୁରେ ବ୍ୟାଜ୍ ପୂର୍ବଦର୍ଶନ ସହିତ ସଫଳତାଗୁଡ଼ିକୁ ଦେଖାନ୍ତୁ।"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

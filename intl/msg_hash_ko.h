@@ -16298,6 +16298,10 @@ MSG_HASH(
    "CPU 클럭 저장(ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "도전과제"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "넷플레이 호스트 시작"
    )
@@ -16345,6 +16349,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "현재 ROM에 대해 선택한 CPU 전력을 저장합니다. 이는 이전에 정의된 경우 코어 속도보다 우선합니다."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "이 메뉴에서 배지 미리보기와 함께 도전과제를 표시합니다."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

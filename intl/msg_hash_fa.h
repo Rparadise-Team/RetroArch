@@ -3804,6 +3804,10 @@ MSG_HASH(
    "ذخیره کلاک CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "دستاوردها"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "شروع نت‌پلی (سرور)"
    )
@@ -3851,6 +3855,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "قدرت cpu انتخاب شده را برای رام فعلی ذخیره می کند، اگر از قبل تعریف شده باشد، این نسبت به سرعت هسته اولویت دارد."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "دستاوردها را با پیش‌نمایش نشان‌ها در این منو نمایش دهید."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

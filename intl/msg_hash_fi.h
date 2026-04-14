@@ -14204,6 +14204,10 @@ MSG_HASH(
    "Tallenna CPU-kello (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Saavutukset"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Käynnistä verkkopelin isännöinti"
    )
@@ -14251,6 +14255,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "säästää valitun prosessorin tehon nykyiselle romille, tämä on etusijalla ydinnopeuteen nähden, jos se on määritetty aiemmin."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Näytä saavutukset merkkien esikatselulla tässä valikossa."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

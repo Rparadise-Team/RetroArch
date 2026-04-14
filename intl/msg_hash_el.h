@@ -6136,6 +6136,10 @@ MSG_HASH(
    "Αποθήκευση ρολογιού CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Επιτεύγματα"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Έναρξη netplay ως οικοδεσπότης"
    )
@@ -6183,6 +6187,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "εξοικονομεί την επιλεγμένη ισχύ cpu για την τρέχουσα rom, αυτό έχει προτεραιότητα σε σχέση με την ταχύτητα του πυρήνα, εάν έχει καθοριστεί προηγουμένως."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Εμφάνιση επιτευγμάτων με προεπισκόπηση σημάτων σε αυτό το μενού."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

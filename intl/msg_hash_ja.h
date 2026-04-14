@@ -15204,6 +15204,10 @@ MSG_HASH(
    "CPUクロックを保存（ROM）"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "実績"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "ネットプレイホストを開始"
    )
@@ -15251,6 +15255,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "現在のROMに対して選択されたCPUパワーを保存します。コア速度が以前に定義されている場合、これがコア速度よりも優先されます。"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "このメニューでバッジのプレビュー付き実績を表示します。"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

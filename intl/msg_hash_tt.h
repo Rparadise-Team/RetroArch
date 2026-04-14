@@ -776,6 +776,10 @@ MSG_HASH(
    "CPU сәгатен саклау (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Казанышлар"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Net-play башлау (сервер)"
    )
@@ -823,6 +827,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "сохраняет выбранную мощность процессора для текущего ПЗУ, это имеет приоритет над частотой ядра, если она была определена ранее."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Бу менюда значок алдан карау белән казанышларны күрсәтү."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

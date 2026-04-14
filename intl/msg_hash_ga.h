@@ -16254,6 +16254,10 @@ MSG_HASH(
    "Sábháil clog LAP (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Éachtaí"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Tosaigh Óstach Netplay"
    )
@@ -16301,6 +16305,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "sábhálann sé an chumhacht cpu roghnaithe don rom reatha, glacann sé seo tosaíocht thar an croí-luas má tá sé sainithe roimhe seo."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Taispeáin éachtaí le réamhamharc suaitheantais sa roghchlár seo."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

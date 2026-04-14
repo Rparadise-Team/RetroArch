@@ -16232,6 +16232,10 @@ MSG_HASH(
    "CPU saatini kaydet (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Başarımlar"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Netplay Sunucusu Başlat"
    )
@@ -16279,6 +16283,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "geçerli rom için seçilen işlemci gücünü kaydeder; bu, daha önce tanımlanmışsa çekirdek hızına göre önceliklidir."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Bu menüde rozet önizlemeleriyle başarımları göster."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

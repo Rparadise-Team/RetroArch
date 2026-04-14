@@ -16238,6 +16238,10 @@ MSG_HASH(
    "Lưu xung nhịp CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Kích hoạt"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Bắt đầu máy chủ Trò chơi trực tuyến"
    )
@@ -16285,6 +16289,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "tiết kiệm năng lượng CPU đã chọn cho rom hiện tại, điều này được ưu tiên hơn tốc độ lõi nếu nó đã được xác định trước đó."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Hiển thị thành tích với bản xem trước huy hiệu trong menu này."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

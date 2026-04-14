@@ -1680,6 +1680,10 @@ MSG_HASH(
    "Spremi takt CPU-a (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Postignuća"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Pokreni Net-play (poslužitelj)"
    )
@@ -1727,6 +1731,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "sprema odabranu procesorsku snagu za trenutni rom, ovo ima prioritet nad brzinom jezgre ako je prethodno definirano."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Prikaži postignuća s pregledom bedževa u ovom izborniku."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

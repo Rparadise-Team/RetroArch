@@ -13838,6 +13838,10 @@ MSG_HASH(
    "Zapisz taktowanie CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Osiągnięcia"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Uruchom hosta gry sieciowej"
    )
@@ -13885,6 +13889,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "zapisuje wybraną moc procesora dla bieżącego romu, ma to pierwszeństwo przed szybkością rdzenia, jeśli została wcześniej zdefiniowana."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Wyświetl osiągnięcia z podglądem odznak w tym menu."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

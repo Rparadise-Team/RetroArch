@@ -1784,6 +1784,10 @@ MSG_HASH(
    "Cadw cloc CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Llwyddiannau"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Cychwyn Net-play (gweinydd)"
    )
@@ -1831,6 +1835,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "yn arbed y pŵer cpu a ddewiswyd ar gyfer y rom cyfredol, mae hyn yn cymryd blaenoriaeth dros y cyflymder craidd os yw wedi'i ddiffinio'n flaenorol."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Dangos cyflawniadau gyda rhagolwg bathodynnau yn y ddewislen hon."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

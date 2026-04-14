@@ -748,6 +748,10 @@ MSG_HASH(
    "Enregistrar l'orològi CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Succès"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Aviar Netplay (servidor)"
    )
@@ -795,6 +799,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "enregistre la puissance CPU sélectionnée pour la rom actuelle, celle-ci est prioritaire sur la vitesse du cœur si elle a été préalablement définie."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Afichar los succès amb previsualizacion de las insígnias dins aqueste menú."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

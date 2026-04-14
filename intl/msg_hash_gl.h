@@ -15960,6 +15960,10 @@ MSG_HASH(
    "Gardar reloxo da CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Logros"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Comezar Servidor de Xogo en Rede"
    )
@@ -16007,6 +16011,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "garda a potencia da CPU seleccionada para a rom actual, esta ten prioridade sobre a velocidade do núcleo se se definiu previamente."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Mostrar logros con vista previa das insignias neste menú."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

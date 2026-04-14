@@ -16066,6 +16066,10 @@ MSG_HASH(
    "Desa el rellotge de CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Assoliments"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Inicia un servidor de joc en xarxa"
    )
@@ -16113,6 +16117,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "guarda la potència de cpu seleccionat per a la rom actual; això té prioritat sobre la velocitat del core si s'ha definit prèviament."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Mostra els assoliments amb vista prèvia de les insígnies en aquest menú."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

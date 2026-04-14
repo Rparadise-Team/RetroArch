@@ -15926,6 +15926,10 @@ MSG_HASH(
    "CPU órajel mentése (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Trófeák"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Netplay kiszolgáló indítása"
    )
@@ -15973,6 +15977,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "megtakarítja a kiválasztott processzorteljesítményt az aktuális romhoz, ez elsőbbséget élvez a magsebességgel szemben, ha korábban meg van határozva."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Eredmények megjelenítése jelvény-előnézettel ebben a menüben."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

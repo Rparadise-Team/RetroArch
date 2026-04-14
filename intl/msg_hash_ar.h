@@ -9884,6 +9884,10 @@ MSG_HASH(
    "حفظ ساعة CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "الإنجازات"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "بدء مضيف الشبكة"
    )
@@ -9931,6 +9935,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "يحفظ طاقة وحدة المعالجة المركزية المحددة للقرص المضغوط الحالي، وهذا يأخذ الأولوية على السرعة الأساسية إذا تم تحديدها مسبقًا."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "اعرض الإنجازات مع معاينة الشارات في هذه القائمة."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

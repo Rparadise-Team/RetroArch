@@ -1932,6 +1932,10 @@ MSG_HASH(
    "שמור שעון CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "הישגים"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "התחל Net-play (שרת)"
    )
@@ -1979,6 +1983,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "חוסך את כוח המעבד הנבחר עבור הרום הנוכחי, זה מקבל עדיפות על מהירות הליבה אם היא הוגדרה קודם לכן."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "הצג הישגים עם תצוגה מקדימה של תגים בתפריט זה."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

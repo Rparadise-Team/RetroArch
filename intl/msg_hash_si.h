@@ -596,6 +596,10 @@ MSG_HASH(
    "CPU ක්ලොක් සුරකින්න (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "ජයග්‍රහණ"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Net-play අරඹන්න (සේවාදායකය)"
    )
@@ -643,6 +647,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "වත්මන් rom සඳහා තෝරාගත් cpu බලය සුරකියි, මෙය කලින් නිර්වචනය කර ඇත්නම් මූලික වේගයට වඩා ප්‍රමුඛත්වය ගනී."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "මෙම මෙනුවේ බැජ් පෙරදසුන් සමඟ ජයග්‍රහණ පෙන්වන්න."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

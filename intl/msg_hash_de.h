@@ -15818,6 +15818,10 @@ MSG_HASH(
    "CPU-Takt speichern (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Errungenschaften"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Hosting starten"
    )
@@ -15865,6 +15869,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "Speichert die ausgewählte CPU-Leistung für das aktuelle ROM. Diese hat Vorrang vor der Kerngeschwindigkeit, sofern sie zuvor definiert wurde."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Zeige Erfolge mit Abzeichenvorschau in diesem Menü an."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

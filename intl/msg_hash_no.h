@@ -5384,6 +5384,10 @@ MSG_HASH(
    "Lagre CPU-klokke (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Prestasjoner"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Start Netplay (server)"
    )
@@ -5431,6 +5435,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "lagrer den valgte cpu-kraften for gjeldende rom, dette prioriteres over kjernehastigheten hvis den er definert tidligere."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Vis prestasjoner med forhåndsvisning av merker i denne menyen."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

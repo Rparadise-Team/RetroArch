@@ -15788,6 +15788,10 @@ MSG_HASH(
    "Захаваць частату CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Дасягненні"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Запусціць хост сеткавай гульні"
    )
@@ -15835,6 +15839,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "захоўвае выбраную магутнасць працэсара для бягучага ПЗУ, гэта мае прыярытэт перад хуткасцю ядра, калі яна была вызначана раней."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Паказваць дасягненні з папярэднім праглядам значкоў у гэтым меню."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,

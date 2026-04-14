@@ -6892,6 +6892,10 @@ MSG_HASH(
    "Uložiť takt CPU (ROM)"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_ACHIEVEMENTS,
+   "Úspechy"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_NETPLAY_HOST,
    "Spustiť Netplay (server)"
    )
@@ -6939,6 +6943,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_SAVE_CPU_CLOCK_ROM,
    "uloží zvolený výkon procesora pre aktuálnu ROM, má prednosť pred rýchlosťou jadra, ak bola predtým definovaná."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS,
+   "Zobraziť úspechy s náhľadmi odznakov v tomto menu."
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST,
