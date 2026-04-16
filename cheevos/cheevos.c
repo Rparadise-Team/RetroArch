@@ -113,6 +113,12 @@ rcheevos_locals_t* get_rcheevos_locals(void)
 }
 
 #define CHEEVOS_MB(x)   ((x) * 1024 * 1024)
+#define RCHEEVOS_SD_POLL_SUMMARY_FRAMES        10
+#define RCHEEVOS_SD_POLL_UNLOCK_FRAMES         12
+#define RCHEEVOS_UNLOCK_BADGE_RETRY_LIMIT      15
+#define RCHEEVOS_UNLOCK_DOWNLOAD_RETRY_PERIOD  3
+#define RCHEEVOS_DEFERRED_UNLOCK_BADGES        16
+#define RCHEEVOS_DEFERRED_UNLOCK_POLL_USEC     250000
 
 /*****************************************************************************
 Supporting functions.
@@ -127,6 +133,86 @@ void rcheevos_log(const char* fmt, ...)
    (void)fmt;
 }
 #endif
+
+typedef struct rcheevos_deferred_unlock_badge
+{
+   char badge_name[32];
+   char badge_path[PATH_MAX_LENGTH];
+   uint8_t retries;
+   bool active;
+} rcheevos_deferred_unlock_badge_t;
+
+static rcheevos_deferred_unlock_badge_t rcheevos_deferred_unlock_badges[RCHEEVOS_DEFERRED_UNLOCK_BADGES];
+
+static void rcheevos_deferred_unlock_badge_reset(void)
+{
+   memset(rcheevos_deferred_unlock_badges, 0, sizeof(rcheevos_deferred_unlock_badges));
+}
+
+static void rcheevos_deferred_unlock_badge_add(const char* badge_name, const char* badge_path)
+{
+   size_t i;
+   int empty_slot = -1;
+
+   if (string_is_empty(badge_name) || string_is_empty(badge_path))
+      return;
+
+   for (i = 0; i < ARRAY_SIZE(rcheevos_deferred_unlock_badges); i++)
+   {
+      if (!rcheevos_deferred_unlock_badges[i].active)
+      {
+         if (empty_slot < 0)
+            empty_slot = (int)i;
+         continue;
+      }
+
+      if (string_is_equal(rcheevos_deferred_unlock_badges[i].badge_name, badge_name))
+         return;
+   }
+
+   if (empty_slot < 0)
+      empty_slot = 0;
+
+   strlcpy(rcheevos_deferred_unlock_badges[empty_slot].badge_name, badge_name,
+         sizeof(rcheevos_deferred_unlock_badges[empty_slot].badge_name));
+   strlcpy(rcheevos_deferred_unlock_badges[empty_slot].badge_path, badge_path,
+         sizeof(rcheevos_deferred_unlock_badges[empty_slot].badge_path));
+   rcheevos_deferred_unlock_badges[empty_slot].retries = 0;
+   rcheevos_deferred_unlock_badges[empty_slot].active = true;
+}
+
+void rcheevos_deferred_unlock_badges_menu_tick(void)
+{
+   static retro_time_t next_deferred_poll = 0;
+   const retro_time_t now = cpu_features_get_time_usec();
+   size_t i;
+
+   if (now < next_deferred_poll)
+      return;
+   next_deferred_poll = now + RCHEEVOS_DEFERRED_UNLOCK_POLL_USEC;
+
+   for (i = 0; i < ARRAY_SIZE(rcheevos_deferred_unlock_badges); i++)
+   {
+      if (!rcheevos_deferred_unlock_badges[i].active)
+         continue;
+
+      if (path_is_valid(rcheevos_deferred_unlock_badges[i].badge_path))
+      {
+         rcheevos_deferred_unlock_badges[i].active = false;
+         continue;
+      }
+
+      rcheevos_deferred_unlock_badges[i].retries++;
+
+      if ((rcheevos_deferred_unlock_badges[i].retries %
+           RCHEEVOS_UNLOCK_DOWNLOAD_RETRY_PERIOD) == 0)
+      {
+         rcheevos_menu_set_suppress_badge_download_notification(true);
+         rcheevos_get_badge_texture(rcheevos_deferred_unlock_badges[i].badge_name, false, true);
+         rcheevos_menu_set_suppress_badge_download_notification(false);
+      }
+   }
+}
 
 static void rcheevos_handle_log_message(const char* message)
 {
@@ -348,8 +434,15 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
          /* LÓGICA ASÍNCRONA: Si no existe en la SD, lo mandamos a la sala de espera */
          if (!path_is_valid(badge_path))
          {
+            if (rcheevos_locals.unlock_badge_pending)
+            {
+               rcheevos_deferred_unlock_badge_add(
+                     rcheevos_locals.unlock_badge_name,
+                     rcheevos_locals.unlock_badge_path);
+            }
+
             rcheevos_locals.unlock_badge_pending = true;
-			rcheevos_locals.unlock_badge_retries = 0;
+            rcheevos_locals.unlock_badge_retries = 0;
             strlcpy(rcheevos_locals.unlock_badge_path, badge_path, sizeof(rcheevos_locals.unlock_badge_path));
             rcheevos_locals.unlock_badge_msg_len = _len;
             rcheevos_locals.unlock_badge_desc_len = strlen(cheevo->description);
@@ -749,6 +842,7 @@ bool rcheevos_unload(void)
    rcheevos_locals.unlock_badge_name[0] = '\0';
    rcheevos_locals.unlock_badge_msg[0] = '\0';
    rcheevos_locals.unlock_badge_desc[0] = '\0';
+   rcheevos_deferred_unlock_badge_reset();
 
    if (was_loaded)
    {
@@ -1055,59 +1149,86 @@ void rcheevos_test(void)
    }
 #endif
 
-   /* solo 1 de cada 10 frames para eliminar los cuellos de botella del bus. */
+   /* Poll SD status periodically to avoid hammering slow storage/network systems. */
    if (rcheevos_locals.summary_badge_pending || rcheevos_locals.unlock_badge_pending)
    {
-      static uint8_t sd_poll_counter = 0;
+      static uint8_t summary_sd_poll_counter = 0;
+      static uint8_t unlock_sd_poll_counter  = 0;
 
-      if (++sd_poll_counter >= 10)
+      if (rcheevos_locals.summary_badge_pending &&
+          ++summary_sd_poll_counter >= RCHEEVOS_SD_POLL_SUMMARY_FRAMES)
       {
-         sd_poll_counter = 0;
+         summary_sd_poll_counter = 0;
 
          /* COMPROBACIÓN DEL SUMMARY BADGE */
-         if (rcheevos_locals.summary_badge_pending)
+         rcheevos_locals.summary_badge_retries++;
+
+         /* Si el archivo existe O hemos superado el tiempo máximo de espera (15 reintentos = ~2.5 seg) */
+         if (path_is_valid(rcheevos_locals.summary_badge_path) || rcheevos_locals.summary_badge_retries > 15)
          {
-            rcheevos_locals.summary_badge_retries++;
-            
-            /* Si el archivo existe O hemos superado el tiempo máximo de espera (15 reintentos = ~2.5 seg) */
-            if (path_is_valid(rcheevos_locals.summary_badge_path) || rcheevos_locals.summary_badge_retries > 15)
-            {
-               /* Cast a char* para arreglar el warning de const */
-               char* badge_to_show = path_is_valid(rcheevos_locals.summary_badge_path) ? rcheevos_locals.summary_badge_name : (char*)"00000";
+            /* Cast a char* para arreglar el warning de const */
+            char* badge_to_show = path_is_valid(rcheevos_locals.summary_badge_path) ? rcheevos_locals.summary_badge_name : (char*)"00000";
 
-               runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
-                     rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
-                     badge_to_show,
-                     MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-               rcheevos_locals.summary_badge_pending = false;
-            }
-         }
-
-         /* COMPROBACIÓN DEL UNLOCK BADGE */
-         if (rcheevos_locals.unlock_badge_pending)
-         {
-            rcheevos_locals.unlock_badge_retries++;
-
-            /* Si el archivo existe O hemos superado el tiempo máximo de espera */
-            if (path_is_valid(rcheevos_locals.unlock_badge_path) || rcheevos_locals.unlock_badge_retries > 15)
-            {
-               /* Cast a char* para arreglar el warning de const */
-               char* badge_to_show = path_is_valid(rcheevos_locals.unlock_badge_path) ? rcheevos_locals.unlock_badge_name : (char*)"00000";
-
-               runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
-                     rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
-                     badge_to_show,
-                     MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-                     
-               runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
-                     rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
-                     badge_to_show,
-                     MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
-                     
-               rcheevos_locals.unlock_badge_pending = false; /* Lo sacamos de espera */
-            }
+            runloop_msg_queue_push(rcheevos_locals.summary_badge_msg,
+                  rcheevos_locals.summary_badge_msg_len, 0, 3 * 60, false,
+                  badge_to_show,
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+            rcheevos_locals.summary_badge_pending = false;
          }
       }
+
+      if (rcheevos_locals.unlock_badge_pending &&
+          ++unlock_sd_poll_counter >= RCHEEVOS_SD_POLL_UNLOCK_FRAMES)
+      {
+         unlock_sd_poll_counter = 0;
+         rcheevos_locals.unlock_badge_retries++;
+
+         /* retry download request periodically in poor network conditions */
+         if ((rcheevos_locals.unlock_badge_retries %
+              RCHEEVOS_UNLOCK_DOWNLOAD_RETRY_PERIOD) == 0)
+         {
+            rcheevos_menu_set_suppress_badge_download_notification(true);
+            rcheevos_get_badge_texture(rcheevos_locals.unlock_badge_name, false, true);
+            rcheevos_menu_set_suppress_badge_download_notification(false);
+         }
+
+         if (path_is_valid(rcheevos_locals.unlock_badge_path))
+         {
+            runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
+                  rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
+                  rcheevos_locals.unlock_badge_name,
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+
+            runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
+                  rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
+                  rcheevos_locals.unlock_badge_name,
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+
+            rcheevos_locals.unlock_badge_pending = false;
+         }
+         else if (rcheevos_locals.unlock_badge_retries > RCHEEVOS_UNLOCK_BADGE_RETRY_LIMIT)
+         {
+            runloop_msg_queue_push(rcheevos_locals.unlock_badge_msg,
+                  rcheevos_locals.unlock_badge_msg_len, 0, 2 * 60, false,
+                  "00000",
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+
+            runloop_msg_queue_push(rcheevos_locals.unlock_badge_desc,
+                  rcheevos_locals.unlock_badge_desc_len, 0, 3 * 60, false,
+                  "00000",
+                  MESSAGE_QUEUE_ICON_ACHIEVEMENT, MESSAGE_QUEUE_CATEGORY_INFO);
+
+            rcheevos_deferred_unlock_badge_add(
+                  rcheevos_locals.unlock_badge_name,
+                  rcheevos_locals.unlock_badge_path);
+            rcheevos_locals.unlock_badge_pending = false;
+         }
+      }
+
+      if (!rcheevos_locals.summary_badge_pending)
+         summary_sd_poll_counter = 0;
+      if (!rcheevos_locals.unlock_badge_pending)
+         unlock_sd_poll_counter = 0;
    }
 
    if (rcheevos_locals.memory.count != 0)

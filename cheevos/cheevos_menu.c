@@ -244,6 +244,11 @@ static void rcheevos_menu_update_badge(rcheevos_menuitem_t* menuitem, bool downl
 uintptr_t rcheevos_menu_get_badge_texture(unsigned menu_offset)
 {
    const rcheevos_locals_t* rcheevos_locals = get_rcheevos_locals();
+
+   /* Deferred unlock badge downloads are only processed while browsing
+    * the achievements menu, to avoid background network churn in-game. */
+   rcheevos_deferred_unlock_badges_menu_tick();
+
    if (menu_offset < rcheevos_locals->menuitem_count)
    {
       rcheevos_menuitem_t* menuitem = &rcheevos_locals->menuitems[menu_offset];

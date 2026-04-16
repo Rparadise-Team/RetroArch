@@ -110,7 +110,7 @@ typedef struct rcheevos_locals_t
    char summary_badge_name[32];       /* cached badge filename without extension */
    char summary_badge_msg[256];       /* cached summary message */
 	
-	/* NUEVAS VARIABLES para la sala de espera de los logros */
+   /* Unlock notification badge waiting state */
    bool unlock_badge_pending;
    uint8_t unlock_badge_retries;
    char unlock_badge_path[512];
