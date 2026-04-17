@@ -404,6 +404,15 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
 
          snprintf(subtitle, sizeof(subtitle), "%s (%lu)", cheevo->title, (unsigned long)cheevo->points);
 
+         /* Ensure badge fetch is initiated by the cheevos subsystem
+          * before posting popup notifications. Video drivers should
+          * only load icons from disk. */
+         if (!string_is_empty(cheevo->badge_url))
+            rcheevos_client_download_badge_from_url_prioritized(cheevo->badge_url, cheevo->badge_name);
+         rcheevos_menu_set_suppress_badge_download_notification(true);
+         rcheevos_get_badge_texture(cheevo->badge_name, false, true);
+         rcheevos_menu_set_suppress_badge_download_notification(false);
+
          gfx_widgets_push_achievement(title, subtitle, cheevo->badge_name);
       }
       else
