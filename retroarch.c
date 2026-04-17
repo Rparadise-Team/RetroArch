@@ -8629,6 +8629,16 @@ bool retroarch_main_quit(void)
    /* Restore video driver before saving */
    video_driver_restore_cached(settings);
 
+#ifdef HAVE_CHEEVOS
+   /* Ensure pending achievement badge queues cannot block quit. */
+   rcheevos_cancel_pending_badge_downloads();
+#endif
+
+#if defined(MIYOOMINI)
+   /* Flush pending writes to FAT32 SD before process exit. */
+   sync();
+#endif
+
 #if !defined(HAVE_DYNAMIC)
    {
       /* Salamander sets RUNLOOP_FLAG_SHUTDOWN_INITIATED prior, so we need to handle it separately */

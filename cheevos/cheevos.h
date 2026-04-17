@@ -60,6 +60,7 @@ int rcheevos_get_richpresence(char *s, size_t len);
 int rcheevos_get_game_badge_url(char *s, size_t len);
 uintptr_t rcheevos_get_badge_texture(const char* badge, bool locked, bool download_if_missing);
 void rcheevos_deferred_unlock_badges_menu_tick(void);
+void rcheevos_cancel_pending_badge_downloads(void);
 
 uint8_t* rcheevos_patch_address(unsigned address);
 

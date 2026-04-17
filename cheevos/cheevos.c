@@ -149,6 +149,25 @@ static void rcheevos_deferred_unlock_badge_reset(void)
    memset(rcheevos_deferred_unlock_badges, 0, sizeof(rcheevos_deferred_unlock_badges));
 }
 
+static void rcheevos_clear_pending_badge_downloads(void)
+{
+   rcheevos_locals.summary_badge_pending = false;
+   rcheevos_locals.summary_badge_msg_len = 0;
+   rcheevos_locals.summary_badge_retries = 0;
+   rcheevos_locals.summary_badge_name[0] = '\0';
+   rcheevos_locals.summary_badge_msg[0] = '\0';
+
+   rcheevos_locals.unlock_badge_pending = false;
+   rcheevos_locals.unlock_badge_msg_len = 0;
+   rcheevos_locals.unlock_badge_retries = 0;
+   rcheevos_locals.unlock_badge_desc_len = 0;
+   rcheevos_locals.unlock_badge_name[0] = '\0';
+   rcheevos_locals.unlock_badge_msg[0] = '\0';
+   rcheevos_locals.unlock_badge_desc[0] = '\0';
+
+   rcheevos_deferred_unlock_badge_reset();
+}
+
 static void rcheevos_deferred_unlock_badge_add(const char* badge_name, const char* badge_path)
 {
    size_t i;
@@ -838,21 +857,7 @@ bool rcheevos_unload(void)
    if (rcheevos_locals.memory.count > 0)
       rc_libretro_memory_destroy(&rcheevos_locals.memory);
 
-   rcheevos_locals.summary_badge_pending = false;
-   rcheevos_locals.summary_badge_msg_len = 0;
-   rcheevos_locals.summary_badge_retries = 0;
-   rcheevos_locals.summary_badge_name[0] = '\0';
-   rcheevos_locals.summary_badge_msg[0] = '\0';
-	
-   /* Limpiamos también la sala de espera de los logros */
-   rcheevos_locals.unlock_badge_pending = false;
-   rcheevos_locals.unlock_badge_msg_len = 0;
-   rcheevos_locals.unlock_badge_retries = 0;
-   rcheevos_locals.unlock_badge_desc_len = 0;
-   rcheevos_locals.unlock_badge_name[0] = '\0';
-   rcheevos_locals.unlock_badge_msg[0] = '\0';
-   rcheevos_locals.unlock_badge_desc[0] = '\0';
-   rcheevos_deferred_unlock_badge_reset();
+   rcheevos_clear_pending_badge_downloads();
 
    if (was_loaded)
    {
@@ -884,6 +889,14 @@ bool rcheevos_unload(void)
    }
 
    return true;
+}
+
+void rcheevos_cancel_pending_badge_downloads(void)
+{
+#ifdef HAVE_THREADS
+   rcheevos_locals.queued_command = CMD_EVENT_NONE;
+#endif
+   rcheevos_clear_pending_badge_downloads();
 }
 
 void rcheevos_leaderboard_trackers_visibility_changed(void)
