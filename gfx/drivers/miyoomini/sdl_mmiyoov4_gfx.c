@@ -125,6 +125,7 @@ struct sdl_miyoomini_video
    unsigned msg_count;
    char msg_tmp[OSD_TEXT_LEN_MAX];
 #ifdef HAVE_CHEEVOS
+   SDL_mutex *cheevos_lock;
    uint32_t *cheevos_icon_data;
    unsigned cheevos_icon_width;
    unsigned cheevos_icon_height;
@@ -215,6 +216,7 @@ static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
 }
 
 #ifdef HAVE_CHEEVOS
+
 static bool sdl_miyoomini_load_png_argb(const char *path, uint32_t **data,
       unsigned *width, unsigned *height)
 {
@@ -226,6 +228,7 @@ static bool sdl_miyoomini_load_png_argb(const char *path, uint32_t **data,
 
    if (filestream_read_file(path, &file_data, &file_len) <= 0 || !file_data)
       return false;
+
 
    rpng = rpng_alloc();
    if (!rpng)
@@ -266,10 +269,23 @@ cleanup:
    return success;
 }
 
-static void sdl_miyoomini_free_cheevos_icon(sdl_miyoomini_video_t *vid)
+static INLINE void sdl_miyoomini_cheevos_lock(sdl_miyoomini_video_t *vid)
+{
+   if (vid && vid->cheevos_lock)
+      SDL_LockMutex(vid->cheevos_lock);
+}
+
+static INLINE void sdl_miyoomini_cheevos_unlock(sdl_miyoomini_video_t *vid)
+{
+   if (vid && vid->cheevos_lock)
+      SDL_UnlockMutex(vid->cheevos_lock);
+}
+
+static void sdl_miyoomini_free_cheevos_icon_nolock(sdl_miyoomini_video_t *vid)
 {
    if (!vid)
       return;
+
 
    free(vid->cheevos_icon_data);
    free(vid->cheevos_icon_restore_data);
@@ -289,6 +305,13 @@ static void sdl_miyoomini_free_cheevos_icon(sdl_miyoomini_video_t *vid)
    vid->cheevos_icon_retry_counter = 0;
    vid->cheevos_badge_name[0] = '\0';
    vid->cheevos_badge_pending[0] = '\0';
+}
+
+static void sdl_miyoomini_free_cheevos_icon(sdl_miyoomini_video_t *vid)
+{
+   sdl_miyoomini_cheevos_lock(vid);
+   sdl_miyoomini_free_cheevos_icon_nolock(vid);
+   sdl_miyoomini_cheevos_unlock(vid);
 }
 
 static unsigned sdl_miyoomini_get_cheevos_icon_size(unsigned screen_height)
@@ -325,6 +348,11 @@ static bool sdl_miyoomini_load_cheevos_icon(sdl_miyoomini_video_t *vid,
    if (!vid || string_is_empty(badge_name))
       return false;
 
+   if (vid->cheevos_icon_data
+         && string_is_equal(vid->cheevos_badge_name, badge_name))
+      return true;
+
+
    fill_pathname_application_special(badge_path, sizeof(badge_path),
          APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
    fill_pathname_slash(badge_path, sizeof(badge_path));
@@ -334,7 +362,9 @@ static bool sdl_miyoomini_load_cheevos_icon(sdl_miyoomini_video_t *vid,
    /* Badge download requests are handled by the cheevos subsystem.
     * Driver only loads from disk to avoid duplicate/racy fetch paths. */
    if (!path_is_valid(badge_path))
+   {
       return false;
+   }
 
    if (!sdl_miyoomini_load_png_argb(badge_path, &icon_data, &icon_width, &icon_height))
       return false;
@@ -350,8 +380,20 @@ static bool sdl_miyoomini_load_cheevos_icon(sdl_miyoomini_video_t *vid,
          scaled_data, target_size, target_size);
 
    free(icon_data);
-   sdl_miyoomini_free_cheevos_icon(vid);
-
+   free(vid->cheevos_icon_data);
+   free(vid->cheevos_icon_restore_data);
+   vid->cheevos_icon_data                = NULL;
+   vid->cheevos_icon_width               = 0;
+   vid->cheevos_icon_height              = 0;
+   vid->cheevos_icon_size                = 0;
+   vid->cheevos_icon_background_stored   = false;
+   vid->cheevos_icon_restore_pending     = false;
+   vid->cheevos_icon_restore_data        = NULL;
+   vid->cheevos_icon_restore_pitch       = 0;
+   vid->cheevos_icon_restore_width       = 0;
+   vid->cheevos_icon_restore_height      = 0;
+   vid->cheevos_icon_restore_x           = 0;
+   vid->cheevos_icon_restore_y           = 0;
    vid->cheevos_icon_data   = scaled_data;
    vid->cheevos_icon_width  = target_size;
    vid->cheevos_icon_height = target_size;
@@ -377,6 +419,7 @@ static void sdl_miyoomini_store_cheevos_background(
    if (!vid || vid->cheevos_icon_background_stored
          || !vid->cheevos_icon_data || bytes_per_pixel == 0)
       return;
+
 
    if (!vid->cheevos_icon_restore_data
          || vid->cheevos_icon_restore_pitch != row_bytes
@@ -429,6 +472,7 @@ static void sdl_miyoomini_restore_cheevos_background(
    if (!vid || !vid->cheevos_icon_restore_data || bytes_per_pixel == 0)
       return;
 
+
    screen_buf = (uint8_t*)fb_addr + (vinfo.yoffset * screen_width * bytes_per_pixel);
    screen_buf += ((size_t)vid->cheevos_icon_restore_y * screen_width
          + (size_t)vid->cheevos_icon_restore_x) * bytes_per_pixel;
@@ -457,6 +501,7 @@ static void sdl_miyoomini_draw_cheevos_icon(sdl_miyoomini_video_t *vid,
 
    if (!vid || !vid->cheevos_icon_visible || !vid->cheevos_icon_data)
       return;
+
 
    settings = config_get_ptr();
    anchor = settings->uints.cheevos_appearance_anchor;
@@ -702,6 +747,10 @@ static void sdl_miyoomini_print_msg(void* data) {
    }
    vid->msg_count >>= 3;
 #ifdef HAVE_CHEEVOS
+   sdl_miyoomini_cheevos_lock(vid);
+   if (vid->cheevos_icon_timer > 0
+         || vid->cheevos_icon_visible
+         || vid->cheevos_icon_restore_pending)
    if (vid->cheevos_icon_timer > 0 && vid->cheevos_icon_visible)
    {
       sdl_miyoomini_draw_cheevos_icon(vid, res_x, res_y);
@@ -715,6 +764,7 @@ static void sdl_miyoomini_print_msg(void* data) {
       sdl_miyoomini_restore_cheevos_background(vid, res_x);
       vid->cheevos_icon_restore_pending = false;
    }
+   sdl_miyoomini_cheevos_unlock(vid);
 #endif
 }
 
@@ -1263,6 +1313,11 @@ static void sdl_miyoomini_gfx_free(void *data) {
 
 #ifdef HAVE_CHEEVOS
    sdl_miyoomini_free_cheevos_icon(vid);
+   if (vid->cheevos_lock)
+   {
+      SDL_DestroyMutex(vid->cheevos_lock);
+      vid->cheevos_lock = NULL;
+   }
 #endif
 
    free(vid);
@@ -1568,6 +1623,16 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid = (sdl_miyoomini_video_t*)calloc(1, sizeof(*vid));
    if (!vid) return NULL;
 
+#ifdef HAVE_CHEEVOS
+   vid->cheevos_lock = SDL_CreateMutex();
+   if (!vid->cheevos_lock)
+   {
+      RARCH_ERR("[SDL1]: Failed to create cheevos mutex\n");
+      free(vid);
+      return NULL;
+   }
+#endif
+
    GFX_Init();
 
    vid->menuscreen = GFX_CreateRGBSurface(
@@ -1658,18 +1723,14 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
 #endif
 
 #ifdef HAVE_CHEEVOS
-   if (video_info->msg_queue_icon != MESSAGE_QUEUE_ICON_ACHIEVEMENT
-         || !video_info->msg_queue_title[0])
-   {
-      if (vid->cheevos_icon_timer > 0)
-      {
-         vid->cheevos_icon_timer = 0;
-         vid->cheevos_icon_visible = false;
-         vid->cheevos_icon_restore_pending = true;
-      }
-   }
-   else if (video_info->msg_queue_icon == MESSAGE_QUEUE_ICON_ACHIEVEMENT
-         && video_info->msg_queue_title[0])
+   bool achievement_msg_active = video_info->msg_queue_icon == MESSAGE_QUEUE_ICON_ACHIEVEMENT
+         && video_info->msg_queue_title[0];
+   sdl_miyoomini_cheevos_lock(vid);
+   if (achievement_msg_active
+         || vid->cheevos_icon_timer > 0
+         || vid->cheevos_icon_restore_pending
+         || (vid->cheevos_badge_pending[0] && vid->cheevos_icon_retry_counter > 0))
+   if (achievement_msg_active)
    {
       bool badge_changed = !string_is_equal(video_info->msg_queue_title, vid->cheevos_badge_pending);
 
@@ -1683,7 +1744,10 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
 
       if (vid->cheevos_badge_pending[0] != '\0')
       {
-         if (vid->cheevos_icon_retry_counter == 0)
+         if (vid->cheevos_icon_retry_counter == 0
+               && (!vid->cheevos_icon_data
+                  || !string_is_equal(vid->cheevos_badge_pending,
+                        vid->cheevos_badge_name)))
          {
             sdl_miyoomini_load_cheevos_icon(
                   vid, vid->cheevos_badge_pending, res_y);
@@ -1695,11 +1759,12 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       if (vid->cheevos_icon_data)
       {
          vid->cheevos_icon_visible = true;
-         vid->cheevos_icon_timer = video_info->msg_queue_duration > 0
-               ? video_info->msg_queue_duration
-               : CHEEVOS_ICON_DURATION_FRAMES;
+         if (badge_changed || vid->cheevos_icon_timer == 0)
+            vid->cheevos_icon_timer = video_info->msg_queue_duration > 0
+                  ? video_info->msg_queue_duration
+                  : CHEEVOS_ICON_DURATION_FRAMES;
       }
-      else
+      else if (vid->cheevos_icon_timer == 0)
          vid->cheevos_icon_visible = false;
    }
    else if (vid->cheevos_icon_timer > 0)
@@ -1732,7 +1797,20 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          vid->cheevos_icon_visible = false;
    }
    else
-      vid->cheevos_icon_visible = false;
+   {
+      if (vid->cheevos_icon_visible)
+      {
+         vid->cheevos_icon_visible = false;
+         vid->cheevos_icon_restore_pending = true;
+      }
+      else
+      {
+         vid->cheevos_icon_visible = false;
+         vid->cheevos_icon_retry_counter = 0;
+         vid->cheevos_badge_pending[0] = '\0';
+      }
+   }
+   sdl_miyoomini_cheevos_unlock(vid);
 #endif
 
    /* Render OSD text at flip */

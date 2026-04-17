@@ -382,6 +382,7 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
    if (!cheevo)
       return;
 
+
    /* Show the on screen message. */
    if (settings->bools.cheevos_visibility_unlock)
    {
