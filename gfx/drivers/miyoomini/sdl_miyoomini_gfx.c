@@ -1667,8 +1667,9 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          || vid->cheevos_icon_timer > 0
          || vid->cheevos_icon_restore_pending
          || (vid->cheevos_badge_pending[0] && vid->cheevos_icon_retry_counter > 0))
-   if (achievement_msg_active)
    {
+      if (achievement_msg_active)
+      {
       bool badge_changed = !string_is_equal(video_info->msg_queue_title, vid->cheevos_badge_pending);
 
       if (badge_changed)
@@ -1703,9 +1704,9 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       }
       else if (vid->cheevos_icon_timer == 0)
          vid->cheevos_icon_visible = false;
-   }
-   else if (vid->cheevos_icon_timer > 0)
-   {
+      }
+      else if (vid->cheevos_icon_timer > 0)
+      {
       if (vid->cheevos_icon_retry_counter > 0)
          vid->cheevos_icon_retry_counter--;
 
@@ -1732,19 +1733,20 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       }
       else
          vid->cheevos_icon_visible = false;
-   }
-   else
-   {
-      if (vid->cheevos_icon_visible)
-      {
-         vid->cheevos_icon_visible = false;
-         vid->cheevos_icon_restore_pending = true;
       }
       else
       {
-         vid->cheevos_icon_visible = false;
-         vid->cheevos_icon_retry_counter = 0;
-         vid->cheevos_badge_pending[0] = '\0';
+         if (vid->cheevos_icon_visible)
+         {
+            vid->cheevos_icon_visible = false;
+            vid->cheevos_icon_restore_pending = true;
+         }
+         else
+         {
+            vid->cheevos_icon_visible = false;
+            vid->cheevos_icon_retry_counter = 0;
+            vid->cheevos_badge_pending[0] = '\0';
+         }
       }
    }
    sdl_miyoomini_cheevos_unlock(vid);
