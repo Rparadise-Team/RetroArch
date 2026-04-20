@@ -112,6 +112,34 @@ rcheevos_locals_t* get_rcheevos_locals(void)
    return &rcheevos_locals;
 }
 
+static void rcheevos_append_miyoo_badge_subdir(char *badge_dir, size_t len, const char *badge_name)
+{
+#if defined(MIYOO_CUSTOM_MENU)
+   if (badge_name && string_is_equal(badge_name, "00000"))
+      return;
+
+   {
+      const rc_client_game_t *game = rc_client_get_game_info(rcheevos_locals.client);
+
+      if (game && !string_is_empty(game->badge_name))
+      {
+         char base_dir[PATH_MAX_LENGTH];
+         char game_badge_dir[32];
+         size_t game_badge_dir_len = strlcpy(game_badge_dir, "i", sizeof(game_badge_dir));
+
+         strlcpy(base_dir, badge_dir, sizeof(base_dir));
+         strlcpy(game_badge_dir + game_badge_dir_len, game->badge_name,
+               sizeof(game_badge_dir) - game_badge_dir_len);
+         fill_pathname_join_special(badge_dir, base_dir, game_badge_dir, len);
+      }
+   }
+#else
+   (void)badge_dir;
+   (void)len;
+   (void)badge_name;
+#endif
+}
+
 #define CHEEVOS_MB(x)   ((x) * 1024 * 1024)
 #define RCHEEVOS_SD_POLL_SUMMARY_FRAMES        10
 #define RCHEEVOS_SD_POLL_UNLOCK_FRAMES         12
@@ -456,6 +484,7 @@ static void rcheevos_award_achievement(const rc_client_achievement_t* cheevo)
          /* Construimos la ruta para comprobar si el archivo ya existe */
          fill_pathname_application_special(badge_path, sizeof(badge_path),
                APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+         rcheevos_append_miyoo_badge_subdir(badge_path, sizeof(badge_path), badge_title);
          fill_pathname_slash(badge_path, sizeof(badge_path));
          strlcat(badge_path, badge_title, sizeof(badge_path));
          strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
@@ -1626,6 +1655,7 @@ static void rcheevos_show_game_placard(void)
 
          fill_pathname_application_special(badge_path, sizeof(badge_path),
                APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+         rcheevos_append_miyoo_badge_subdir(badge_path, sizeof(badge_path), badge_name);
          fill_pathname_slash(badge_path, sizeof(badge_path));
          strlcat(badge_path, badge_name, sizeof(badge_path));
          strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));

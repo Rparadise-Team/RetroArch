@@ -329,6 +329,42 @@ static void sdl_miyoomini_scale_argb(const uint32_t *src, unsigned src_w, unsign
    }
 }
 
+static void sdl_miyoomini_append_cheevos_badge_subdir(char *badge_dir,
+      size_t len, const char *badge_name)
+{
+#if defined(HAVE_CHEEVOS) && defined(MIYOO_CUSTOM_MENU)
+   char game_badge_url[PATH_MAX_LENGTH];
+   const char *badge_file = NULL;
+   char game_badge_dir[32];
+   char base_dir[PATH_MAX_LENGTH];
+   size_t badge_id_len;
+
+   if (string_is_empty(badge_name) || string_is_equal(badge_name, "00000"))
+      return;
+
+   if (!rcheevos_get_game_badge_url(game_badge_url, sizeof(game_badge_url)))
+      return;
+
+   badge_file = strrchr(game_badge_url, '/');
+   badge_file = badge_file ? badge_file + 1 : game_badge_url;
+
+   badge_id_len = strcspn(badge_file, ".?");
+   if (badge_id_len == 0 || badge_id_len > (sizeof(game_badge_dir) - 2))
+      return;
+
+   game_badge_dir[0] = 'i';
+   memcpy(&game_badge_dir[1], badge_file, badge_id_len);
+   game_badge_dir[badge_id_len + 1] = '\0';
+
+   strlcpy(base_dir, badge_dir, sizeof(base_dir));
+   fill_pathname_join_special(badge_dir, base_dir, game_badge_dir, len);
+#else
+   (void)badge_dir;
+   (void)len;
+   (void)badge_name;
+#endif
+}
+
 static bool sdl_miyoomini_load_cheevos_icon(sdl_miyoomini_video_t *vid,
       const char *badge_name, unsigned screen_height)
 {
@@ -349,6 +385,8 @@ static bool sdl_miyoomini_load_cheevos_icon(sdl_miyoomini_video_t *vid,
 
    fill_pathname_application_special(badge_path, sizeof(badge_path),
          APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+   sdl_miyoomini_append_cheevos_badge_subdir(
+         badge_path, sizeof(badge_path), badge_name);
    fill_pathname_slash(badge_path, sizeof(badge_path));
    strlcat(badge_path, badge_name, sizeof(badge_path));
    strlcat(badge_path, FILE_PATH_PNG_EXTENSION, sizeof(badge_path));
@@ -1668,6 +1706,10 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          || vid->cheevos_icon_restore_pending
          || (vid->cheevos_badge_pending[0] && vid->cheevos_icon_retry_counter > 0))
    {
+      /* Keep icon visibility strictly tied to active achievement notifications. */
+      if (!achievement_msg_active)
+         vid->cheevos_icon_timer = 0;
+
       if (achievement_msg_active)
       {
       bool badge_changed = !string_is_equal(video_info->msg_queue_title, vid->cheevos_badge_pending);

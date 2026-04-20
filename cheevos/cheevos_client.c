@@ -391,6 +391,33 @@ static bool rcheevos_priority_badge_pending = false;
 static char rcheevos_priority_badge_url[512];
 static char rcheevos_priority_badge_name[32];
 
+static void rcheevos_append_miyoo_badge_subdir(char *badge_dir, size_t len, const char *badge_name)
+{
+#if defined(MIYOO_CUSTOM_MENU)
+   if (badge_name && string_is_equal(badge_name, "00000"))
+      return;
+
+   const rcheevos_locals_t* rcheevos_locals = get_rcheevos_locals();
+   const rc_client_game_t *game = rc_client_get_game_info(rcheevos_locals->client);
+
+   if (game && !string_is_empty(game->badge_name))
+   {
+      char base_dir[PATH_MAX_LENGTH];
+      char game_badge_dir[32];
+      size_t game_badge_dir_len = strlcpy(game_badge_dir, "i", sizeof(game_badge_dir));
+
+      strlcpy(base_dir, badge_dir, sizeof(base_dir));
+      strlcpy(game_badge_dir + game_badge_dir_len, game->badge_name,
+            sizeof(game_badge_dir) - game_badge_dir_len);
+      fill_pathname_join_special(badge_dir, base_dir, game_badge_dir, len);
+   }
+#else
+   (void)badge_dir;
+   (void)len;
+   (void)badge_name;
+#endif
+}
+
 static void rcheevos_client_download_task_callback(retro_task_t* task,
    void* task_data, void* user_data, const char* error)
 {
@@ -432,12 +459,25 @@ bool rcheevos_client_download_badge(rc_client_download_queue_t* queue,
    char* badge_fullname;
    size_t badge_fullname_size;
    rc_client_download_task_data_t* taskdata;
+   char badge_root_path[512] = "";
    char badge_fullpath[512] = "";
    rcheevos_locals_t* rcheevos_locals = get_rcheevos_locals();
 
-   /* make sure the directory exists */
+   /* Ensure the root badges directory exists. */
+   fill_pathname_application_special(badge_root_path, sizeof(badge_root_path),
+      APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+
+   if (!path_is_directory(badge_root_path))
+   {
+      CHEEVOS_LOG(RCHEEVOS_TAG "Creating %s\n", badge_root_path);
+      path_mkdir(badge_root_path);
+   }
+
+   /* Ensure the final target directory exists.
+    * On MIYOO_CUSTOM_MENU this may be a per-game subdirectory. */
    fill_pathname_application_special(badge_fullpath, sizeof(badge_fullpath),
       APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+   rcheevos_append_miyoo_badge_subdir(badge_fullpath, sizeof(badge_fullpath), badge_name);
 
    if (!path_is_directory(badge_fullpath))
    {

@@ -48,6 +48,33 @@
 #define MENU_BADGE_RETRY_RELOAD_FRAMES 64
 static bool rcheevos_suppress_badge_download_notification = false;
 
+static void rcheevos_append_miyoo_badge_subdir(char *badge_dir, size_t len, const char *badge_name)
+{
+#if defined(MIYOO_CUSTOM_MENU)
+   if (badge_name && string_is_equal(badge_name, "00000"))
+      return;
+
+   const rcheevos_locals_t* rcheevos_locals = get_rcheevos_locals();
+   const rc_client_game_t *game = rc_client_get_game_info(rcheevos_locals->client);
+
+   if (game && !string_is_empty(game->badge_name))
+   {
+      char base_dir[PATH_MAX_LENGTH];
+      char game_badge_dir[32];
+      size_t game_badge_dir_len = strlcpy(game_badge_dir, "i", sizeof(game_badge_dir));
+
+      strlcpy(base_dir, badge_dir, sizeof(base_dir));
+      strlcpy(game_badge_dir + game_badge_dir_len, game->badge_name,
+            sizeof(game_badge_dir) - game_badge_dir_len);
+      fill_pathname_join_special(badge_dir, base_dir, game_badge_dir, len);
+   }
+#else
+   (void)badge_dir;
+   (void)len;
+   (void)badge_name;
+#endif
+}
+
 #if HAVE_MENU
 
 size_t rcheevos_menu_get_state(unsigned menu_offset, char *s, size_t len)
@@ -297,6 +324,7 @@ size_t rcheevos_menu_get_badge_path(unsigned menu_offset, char *s, size_t len)
 
       fill_pathname_application_special(badge_dir, sizeof(badge_dir),
             APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+      rcheevos_append_miyoo_badge_subdir(badge_dir, sizeof(badge_dir), badge_name);
       return fill_pathname_join_special(s, badge_dir, badge_file, len);
    }
 
@@ -803,6 +831,7 @@ uintptr_t rcheevos_get_badge_texture(const char* badge, bool locked, bool downlo
 
    fill_pathname_application_special(fullpath, sizeof(fullpath),
       APPLICATION_SPECIAL_DIRECTORY_THUMBNAILS_CHEEVOS_BADGES);
+   rcheevos_append_miyoo_badge_subdir(fullpath, sizeof(fullpath), badge);
 
    if (!gfx_display_reset_textures_list(badge_file, fullpath,
       &tex, TEXTURE_FILTER_MIPMAP_LINEAR, NULL, NULL))
