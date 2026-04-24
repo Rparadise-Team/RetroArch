@@ -614,6 +614,7 @@ void rcheevos_menu_populate_miyoo(void* data, bool cheevos_enable,
    rc_client_achievement_list_t* list = rc_client_create_achievement_list(rcheevos_locals->client,
       RC_CLIENT_ACHIEVEMENT_CATEGORY_CORE_AND_UNOFFICIAL,
       RC_CLIENT_ACHIEVEMENT_LIST_GROUPING_PROGRESS);
+   bool has_achievements = false;
    uint32_t i, j;
 
    (void)cheevos_enable;
@@ -622,7 +623,16 @@ void rcheevos_menu_populate_miyoo(void* data, bool cheevos_enable,
    rcheevos_menu_reset_badges();
    rcheevos_locals->menuitem_count = 0;
 
-   if (game && game->id != 0)
+   for (i = 0; i < list->num_buckets; i++)
+   {
+      if (list->buckets[i].num_achievements > 0)
+      {
+         has_achievements = true;
+         break;
+      }
+   }
+
+   if (game && game->id != 0 && has_achievements)
    {
       /* Keep generic quickmenu hardcore pause/resume action in Miyoo menu. */
       if (     cheevos_enable

@@ -94,11 +94,18 @@ int action_cancel_pop_default(const char *path,
       }
       if (miyoo_menu_achievements_menu_is_open())
       {
-         if (string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_PAUSE_MENU)))
+         bool in_hardcore_pause_submenu =
+               string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_PAUSE_CANCEL))
+            || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_PAUSE))
+            || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_RESUME_CANCEL))
+            || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_RESUME))
+            || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_RESUME_REQUIRES_RELOAD));
+
+         if (in_hardcore_pause_submenu)
          {
             size_t new_selection_ptr = menu_st->selection_ptr;
             menu_entries_pop_stack(&new_selection_ptr, 0, 1);
-            menu_st->selection_ptr = 0;
+            menu_st->selection_ptr = new_selection_ptr;
          }
          else
          {
