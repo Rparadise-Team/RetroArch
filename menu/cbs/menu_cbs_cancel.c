@@ -94,8 +94,17 @@ int action_cancel_pop_default(const char *path,
       }
       if (miyoo_menu_achievements_menu_is_open())
       {
-         miyoo_menu_achievements_menu_close();
-         menu_st->selection_ptr = miyoo_menu_achievements_parent_index();
+         if (string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_PAUSE_MENU)))
+         {
+            size_t new_selection_ptr = menu_st->selection_ptr;
+            menu_entries_pop_stack(&new_selection_ptr, 0, 1);
+            menu_st->selection_ptr = 0;
+         }
+         else
+         {
+            miyoo_menu_achievements_menu_close();
+            menu_st->selection_ptr = miyoo_menu_achievements_parent_index();
+         }
          handled_submenu = true;
       }
       if (miyoo_menu_state_menu_get_mode() != 0)
