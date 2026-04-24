@@ -2697,6 +2697,17 @@ static void rgui_render_background(
          || (fb_pitch != frame_buf->width << 1))
       return;
 
+#if defined(MIYOO_CUSTOM_MENU)
+   if (   miyoo_menu_context_is_native_quickmenu()
+       && string_is_equal(rgui->menu_title, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MAIN_MENU)))
+   {
+      struct menu_state *menu_st = menu_state_get_ptr();
+      if (   menu_st
+          && (*msg_hash_get_uint(MSG_HASH_USER_LANGUAGE) == RETRO_LANGUAGE_ENGLISH))
+         menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+   }
+#endif
+
    /* If screensaver is active, 'zero out' framebuffer */
    if (rgui->flags & RGUI_FLAG_SHOW_SCREENSAVER)
    {
@@ -7591,6 +7602,7 @@ static void rgui_navigation_set(void *data, bool scroll)
 {
    size_t start                   = 0;
    bool menu_show_sublabels       = false;
+   const char *menu_label         = NULL;
    struct menu_state *menu_st     = menu_state_get_ptr();
    menu_list_t *menu_list         = menu_st->entries.list;
    size_t end                     = menu_list ? MENU_LIST_GET_SELECTION(menu_list, 0)->size : 0;
@@ -7601,12 +7613,13 @@ static void rgui_navigation_set(void *data, bool scroll)
       return;
 
    menu_show_sublabels            = config_get_ptr()->bools.menu_show_sublabels;
+   menu_entries_get_last_stack(NULL, &menu_label, NULL, NULL, NULL);
 
    if (rgui->flags & RGUI_FLAG_IS_PLAYLIST)
       rgui->playlist_selection[rgui->playlist_selection_ptr] = selection;
    else if (rgui->flags & RGUI_FLAG_IS_PLAYLISTS_TAB)
       rgui->playlist_selection_ptr = selection;
-   else if (string_is_equal(rgui->menu_title, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_SETTINGS)))
+   else if (string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_SETTINGS)))
       rgui->settings_selection_ptr = selection;
 
    rgui_scan_selected_entry_thumbnail(rgui, false);
