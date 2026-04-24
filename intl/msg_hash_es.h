@@ -16158,6 +16158,10 @@ MSG_HASH(
    "Seleccione MHz para CPU MIYOO."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Logros"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Guardado rápido"
    )
