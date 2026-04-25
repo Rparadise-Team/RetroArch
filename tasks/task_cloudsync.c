@@ -1245,6 +1245,9 @@ static void task_cloud_sync_task_handler(retro_task_t *task)
    if (!(sync_state = (task_cloud_sync_state_t *)task->state))
       goto task_finished;
 
+   if (task->flags & RETRO_TASK_FLG_CANCELLED)
+      sync_state->phase = CLOUD_SYNC_PHASE_END;
+
    slock_lock(tcs_running_lock);
    /* we can transfer more than one file at a time */
    if (sync_state->waiting > ((sync_state->phase == CLOUD_SYNC_PHASE_DIFF) ? 4U : 0U))
@@ -1333,6 +1336,20 @@ static bool task_cloud_sync_task_finder(retro_task_t *task, void *user_data)
    return task->handler == task_cloud_sync_task_handler;
 }
 
+static bool task_cloud_sync_cancel_finder(retro_task_t *task, void *user_data)
+{
+   (void)user_data;
+
+   if (!task)
+      return false;
+
+   if (task->handler != task_cloud_sync_task_handler)
+      return false;
+
+   task_queue_cancel_task(task);
+   return true;
+}
+
 void task_push_cloud_sync(void)
 {
    char task_title[128];
@@ -1375,6 +1392,15 @@ void task_push_cloud_sync(void)
    task->callback = task_cloud_sync_cb;
 
    task_queue_push(task);
+}
+
+void task_cancel_cloud_sync(void)
+{
+   task_finder_data_t find_data;
+
+   find_data.func     = task_cloud_sync_cancel_finder;
+   find_data.userdata = NULL;
+   task_queue_find(&find_data);
 }
 
 void task_push_cloud_sync_update_driver(void)

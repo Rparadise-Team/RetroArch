@@ -8634,6 +8634,11 @@ bool retroarch_main_quit(void)
    rcheevos_cancel_pending_badge_downloads();
 #endif
 
+#ifdef HAVE_CLOUDSYNC
+   /* Ensure cloud sync tasks do not block frontend shutdown. */
+   task_cancel_cloud_sync();
+#endif
+
 #if defined(MIYOOMINI)
    /* Flush pending writes to FAT32 SD before process exit. */
    sync();

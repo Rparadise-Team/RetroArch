@@ -112,7 +112,10 @@ struct sdl_miyoomini_video
    uint16_t menu_bg_texture[RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT];
    uint16_t menu_composite_texture[RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT];
    float menu_texture_alpha;
+   uint8_t menu_texture_alpha_u8;
    bool menu_bg_valid;
+   bool menu_surface_dirty;
+   bool menu_composite_valid;
 #ifdef HAVE_OVERLAY
    SDL_Surface *overlay_surface;
 #endif
@@ -207,6 +210,8 @@ static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
       SDL_UnlockSurface(screen);
 
    vid->menu_bg_valid = true;
+   vid->menu_surface_dirty = true;
+   vid->menu_composite_valid = false;
 }
 
 #ifdef HAVE_CHEEVOS
@@ -1844,27 +1849,42 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
    } else {
       if ((vid->menu_texture_alpha < 0.999f) && vid->menu_bg_valid)
       {
-         unsigned i;
          uint8_t alpha_u8 = (uint8_t)(vid->menu_texture_alpha * 255.0f);
-         uint16_t *menu_rgui_src = (uint16_t*)vid->menuscreen_rgui->pixels;
 
-         for (i = 0; i < (RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT); i++)
+         if (vid->menu_surface_dirty || !vid->menu_composite_valid
+               || (vid->menu_texture_alpha_u8 != alpha_u8))
          {
-            uint16_t fg      = menu_rgui_src[i];
-            vid->menu_composite_texture[i] = (fg != 0)
-                  ? fg
-                  : sdl_miyoomini_blend_565(
-                        vid->menu_bg_texture[i],
-                        fg,
-                        alpha_u8);
-         }
+            unsigned i;
+            uint16_t *menu_rgui_src = (uint16_t*)vid->menuscreen_rgui->pixels;
 
-         scale2x2_n16(vid->menu_composite_texture, vid->menuscreen->pixels,
-               RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0, 0);
+            for (i = 0; i < (RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT); i++)
+            {
+               uint16_t fg      = menu_rgui_src[i];
+               vid->menu_composite_texture[i] = (fg != 0)
+                     ? fg
+                     : sdl_miyoomini_blend_565(
+                           vid->menu_bg_texture[i],
+                           fg,
+                           alpha_u8);
+            }
+
+            scale2x2_n16(vid->menu_composite_texture, vid->menuscreen->pixels,
+                  RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0, 0);
+            vid->menu_texture_alpha_u8 = alpha_u8;
+            vid->menu_composite_valid  = true;
+            vid->menu_surface_dirty    = false;
+         }
       }
       else
-         scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels,
-               RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0, 0);
+      {
+         if (vid->menu_surface_dirty || vid->menu_composite_valid)
+         {
+            scale2x2_n16(vid->menuscreen_rgui->pixels, vid->menuscreen->pixels,
+                  RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 0, 0);
+            vid->menu_surface_dirty   = false;
+            vid->menu_composite_valid = false;
+         }
+      }
       stOpt.eRotate = E_MI_GFX_ROTATE_180;
       GFX_Flip(vid->menuscreen);
       stOpt.eRotate = vid->rotate;
@@ -1881,14 +1901,17 @@ static void sdl_miyoomini_set_texture_enable(void *data, bool state, bool full_s
 
    sdl_miyoomini_toggle_powersave(state);
 
-  if (state) {
-     sdl_miyoomini_capture_menu_background(vid);
-  //    system("playActivity stop_all &");
-     vid->was_in_menu = true;
-  }
-  else {
-     vid->menu_bg_valid = false;
-  }
+	  if (state) {
+	     sdl_miyoomini_capture_menu_background(vid);
+	  //    system("playActivity stop_all &");
+	     vid->menu_surface_dirty = true;
+	     vid->was_in_menu = true;
+	  }
+	  else {
+	     vid->menu_bg_valid = false;
+	     vid->menu_surface_dirty = true;
+	     vid->menu_composite_valid = false;
+	  }
   // else {
   //   system("playActivity resume &");
   // }
@@ -1901,6 +1924,7 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
    if (unlikely( !vid || rgb32 || (width != RGUI_MENU_WIDTH) || (height != RGUI_MENU_HEIGHT))) return;
 
    vid->menu_texture_alpha = alpha;
+   vid->menu_surface_dirty = true;
    memcpy_neon(vid->menuscreen_rgui->pixels, (void*)frame,
       RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT * sizeof(uint16_t));
 }
