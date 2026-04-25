@@ -77,7 +77,9 @@ static void sdl_audio_cb(void *data, Uint8 *stream, int len)
          memset(stream + write_size, 0, len - write_size);
    }
 #endif
+#ifdef HAVE_THREADS
    scond_signal(sdl->cond);
+#endif
 }
 
 static void *sdl_audio_init(const char *device,
@@ -203,26 +205,27 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
 #endif
          {
             SDL_UnlockAudio();
-            #ifdef HAVE_THREADS
+#ifdef HAVE_THREADS
             slock_lock(sdl->lock);
             scond_wait(sdl->cond, sdl->lock);
             slock_unlock(sdl->lock);
-            #endif
+#else
+            SDL_Delay(1);
+#endif
          }
          else
          {
             size_t write_amt = size - written > avail ? avail : size - written;
+            size_t current_avail;
             fifo_write(sdl->buffer, (const char*)buf + written, write_amt);
             SDL_UnlockAudio();
             written += write_amt;
+            current_avail = avail - write_amt;
         
             /* FIX: Delay adaptativo para AudioServer OFF
              * Si buffer está muy lleno, esperar un poco antes de siguiente write
              * Esto sincroniza mejor con el callback y evita acumulación
              */
-            SDL_LockAudio();
-            size_t current_avail = FIFO_WRITE_AVAIL(sdl->buffer);
-            SDL_UnlockAudio();
 #ifdef NO_MMP            
             if (current_avail < (sdl->bufsize/3))
             {
