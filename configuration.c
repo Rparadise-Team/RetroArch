@@ -3521,6 +3521,92 @@ static bool check_menu_driver_compatibility(settings_t *settings)
 }
 #endif
 
+#if defined(MIYOOMINI)
+static void config_apply_miyoomini_defaults(config_file_t *conf)
+{
+   if (!conf)
+      return;
+
+   /* Platform-critical defaults required for sane first boot
+    * when user/global config files are missing. */
+   config_set_string(conf, "video_driver", "sdl_dingux");
+   config_set_string(conf, "audio_driver", "sdl");
+   config_set_string(conf, "input_driver", "sdl_dingux");
+   config_set_string(conf, "input_joypad_driver", "sdl_dingux");
+   config_set_string(conf, "menu_driver", "rgui");
+   config_set_string(conf, "audio_out_rate", "48000");
+   config_set_string(conf, "audio_latency", "64");
+   config_set_string(conf, "video_vsync", "false");
+   config_set_string(conf, "video_threaded", "false");
+   config_set_string(conf, "video_smooth", "true");
+
+   /* Miyoo/Koriki storage layout. */
+   config_set_string(conf, "assets_directory", ":/.retroarch/assets");
+   config_set_string(conf, "cache_directory", ":/.retroarch/cache");
+   config_set_string(conf, "playlist_directory", ":/.retroarch/lists/playlists");
+   config_set_string(conf, "core_assets_directory", ":/.retroarch/downloads");
+   config_set_string(conf, "libretro_directory", ":/.retroarch/cores");
+   config_set_string(conf, "libretro_info_path", ":/.retroarch/cores");
+   config_set_string(conf, "content_database_path", ":/.retroarch/database/rdb");
+   config_set_string(conf, "cheat_database_path", "/mnt/SDCARD/Cheats");
+   config_set_string(conf, "system_directory", "/mnt/SDCARD/BIOS");
+   config_set_string(conf, "savefile_directory", "/mnt/SDCARD/Saves/RA_saves");
+   config_set_string(conf, "savestate_directory", "/mnt/SDCARD/Saves/RA_states");
+   config_set_string(conf, "screenshot_directory", "/mnt/SDCARD/Media/screenshots");
+
+   /* Keep per-core behavior compatible with existing Miyoo setups. */
+   config_set_string(conf, "auto_overrides_enable", "true");
+   config_set_string(conf, "auto_remaps_enable", "true");
+   config_set_string(conf, "game_specific_options", "true");
+   config_set_string(conf, "global_core_options", "false");
+   config_set_string(conf, "savefiles_in_content_dir", "false");
+   config_set_string(conf, "savestates_in_content_dir", "false");
+   config_set_string(conf, "sort_savefiles_enable", "true");
+   config_set_string(conf, "sort_savestates_enable", "true");
+   config_set_string(conf, "sort_savefiles_by_content_enable", "false");
+   config_set_string(conf, "sort_savestates_by_content_enable", "false");
+   config_set_string(conf, "core_info_cache_enable", "true");
+   config_set_string(conf, "core_info_savestate_bypass", "false");
+   config_set_string(conf, "core_set_supports_no_game_enable", "true");
+   config_set_string(conf, "content_show_contentless_cores", "2");
+   config_set_string(conf, "core_updater_auto_backup", "true");
+   config_set_string(conf, "core_updater_auto_backup_history_size", "1");
+   config_set_string(conf, "core_updater_auto_extract_archive", "true");
+   config_set_string(conf, "core_updater_show_experimental_cores", "true");
+   config_set_string(conf, "core_updater_buildbot_cores_url",
+         "https://raw.githubusercontent.com/Rparadise-Team/Koriki/cores/armhf/");
+
+   /* Miyoo menu + hotkey bindings. */
+   config_set_string(conf, "input_enable_hotkey_btn", "14");
+   config_set_string(conf, "input_menu_toggle_btn", "9");
+   config_set_string(conf, "input_menu_toggle_gamepad_combo", "0");
+   config_set_string(conf, "input_exit_emulator_btn", "3");
+   config_set_string(conf, "input_pause_toggle_btn", "8");
+   config_set_string(conf, "input_toggle_fast_forward_btn", "0");
+   config_set_string(conf, "input_fps_toggle_btn", "1");
+   config_set_string(conf, "input_load_state_btn", "10");
+   config_set_string(conf, "input_save_state_btn", "11");
+   config_set_string(conf, "input_state_slot_decrease_btn", "12");
+   config_set_string(conf, "input_state_slot_increase_btn", "13");
+
+   /* RGUI defaults used by Miyoo/Koriki menus. */
+   config_set_string(conf, "menu_disable_info_button", "true");
+   config_set_string(conf, "menu_disable_search_button", "true");
+   config_set_string(conf, "menu_show_online_updater", "true");
+   config_set_string(conf, "menu_show_core_updater", "true");
+   config_set_string(conf, "menu_show_rewind", "false");
+   config_set_string(conf, "menu_enable_widgets", "false");
+   config_set_string(conf, "menu_swap_ok_cancel_buttons", "false");
+   config_set_string(conf, "menu_swap_scroll_buttons", "false");
+   config_set_string(conf, "rgui_browser_directory", "/mnt/SDCARD/Roms");
+   config_set_string(conf, "rgui_config_directory", ":/.retroarch/config");
+   config_set_string(conf, "rgui_menu_theme_preset", ":/.retroarch/assets/rgui/Koriki.cfg");
+   config_set_string(conf, "rgui_show_start_screen", "false");
+   config_set_string(conf, "rgui_aspect_ratio", "0");
+   config_set_string(conf, "rgui_aspect_ratio_lock", "0");
+}
+#endif
+
 /**
  * open_default_config_file
  *
@@ -3660,18 +3746,26 @@ config_file_t *open_default_config_file(void)
       if ((path_mkdir(basedir)))
       {
          char skeleton_conf[PATH_MAX_LENGTH];
+         bool has_skeleton    = false;
          bool saved          = false;
          /* Build a retroarch.cfg path from the
           * global config directory (/etc). */
          fill_pathname_join_special(skeleton_conf, GLOBAL_CONFIG_DIR,
             FILE_PATH_MAIN_CONFIG, sizeof(skeleton_conf));
          if ((conf = config_file_new_from_path_to_string(skeleton_conf)))
+         {
+            has_skeleton = true;
             RARCH_LOG("[Config] Using skeleton config \"%s\" as base for a new config file.\n", skeleton_conf);
-         else
+         }
+         if (!conf)
             conf = config_file_new_alloc();
 
          if (conf)
          {
+#if defined(MIYOOMINI)
+            if (!has_skeleton)
+               config_apply_miyoomini_defaults(conf);
+#endif
             /* Since this is a clean config file, we can
              * safely use config_save_on_exit. */
             config_set_string(conf, "config_save_on_exit", "true");

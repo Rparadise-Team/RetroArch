@@ -971,7 +971,11 @@
 #define DEFAULT_OVERLAY_DPAD_DIAGONAL_SENSITIVITY 80
 #define DEFAULT_OVERLAY_ABXY_DIAGONAL_SENSITIVITY 50
 
+#if defined(MIYOOMINI)
+#define DEFAULT_MENU_SWAP_OK_CANCEL_BUTTONS false
+#else
 #define DEFAULT_MENU_SWAP_OK_CANCEL_BUTTONS true
+#endif
 #define DEFAULT_MENU_SWAP_SCROLL_BUTTONS false
 #define DEFAULT_MENU_SINGLECLICK_PLAYLISTS false
 #define DEFAULT_MENU_ALLOW_TABS_BACK true
@@ -1320,7 +1324,11 @@
 
 /* Saves non-volatile SRAM at a regular interval.
  * It is measured in seconds. A value of 0 disables autosave. */
-#if defined(__i386__) || defined(__i486__) || defined(__i686__) || defined(__x86_64__) || defined(_M_X64) || defined(_WIN32) || defined(OSX) || defined(ANDROID) || defined(IOS) || defined(DINGUX)
+#if defined(MIYOOMINI)
+/* Miyoo builds typically use SD-backed storage and benefit from
+ * less frequent writes than the generic desktop/mobile default. */
+#define DEFAULT_AUTOSAVE_INTERVAL 60
+#elif defined(__i386__) || defined(__i486__) || defined(__i686__) || defined(__x86_64__) || defined(_M_X64) || defined(_WIN32) || defined(OSX) || defined(ANDROID) || defined(IOS) || defined(DINGUX)
 /* Flush to file every 10 seconds on modern platforms by default */
 #define DEFAULT_AUTOSAVE_INTERVAL 10
 #else
@@ -1864,7 +1872,11 @@
 #elif defined(__i386__) || defined(__i486__) || defined(__i686__)
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/linux/x86/latest/"
 #elif defined(__arm__) && __ARM_ARCH == 7 && defined(__ARM_PCS_VFP)
+#if defined(MIYOOMINI)
+#define DEFAULT_BUILDBOT_SERVER_URL "https://raw.githubusercontent.com/Rparadise-Team/Koriki/cores/armhf/"
+#else
 #define DEFAULT_BUILDBOT_SERVER_URL "http://buildbot.libretro.com/nightly/linux/armhf/latest/"
+#endif
 #else
 #define DEFAULT_BUILDBOT_SERVER_URL ""
 #endif
