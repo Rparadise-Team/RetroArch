@@ -104,8 +104,6 @@ struct sdl_miyoomini_video
    bool vsync;
    bool keep_aspect;
    bool scale_integer;
-   unsigned custom_vp_width;
-   unsigned custom_vp_height;
    bool quitting;
    bitmapfont_lut_t *osd_font;
    uint32_t font_colour32;
@@ -1497,34 +1495,6 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       vid->video_y = 0;
    }
 
-   if (vid->keep_aspect) {
-      unsigned custom_w = vid->custom_vp_width;
-      unsigned custom_h = vid->custom_vp_height;
-
-      /* RetroArch custom viewport dimensions are defined in
-       * content orientation space. When rotated, swap axes
-       * so legacy Dingux-style values (e.g. height=576) map
-       * correctly on SDL2. */
-      if (vid->rotate & 1) {
-         custom_w = vid->custom_vp_height;
-         custom_h = vid->custom_vp_width;
-      }
-
-      if (custom_h > 0) {
-         if (!custom_w)
-            custom_w = (unsigned)(((uint64_t)custom_h * width) / height);
-
-         if (custom_w > SDL_MIYOOMINI_WIDTH)
-            custom_w = SDL_MIYOOMINI_WIDTH;
-         if (custom_h > SDL_MIYOOMINI_HEIGHT)
-            custom_h = SDL_MIYOOMINI_HEIGHT;
-
-         vid->video_w = custom_w;
-         vid->video_h = custom_h;
-         vid->video_x = (SDL_MIYOOMINI_WIDTH  - vid->video_w) >> 1;
-         vid->video_y = (SDL_MIYOOMINI_HEIGHT - vid->video_h) >> 1;
-      }
-   }
    /* align to x4 bytes */
    if (!rgb32) { vid->video_x &= ~1; vid->video_w &= ~1; }
 
@@ -1670,8 +1640,6 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->vsync             = video->vsync;
    vid->keep_aspect       = settings->bools.video_dingux_ipu_keep_aspect;
    vid->scale_integer     = settings->bools.video_scale_integer;
-   vid->custom_vp_width   = settings->video_vp_custom.width;
-   vid->custom_vp_height  = settings->video_vp_custom.height;
    vid->filter_type       = (enum dingux_ipu_filter_type)settings->uints.video_dingux_ipu_filter_type;
    vid->menu_active       = false;
    vid->was_in_menu       = false;
@@ -2099,17 +2067,11 @@ static void sdl_miyoomini_apply_state_changes(void *data) {
 
    bool keep_aspect       = (settings) ? settings->bools.video_dingux_ipu_keep_aspect : true;
    bool integer_scaling   = (settings) ? settings->bools.video_scale_integer : false;
-   unsigned custom_vp_width  = (settings) ? settings->video_vp_custom.width : 0;
-   unsigned custom_vp_height = (settings) ? settings->video_vp_custom.height : 0;
 
    if ((vid->keep_aspect != keep_aspect) ||
-       (vid->scale_integer != integer_scaling) ||
-       (vid->custom_vp_width != custom_vp_width) ||
-       (vid->custom_vp_height != custom_vp_height)) {
+       (vid->scale_integer != integer_scaling)) {
       vid->keep_aspect   = keep_aspect;
       vid->scale_integer = integer_scaling;
-      vid->custom_vp_width  = custom_vp_width;
-      vid->custom_vp_height = custom_vp_height;
 
       /* Aspect/scaling changes require all frame
        * dimension/padding/cropping parameters to

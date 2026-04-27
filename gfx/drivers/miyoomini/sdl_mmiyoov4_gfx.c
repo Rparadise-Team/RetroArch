@@ -110,8 +110,6 @@ struct sdl_miyoomini_video
    bool vsync;
    bool keep_aspect;
    bool scale_integer;
-   unsigned custom_vp_width;
-   unsigned custom_vp_height;
    bool quitting;
    bitmapfont_lut_t *osd_font;
    uint32_t font_colour32;
@@ -1521,31 +1519,6 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       }
    }
 
-   if (vid->keep_aspect) {
-      unsigned custom_w = vid->custom_vp_width;
-      unsigned custom_h = vid->custom_vp_height;
-
-      if (vid->rotate & 1) {
-         custom_w = vid->custom_vp_height;
-         custom_h = vid->custom_vp_width;
-      }
-
-      if (custom_h > 0) {
-         if (!custom_w)
-            custom_w = (unsigned)(((uint64_t)custom_h * width) / height);
-
-         if (custom_w > base_width)
-            custom_w = base_width;
-         if (custom_h > base_height)
-            custom_h = base_height;
-
-         vid->video_w = custom_w;
-         vid->video_h = custom_h;
-         vid->video_x = (base_width  - vid->video_w) >> 1;
-         vid->video_y = (base_height - vid->video_h) >> 1;
-      }
-   }
-
    /* Si scale_integer, redondear ANTES de escalar */
    if (vid->scale_integer && mul_int) {
       unsigned base_unit_w = width * mul_int;
@@ -1729,8 +1702,6 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->vsync             = video->vsync;
    vid->keep_aspect       = settings->bools.video_dingux_ipu_keep_aspect;
    vid->scale_integer     = settings->bools.video_scale_integer;
-   vid->custom_vp_width   = settings->video_vp_custom.width;
-   vid->custom_vp_height  = settings->video_vp_custom.height;
    vid->filter_type       = (enum dingux_ipu_filter_type)settings->uints.video_dingux_ipu_filter_type;
    vid->menu_active       = false;
    vid->was_in_menu       = false;
@@ -2167,17 +2138,11 @@ static void sdl_miyoomini_apply_state_changes(void *data) {
 
    bool keep_aspect       = (settings) ? settings->bools.video_dingux_ipu_keep_aspect : true;
    bool integer_scaling   = (settings) ? settings->bools.video_scale_integer : false;
-   unsigned custom_vp_width  = (settings) ? settings->video_vp_custom.width : 0;
-   unsigned custom_vp_height = (settings) ? settings->video_vp_custom.height : 0;
 
    if ((vid->keep_aspect != keep_aspect) ||
-       (vid->scale_integer != integer_scaling) ||
-       (vid->custom_vp_width != custom_vp_width) ||
-       (vid->custom_vp_height != custom_vp_height)) {
+       (vid->scale_integer != integer_scaling)) {
       vid->keep_aspect   = keep_aspect;
       vid->scale_integer = integer_scaling;
-      vid->custom_vp_width  = custom_vp_width;
-      vid->custom_vp_height = custom_vp_height;
 
       /* Aspect/scaling changes require all frame
        * dimension/padding/cropping parameters to

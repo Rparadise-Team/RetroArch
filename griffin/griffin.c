@@ -1163,7 +1163,7 @@ FRONTEND
 #include "../frontend/drivers/platform_dos.c"
 #endif
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 #include "../dingux/dingux_utils.c"
 #endif
 

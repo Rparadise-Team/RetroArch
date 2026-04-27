@@ -1273,6 +1273,10 @@ ifeq ($(DINGUX), 1)
    OBJ += dingux/dingux_utils.o
 endif
 
+ifeq ($(MIYOOMINI), 1)
+   OBJ += dingux/dingux_utils.o
+endif
+
 ifeq ($(HAVE_WAYLAND), 1)
  OBJ += gfx/drivers_context/wayland_ctx.o \
         input/common/wayland_common.o \

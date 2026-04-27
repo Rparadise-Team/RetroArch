@@ -40,7 +40,7 @@
 
 /* Required for OpenDingux IPU filter + refresh
  * rate settings */
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 #include "dingux/dingux_utils.h"
 #endif
 

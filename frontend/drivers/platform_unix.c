@@ -63,7 +63,7 @@
 #endif
 #endif
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 #include "../../dingux/dingux_utils.h"
 #endif
 
@@ -1237,7 +1237,7 @@ static enum frontend_powerstate frontend_unix_get_powerstate(
 
    /* 'Time left' reporting is unsupported */
    *seconds = -1;
-#elif defined(DINGUX)
+#elif defined(DINGUX) || defined(MIYOOMINI)
    /* Dingux seems to have limited battery
     * reporting capability - if we get a valid
     * integer here, just assume that state is
@@ -1832,19 +1832,8 @@ static void frontend_unix_get_env(int *argc,
 #if defined(RARCH_UNIX_CWD_ENV)
    /* The entire path is zero initialized. */
    getcwd(base_path, sizeof(base_path));
-#elif defined(DINGUX)
+#elif defined(DINGUX) || defined(MIYOOMINI)
    dingux_get_base_path(base_path, sizeof(base_path));
-#elif defined(MIYOOMINI)
-   {
-      const char *home = getenv("HOME");
-      if (home)
-      {
-         size_t _len = strlcpy(base_path, home, sizeof(base_path));
-         strlcpy(base_path + _len, "/.retroarch", sizeof(base_path) - _len);
-      }
-      else
-         strlcpy(base_path, "retroarch", sizeof(base_path));
-   }
 #else
    const char *xdg          = getenv("XDG_CONFIG_HOME");
    const char *home         = getenv("HOME");
@@ -1927,7 +1916,7 @@ static void frontend_unix_get_env(int *argc,
       fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_ASSETS], base_path,
             "assets", sizeof(g_defaults.dirs[DEFAULT_DIR_ASSETS]));
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_AUDIO_FILTER], base_path,
          "filters/audio", sizeof(g_defaults.dirs[DEFAULT_DIR_AUDIO_FILTER]));
    fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_VIDEO_FILTER], base_path,
@@ -2438,14 +2427,8 @@ static int frontend_unix_parse_drive_list(void *data, bool load_content)
    const char *home         = getenv("HOME");
    const char *user         = getenv("USER");
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
    dingux_get_base_path(base_path, sizeof(base_path));
-#elif defined(MIYOOMINI)
-   if (home)
-   {
-      size_t _len = strlcpy(base_path, home, sizeof(base_path));
-      strlcpy(base_path + _len, "/.retroarch", sizeof(base_path) - _len);
-   }
 #else
    const char *xdg          = getenv("XDG_CONFIG_HOME");
 
@@ -2656,7 +2639,7 @@ static void frontend_unix_exitspawn(char *s, size_t len, char *args)
 
 static uint64_t frontend_unix_get_total_mem(void)
 {
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
    char line[256];
    unsigned long mem_total = 0;
    FILE* meminfo_file      = NULL;

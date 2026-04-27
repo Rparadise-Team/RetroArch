@@ -3589,6 +3589,22 @@ static void config_apply_miyoomini_defaults(config_file_t *conf)
    config_set_string(conf, "input_state_slot_decrease_btn", "12");
    config_set_string(conf, "input_state_slot_increase_btn", "13");
 
+   /* Disable default keyboard hotkeys on Miyoo.
+    * Physical controls are handled as joypad buttons. */
+   config_set_string(conf, "input_enable_hotkey", "nul");
+   config_set_string(conf, "input_menu_toggle", "nul");
+   config_set_string(conf, "input_exit_emulator", "nul");
+   config_set_string(conf, "input_pause_toggle", "nul");
+   config_set_string(conf, "input_toggle_fast_forward", "nul");
+   config_set_string(conf, "input_fps_toggle", "nul");
+   config_set_string(conf, "input_load_state", "nul");
+   config_set_string(conf, "input_save_state", "nul");
+   config_set_string(conf, "input_state_slot_decrease", "nul");
+   config_set_string(conf, "input_state_slot_increase", "nul");
+   config_set_string(conf, "input_rewind", "nul");
+   config_set_string(conf, "input_reset", "nul");
+   config_set_string(conf, "input_close_content", "nul");
+
    /* RGUI defaults used by Miyoo/Koriki menus. */
    config_set_string(conf, "menu_disable_info_button", "true");
    config_set_string(conf, "menu_disable_search_button", "true");

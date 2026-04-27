@@ -4739,6 +4739,18 @@ void input_config_reset(void)
       memcpy(input_config_binds[i], retro_keybinds_rest,
             sizeof(retro_keybinds_rest));
 
+#if defined(MIYOOMINI)
+   /* Miyoo builds use joypad-only defaults.
+    * Prevent key defaults from being restored when users
+    * reset hotkeys via the menu. */
+   for (i = 0; i < MAX_USERS; i++)
+   {
+      unsigned j;
+      for (j = 0; j < RARCH_BIND_LIST_END; j++)
+         input_config_binds[i][j].key = RETROK_UNKNOWN;
+   }
+#endif
+
    for (i = 0; i < MAX_USERS; i++)
    {
       /* Note: Don't use input_config_clear_device_name()

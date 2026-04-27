@@ -98,7 +98,7 @@
 #define DEFAULT_MAX_PADS 4
 #elif defined(HAVE_XINPUT) && !defined(HAVE_DINPUT)
 #define DEFAULT_MAX_PADS 4
-#elif defined(DINGUX)
+#elif defined(DINGUX) || defined(MIYOOMINI)
 #define DEFAULT_MAX_PADS 2
 #elif defined(EMSCRIPTEN)
 #define DEFAULT_MAX_PADS 4

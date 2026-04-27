@@ -754,9 +754,11 @@ static int setting_int_action_right_default(
 
 static int setting_bind_action_start(rarch_setting_t *setting)
 {
-   unsigned bind_type;
    struct retro_keybind *keybind   = NULL;
+#if !defined(MIYOOMINI)
+   unsigned bind_type;
    struct retro_keybind *def_binds = (struct retro_keybind *)retro_keybinds_1;
+#endif
 
    if (!setting)
       return -1;
@@ -770,13 +772,17 @@ static int setting_bind_action_start(rarch_setting_t *setting)
    /* Clear old mapping bit */
    input_keyboard_mapping_bits(0, keybind->key);
 
+#if defined(MIYOOMINI)
+   keybind->key     = RETROK_UNKNOWN;
+   keybind->mbutton = NO_BTN;
+#else
    if (setting->index_offset)
       def_binds     = (struct retro_keybind*)retro_keybinds_rest;
 
    bind_type        = setting->bind_type;
-
    keybind->key     = def_binds[bind_type - MENU_SETTINGS_BIND_BEGIN].key;
    keybind->mbutton = def_binds[bind_type - MENU_SETTINGS_BIND_BEGIN].mbutton;
+#endif
 
    /* Store new mapping bit */
    input_keyboard_mapping_bits(1, keybind->key);
@@ -2601,22 +2607,30 @@ static int setting_action_ok_bind_defaults(
    struct menu_state    *menu_st         = menu_state_get_ptr();
    struct menu_bind_state *binds         = &menu_st->input_binds;
    struct retro_keybind *target          = NULL;
+#if !defined(MIYOOMINI)
    const struct retro_keybind *def_binds = NULL;
+#endif
 
    if (!setting)
       return -1;
 
    target             =  &input_config_binds[setting->index_offset][0];
+#if !defined(MIYOOMINI)
    def_binds          =  (setting->index_offset)
                         ? retro_keybinds_rest
                         : retro_keybinds_1;
+#endif
    binds->begin       = MENU_SETTINGS_BIND_BEGIN;
    binds->last        = MENU_SETTINGS_BIND_LAST;
 
    for ( i  = MENU_SETTINGS_BIND_BEGIN;
          i <= MENU_SETTINGS_BIND_LAST; i++, target++)
    {
+#if defined(MIYOOMINI)
+      target->key     = RETROK_UNKNOWN;
+#else
       target->key     = def_binds[i - MENU_SETTINGS_BIND_BEGIN].key;
+#endif
       target->joykey  = NO_BTN;
       target->joyaxis = AXIS_NONE;
       target->mbutton = NO_BTN;
@@ -13562,7 +13576,11 @@ static bool setting_append_list(
 #endif
 
 #if (defined(DINGUX) || defined(MIYOOMINI))
-            if (string_is_equal(settings->arrays.video_driver, "sdl_dingux"))
+            if (   string_is_equal(settings->arrays.video_driver, "sdl_dingux")
+#if defined(MIYOOMINI)
+                || string_is_equal(settings->arrays.video_driver, "sdl2")
+#endif
+               )
             {
                CONFIG_UINT(
                      list, list_info,

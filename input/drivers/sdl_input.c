@@ -43,6 +43,64 @@
 #include <dlfcn.h>
 #endif
 
+#if defined(MIYOOMINI)
+/* Keep these key definitions in sync with
+ * input/drivers_joypad/sdl_miyoomini_joypad.c. */
+#define SDL_MIYOOMINI_SDLK_X      SDLK_LSHIFT
+#define SDL_MIYOOMINI_SDLK_A      SDLK_SPACE
+#define SDL_MIYOOMINI_SDLK_B      SDLK_LCTRL
+#define SDL_MIYOOMINI_SDLK_Y      SDLK_LALT
+#define SDL_MIYOOMINI_SDLK_L      SDLK_e
+#define SDL_MIYOOMINI_SDLK_R      SDLK_t
+#define SDL_MIYOOMINI_SDLK_L2     SDLK_TAB
+#define SDL_MIYOOMINI_SDLK_R2     SDLK_BACKSPACE
+#define SDL_MIYOOMINI_SDLK_SELECT SDLK_RCTRL
+#define SDL_MIYOOMINI_SDLK_START  SDLK_RETURN
+#define SDL_MIYOOMINI_SDLK_L3     SDLK_ESCAPE
+#define SDL_MIYOOMINI_SDLK_R3     SDLK_POWER
+#define SDL_MIYOOMINI_SDLK_UP     SDLK_UP
+#define SDL_MIYOOMINI_SDLK_RIGHT  SDLK_RIGHT
+#define SDL_MIYOOMINI_SDLK_DOWN   SDLK_DOWN
+#define SDL_MIYOOMINI_SDLK_LEFT   SDLK_LEFT
+
+static bool sdl_miyoomini_uses_dingux_joypad(void)
+{
+   settings_t *settings = config_get_ptr();
+
+   return settings &&
+         string_is_equal(settings->arrays.input_joypad_driver, "sdl_dingux");
+}
+
+static bool sdl_miyoomini_is_gamepad_key(int key)
+{
+   switch (key)
+   {
+      case SDL_MIYOOMINI_SDLK_X:
+      case SDL_MIYOOMINI_SDLK_A:
+      case SDL_MIYOOMINI_SDLK_B:
+      case SDL_MIYOOMINI_SDLK_Y:
+      case SDL_MIYOOMINI_SDLK_L:
+      case SDL_MIYOOMINI_SDLK_R:
+      case SDL_MIYOOMINI_SDLK_L2:
+      case SDL_MIYOOMINI_SDLK_R2:
+      case SDL_MIYOOMINI_SDLK_SELECT:
+      case SDL_MIYOOMINI_SDLK_START:
+      case SDL_MIYOOMINI_SDLK_L3:
+      case SDL_MIYOOMINI_SDLK_R3:
+      case SDL_MIYOOMINI_SDLK_UP:
+      case SDL_MIYOOMINI_SDLK_RIGHT:
+      case SDL_MIYOOMINI_SDLK_DOWN:
+      case SDL_MIYOOMINI_SDLK_LEFT:
+      case SDLK_UNKNOWN:
+         return true;
+      default:
+         break;
+   }
+
+   return false;
+}
+#endif
+
 typedef struct sdl_input
 {
    int mouse_x;
@@ -98,6 +156,12 @@ static bool sdl_key_pressed(int key)
 
    if (!key)
       return false;
+
+#if defined(MIYOOMINI)
+   if (sdl_miyoomini_uses_dingux_joypad() &&
+       sdl_miyoomini_is_gamepad_key(rarch_keysym_lut[(enum retro_key)key]))
+      return false;
+#endif
 
 #ifdef WEBOS
    if (   (key == RETROK_BACKSPACE )
@@ -522,8 +586,16 @@ static void sdl_input_poll(void *data)
          if (event.key.keysym.mod & 0x8000 /*KMOD_SCROLL*/)
             mod |= RETROKMOD_SCROLLOCK;
 
-         input_keyboard_event(event.type == SDL_KEYDOWN, code, code, mod,
-               RETRO_DEVICE_KEYBOARD);
+         if (!(
+#if defined(MIYOOMINI)
+               sdl_miyoomini_uses_dingux_joypad() &&
+               sdl_miyoomini_is_gamepad_key(event.key.keysym.sym)
+#else
+               false
+#endif
+               ))
+            input_keyboard_event(event.type == SDL_KEYDOWN, code, code, mod,
+                  RETRO_DEVICE_KEYBOARD);
       }
 #ifdef HAVE_SDL2
       else if (event.type == SDL_MOUSEWHEEL)

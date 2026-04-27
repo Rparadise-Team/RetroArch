@@ -39,7 +39,7 @@
 #include <kernel/image.h>
 #endif
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 #include "dingux/dingux_utils.h"
 #endif
 
@@ -151,7 +151,7 @@ bool fill_pathname_application_data(char *s, size_t len)
 #elif defined(RARCH_UNIX_CWD_ENV)
    getcwd(s, len);
    return true;
-#elif defined(DINGUX)
+#elif defined(DINGUX) || defined(MIYOOMINI)
    dingux_get_base_path(s, len);
    return true;
 #elif !defined(RARCH_CONSOLE)

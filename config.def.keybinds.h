@@ -682,7 +682,7 @@ static const struct retro_keybind retro_keybinds_1[] = {
       RARCH_OSK, NO_BTN, NO_BTN, 0,
       true
    },
-#elif defined(DINGUX)
+#elif defined(DINGUX) || defined(MIYOOMINI)
    { 
       NULL, NULL,
       AXIS_NONE, AXIS_NONE,

@@ -1020,17 +1020,30 @@ size_t menu_display_powerstate(gfx_display_ctx_powerstate_t *powerstate,
    int percent                    = 0;
    struct menu_state    *menu_st  = &menu_driver_state;
    enum frontend_powerstate state = FRONTEND_POWERSTATE_NONE;
+   bool do_update                = false;
 
    /* Trigger an update, if required */
    if (menu_st->current_time_us - menu_st->powerstate_last_time_us >=
          POWERSTATE_CHECK_INTERVAL)
+      do_update = true;
+
+   /* Ensure first valid battery state is populated ASAP */
+   if (!do_update)
+   {
+      state = get_last_powerstate(&percent);
+      if ((state == FRONTEND_POWERSTATE_NONE) ||
+            (state == FRONTEND_POWERSTATE_NO_SOURCE))
+         do_update = true;
+   }
+
+   if (do_update)
    {
       menu_st->powerstate_last_time_us = menu_st->current_time_us;
       task_push_get_powerstate();
    }
 
    /* Get last recorded state */
-   state                       = get_last_powerstate(&percent);
+   state = get_last_powerstate(&percent);
 
    /* Populate gfx_display_ctx_powerstate_t */
    powerstate->battery_enabled = (state != FRONTEND_POWERSTATE_NONE) &&
