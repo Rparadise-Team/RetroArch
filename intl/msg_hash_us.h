@@ -2122,7 +2122,7 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_SMOOTH,
    "Add a slight blur to the image to soften hard pixel edges. This option has very little impact on performance. Should be disabled if using shaders."
    )
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_IPU_FILTER_TYPE,
    "Image Interpolation"
@@ -2609,7 +2609,7 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_ASPECT_RATIO_FULL,
    "Full"
    )
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_IPU_KEEP_ASPECT,
    "Keep Aspect Ratio"

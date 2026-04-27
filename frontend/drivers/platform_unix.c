@@ -1834,6 +1834,17 @@ static void frontend_unix_get_env(int *argc,
    getcwd(base_path, sizeof(base_path));
 #elif defined(DINGUX)
    dingux_get_base_path(base_path, sizeof(base_path));
+#elif defined(MIYOOMINI)
+   {
+      const char *home = getenv("HOME");
+      if (home)
+      {
+         size_t _len = strlcpy(base_path, home, sizeof(base_path));
+         strlcpy(base_path + _len, "/.retroarch", sizeof(base_path) - _len);
+      }
+      else
+         strlcpy(base_path, "retroarch", sizeof(base_path));
+   }
 #else
    const char *xdg          = getenv("XDG_CONFIG_HOME");
    const char *home         = getenv("HOME");
@@ -1858,7 +1869,7 @@ static void frontend_unix_get_env(int *argc,
    else
       fill_pathname_join(g_defaults.dirs[DEFAULT_DIR_CORE], base_path,
             "cores", sizeof(g_defaults.dirs[DEFAULT_DIR_CORE]));
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
    /* On platforms that require manual core installation/
     * removal, placing core info files in the same directory
     * as the cores themselves makes file management highly
@@ -2429,6 +2440,12 @@ static int frontend_unix_parse_drive_list(void *data, bool load_content)
 
 #if defined(DINGUX)
    dingux_get_base_path(base_path, sizeof(base_path));
+#elif defined(MIYOOMINI)
+   if (home)
+   {
+      size_t _len = strlcpy(base_path, home, sizeof(base_path));
+      strlcpy(base_path + _len, "/.retroarch", sizeof(base_path) - _len);
+   }
 #else
    const char *xdg          = getenv("XDG_CONFIG_HOME");
 

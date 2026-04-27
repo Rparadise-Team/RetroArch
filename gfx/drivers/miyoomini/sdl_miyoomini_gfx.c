@@ -21,8 +21,8 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_video.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_video.h>
 
 #include <gfx/video_frame.h>
 #include <string/stdstring.h>
@@ -104,6 +104,8 @@ struct sdl_miyoomini_video
    bool vsync;
    bool keep_aspect;
    bool scale_integer;
+   unsigned custom_vp_width;
+   unsigned custom_vp_height;
    bool quitting;
    bitmapfont_lut_t *osd_font;
    uint32_t font_colour32;
@@ -183,6 +185,8 @@ static uint16_t sdl_miyoomini_surface_read_pixel565(
 
    return 0;
 }
+
+static void sdl_miyoomini_apply_state_changes(void *data);
 
 static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
 {
@@ -1401,10 +1405,10 @@ static void sdl_miyoomini_input_driver_init(
    signal(SIGSTOP, sdl_miyoomini_sighandler);
    signal(SIGCONT, sdl_miyoomini_sighandler);
 
-   if (string_is_equal(input_drv_name, "sdl_dingux")) {
-      *input_data = input_driver_init_wrap(&input_sdl_dingux,
+   if (string_is_equal(input_drv_name, "sdl2")) {
+      *input_data = input_driver_init_wrap(&input_sdl,
             joypad_drv_name);
-      if (*input_data) *input = &input_sdl_dingux;
+      if (*input_data) *input = &input_sdl;
       return;
    }
 
@@ -1491,6 +1495,35 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       vid->video_h = SDL_MIYOOMINI_HEIGHT;
       vid->video_x = 0;
       vid->video_y = 0;
+   }
+
+   if (vid->keep_aspect) {
+      unsigned custom_w = vid->custom_vp_width;
+      unsigned custom_h = vid->custom_vp_height;
+
+      /* RetroArch custom viewport dimensions are defined in
+       * content orientation space. When rotated, swap axes
+       * so legacy Dingux-style values (e.g. height=576) map
+       * correctly on SDL2. */
+      if (vid->rotate & 1) {
+         custom_w = vid->custom_vp_height;
+         custom_h = vid->custom_vp_width;
+      }
+
+      if (custom_h > 0) {
+         if (!custom_w)
+            custom_w = (unsigned)(((uint64_t)custom_h * width) / height);
+
+         if (custom_w > SDL_MIYOOMINI_WIDTH)
+            custom_w = SDL_MIYOOMINI_WIDTH;
+         if (custom_h > SDL_MIYOOMINI_HEIGHT)
+            custom_h = SDL_MIYOOMINI_HEIGHT;
+
+         vid->video_w = custom_w;
+         vid->video_h = custom_h;
+         vid->video_x = (SDL_MIYOOMINI_WIDTH  - vid->video_w) >> 1;
+         vid->video_y = (SDL_MIYOOMINI_HEIGHT - vid->video_h) >> 1;
+      }
    }
    /* align to x4 bytes */
    if (!rgb32) { vid->video_x &= ~1; vid->video_w &= ~1; }
@@ -1603,6 +1636,12 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid = (sdl_miyoomini_video_t*)calloc(1, sizeof(*vid));
    if (!vid) return NULL;
 
+#if SDL_MAJOR_VERSION >= 2
+   /* Keep SDL2 from applying filtered renderer scaling -
+    * Miyoomini uses Dingux MI_GFX scaling/viewport path */
+   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+#endif
+
 #ifdef HAVE_CHEEVOS
    vid->cheevos_lock = SDL_CreateMutex();
    if (!vid->cheevos_lock)
@@ -1631,6 +1670,8 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->vsync             = video->vsync;
    vid->keep_aspect       = settings->bools.video_dingux_ipu_keep_aspect;
    vid->scale_integer     = settings->bools.video_scale_integer;
+   vid->custom_vp_width   = settings->video_vp_custom.width;
+   vid->custom_vp_height  = settings->video_vp_custom.height;
    vid->filter_type       = (enum dingux_ipu_filter_type)settings->uints.video_dingux_ipu_filter_type;
    vid->menu_active       = false;
    vid->was_in_menu       = false;
@@ -1920,13 +1961,47 @@ static void sdl_miyoomini_set_texture_enable(void *data, bool state, bool full_s
 static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool rgb32,
       unsigned width, unsigned height, float alpha) {
    sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
+   unsigned x, y;
 
-   if (unlikely( !vid || rgb32 || (width != RGUI_MENU_WIDTH) || (height != RGUI_MENU_HEIGHT))) return;
+   if (unlikely(!vid || !frame || !width || !height))
+      return;
 
    vid->menu_texture_alpha = alpha;
    vid->menu_surface_dirty = true;
-   memcpy_neon(vid->menuscreen_rgui->pixels, (void*)frame,
-      RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT * sizeof(uint16_t));
+
+   if (!rgb32) {
+      const uint16_t *src = (const uint16_t*)frame;
+      uint16_t *dst       = (uint16_t*)vid->menuscreen_rgui->pixels;
+
+      for (y = 0; y < RGUI_MENU_HEIGHT; y++) {
+         unsigned sy = (y * height) / RGUI_MENU_HEIGHT;
+         for (x = 0; x < RGUI_MENU_WIDTH; x++) {
+            unsigned sx = (x * width) / RGUI_MENU_WIDTH;
+            dst[(y * RGUI_MENU_WIDTH) + x] = src[(sy * width) + sx];
+         }
+      }
+      return;
+   }
+
+   {
+      const uint32_t *src = (const uint32_t*)frame;
+      uint16_t *dst       = (uint16_t*)vid->menuscreen_rgui->pixels;
+
+      for (y = 0; y < RGUI_MENU_HEIGHT; y++) {
+         unsigned sy = (y * height) / RGUI_MENU_HEIGHT;
+         for (x = 0; x < RGUI_MENU_WIDTH; x++) {
+            unsigned sx = (x * width) / RGUI_MENU_WIDTH;
+            uint32_t c  = src[(sy * width) + sx];
+            uint8_t r   = (c >> 16) & 0xFF;
+            uint8_t g   = (c >> 8) & 0xFF;
+            uint8_t b   = c & 0xFF;
+
+            dst[(y * RGUI_MENU_WIDTH) + x] = (uint16_t)(((r & 0xF8) << 8) |
+                                                        ((g & 0xFC) << 3) |
+                                                        (b >> 3));
+         }
+      }
+   }
 }
 
 static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
@@ -1948,7 +2023,7 @@ static void sdl_miyoomini_gfx_check_window(sdl_miyoomini_video_t *vid) {
    SDL_Event event;
 
    SDL_PumpEvents();
-   while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_QUITMASK))
+   while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT) == 1)
    {
       if (event.type != SDL_QUIT)
          continue;
@@ -2024,11 +2099,17 @@ static void sdl_miyoomini_apply_state_changes(void *data) {
 
    bool keep_aspect       = (settings) ? settings->bools.video_dingux_ipu_keep_aspect : true;
    bool integer_scaling   = (settings) ? settings->bools.video_scale_integer : false;
+   unsigned custom_vp_width  = (settings) ? settings->video_vp_custom.width : 0;
+   unsigned custom_vp_height = (settings) ? settings->video_vp_custom.height : 0;
 
    if ((vid->keep_aspect != keep_aspect) ||
-       (vid->scale_integer != integer_scaling)) {
+       (vid->scale_integer != integer_scaling) ||
+       (vid->custom_vp_width != custom_vp_width) ||
+       (vid->custom_vp_height != custom_vp_height)) {
       vid->keep_aspect   = keep_aspect;
       vid->scale_integer = integer_scaling;
+      vid->custom_vp_width  = custom_vp_width;
+      vid->custom_vp_height = custom_vp_height;
 
       /* Aspect/scaling changes require all frame
        * dimension/padding/cropping parameters to
@@ -2093,21 +2174,24 @@ static bool sdl_miyoomini_overlay_load(void *data, const void *image_data, unsig
 	void* pixels = images[0].pixels;
 	uint32_t width = images[0].width;
 	uint32_t height = images[0].height;
+	uint32_t rmask = images[0].supports_rgba ? 0x000000FF : 0x00FF0000;
+	uint32_t bmask = images[0].supports_rgba ? 0x00FF0000 : 0x000000FF;
 
 	if (vid->overlay_surface) GFX_FreeSurface(vid->overlay_surface);
 	SDL_Surface *ostmp = SDL_CreateRGBSurfaceFrom(pixels, width, height, 32, width*4,
-				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+				rmask, 0x0000FF00, bmask, 0xFF000000);
 	SDL_Surface *ostmp2 = GFX_DuplicateSurface(ostmp);
 	SDL_FreeSurface(ostmp);
 	vid->overlay_surface = GFX_CreateRGBSurface(0, 640, 480, 32,
-				0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-	ostmp2->flags &= ~SDL_SRCALPHA;
+				rmask, 0x0000FF00, bmask, 0xFF000000);
+	SDL_SetSurfaceBlendMode(ostmp2, SDL_BLENDMODE_NONE);
 	GFX_BlitSurfaceRotate(ostmp2, NULL, vid->overlay_surface, NULL, 2);
 	GFX_FreeSurface(ostmp2);
 
 	settings_t *settings = config_get_ptr();
 	vid->overlay_surface->flags |= SDL_SRCALPHA;
-	vid->overlay_surface->format->alpha = (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255;
+	SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+	SDL_SetSurfaceAlphaMod(vid->overlay_surface, (settings) ? settings->floats.input_overlay_opacity * 0xFF : 255);
 	GFX_SetupOverlaySurface(vid->overlay_surface);
 
 	return true;
@@ -2121,9 +2205,15 @@ static void sdl_miyoomini_overlay_set_alpha(void *data, unsigned idx, float mod)
 	sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
 	if ((!idx)&&(vid)&&(vid->overlay_surface)) {
 		uint8_t value = mod * 0xFF;
-		if (!(vid->overlay_surface->flags & SDL_SRCALPHA)||(vid->overlay_surface->format->alpha != value)) {
-			vid->overlay_surface->format->alpha = value;
-			GFX_SetupOverlaySurface(vid->overlay_surface);
+		vid->overlay_surface->flags |= SDL_SRCALPHA;
+		SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+		{
+			Uint8 current_alpha = 0;
+			SDL_GetSurfaceAlphaMod(vid->overlay_surface, &current_alpha);
+			if (current_alpha != value) {
+				SDL_SetSurfaceAlphaMod(vid->overlay_surface, value);
+				GFX_SetupOverlaySurface(vid->overlay_surface);
+			}
 		}
 	}
 	return;
@@ -2147,7 +2237,7 @@ void sdl_miyoomini_gfx_get_overlay_interface(void *data, const video_overlay_int
 
 #endif
 
-video_driver_t video_sdl_dingux = {
+video_driver_t video_sdl2 = {
    sdl_miyoomini_gfx_init,
    sdl_miyoomini_gfx_frame,
    sdl_miyoomini_gfx_set_nonblock_state,
@@ -2157,7 +2247,7 @@ video_driver_t video_sdl_dingux = {
    sdl_miyoomini_gfx_has_windowed,
    sdl_miyoomini_gfx_set_shader,
    sdl_miyoomini_gfx_free,
-   "sdl_dingux",
+   "sdl2",
    NULL, /* set_viewport */
    sdl_miyoomini_gfx_set_rotation,
    sdl_miyoomini_gfx_viewport_info,

@@ -12,11 +12,12 @@ CC = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-gcc
 CXX = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-g++
 STRIP = $(TOOLCHAIN_DIR)/bin/arm-linux-gnueabihf-strip
 
-SDL_CONFIG ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/sdl-config
-FREETYPE_CONFIG	?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/bin/freetype-config
+SYSROOT_DIR ?= $(TOOLCHAIN_DIR)/arm-miyoomini-linux-gnueabihf/sysroot/usr
+SDL2_CONFIG ?= $(SYSROOT_DIR)/bin/sdl2-config
+FREETYPE_CONFIG	?= $(SYSROOT_DIR)/bin/freetype-config
 
-INC_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/include
-LIB_DIR ?= $(TOOLCHAIN_DIR)/arm-linux-gnueabihf/libc/usr/lib
+INC_DIR ?= $(SYSROOT_DIR)/include
+LIB_DIR ?= $(SYSROOT_DIR)/lib
 
 LTO = -flto
 NEON_CFLAGS :=
@@ -33,7 +34,7 @@ DEBUG ?= 0
 MIYOOMINI = 1
 MMIYOOV4 = 1
 NO_MMP = 0
-DINGUX = 1
+DINGUX = 0
 HAVE_SCREENSHOTS = 1
 HAVE_REWIND = 0
 HAVE_7ZIP = 1
@@ -85,7 +86,8 @@ HAVE_RJPEG = 1
 HAVE_RPILED = 0
 HAVE_RPNG = 1
 HAVE_RUNAHEAD = 0
-HAVE_SDL_DINGUX = 1
+HAVE_SDL_DINGUX = 0
+HAVE_SDL2 = 1
 HAVE_SHADERPIPELINE = 0
 HAVE_STB_FONT = 0
 HAVE_STB_IMAGE = 0
@@ -139,7 +141,7 @@ OBJ := miyoo.o
 LINK := $(CXX)
 DEF_FLAGS := -marm -mtune=cortex-a7 -march=armv7ve+simd -mfpu=neon-vfpv4 -mfloat-abi=hard -fomit-frame-pointer
 DEF_FLAGS += -ffunction-sections -fdata-sections
-DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOOMINI -DMIYOO_CUSTOM_MENU -DMMIYOOV4 -DDINGUX -MMD
+DEF_FLAGS += -I. -Ideps -Ideps/stb -DMIYOOMINI -DMIYOO_CUSTOM_MENU -DMMIYOOV4 -MMD
 DEF_FLAGS += -Wall -Wno-unused-function -Wno-unused-variable -flto
 DEF_FLAGS += -std=gnu99 -D_GNU_SOURCE
 LIBS := -ldl -lz -lrt -lcrypto -lssl -lmbedtls -lmbedx509 -lmbedcrypto -pthread -lmi_sys -lmi_ao -lmi_gfx -lcam_os_wrapper -lmsettings -lmi_common
@@ -151,12 +153,15 @@ INCLUDE_DIRS = -I$(INC_DIR)
 LIBRARY_DIRS = -L$(LIB_DIR)
 DEFINES := -DRARCH_INTERNAL -D_FILE_OFFSET_BITS=64 -UHAVE_STATIC_DUMMY
 DEFINES += -DHAVE_C99=1 -DHAVE_CXX=1
+DEFINES += -DHAVE_SDL2
 DEFINES += -DHAVE_GETOPT_LONG=1 -DHAVE_STRCASESTR=1 -DHAVE_DYNAMIC=1 -DHAVE_SSL -DHAVE_SYSTEMMBEDTLS -DHAVE_OSS -DHAVE_AUDIOIO
 DEFINES += -DHAVE_FILTERS_BUILTIN -DHAVE_ARM_NEON_ASM_OPTIMIZATIONS
 DEFINES += -DHAVE_NETWORKING -DHAVE_IFINFO -DHAVE_ONLINE_UPDATER -DHAVE_UPDATE_ASSETS -DHAVE_UPDATE_CORES -DHAVE_NETWORK_CMD -DHAVE_NETPLAYDISCOVERY -DHAVE_UPDATE_CORE_INFO
 
-SDL_DINGUX_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
-SDL_DINGUX_LIBS := $(shell $(SDL_CONFIG) --libs)
+SDL2_CFLAGS := $(shell $(SDL2_CONFIG) --cflags)
+SDL_DINGUX_CFLAGS := $(SDL2_CFLAGS)
+SDL2_LIBS := $(shell $(SDL2_CONFIG) --libs)
+SDL_DINGUX_LIBS := $(SDL2_LIBS)
 FREETYPE_CFLAGS := $(shell $(FREETYPE_CONFIG) --cflags)
 FREETYPE_LIBS := $(shell $(FREETYPE_CONFIG) --libs)
 MMAP_LIBS = -lc

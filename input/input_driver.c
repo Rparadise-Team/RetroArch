@@ -271,7 +271,7 @@ input_device_driver_t *joypad_drivers[] = {
 #if defined(HAVE_SDL) || defined(HAVE_SDL2)
    &sdl_joypad,
 #endif
-#if defined(DINGUX) && defined(HAVE_SDL_DINGUX)
+#if (defined(DINGUX) && defined(HAVE_SDL_DINGUX)) || defined(MIYOOMINI)
    &sdl_dingux_joypad,
 #endif
 #ifdef __QNX__

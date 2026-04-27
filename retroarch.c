@@ -29,7 +29,7 @@
 #endif
 #endif
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 #include <sys/types.h>
 #include <unistd.h>
 #endif
@@ -4315,6 +4315,11 @@ bool command_event(enum event_command cmd, void *data)
                audio_st->callback.set_state = NULL;
                return false;
             }
+#if defined(MIYOOMINI)
+            /* Ensure Miyoo/Dingux-style video scaling state is
+             * re-applied after each core/content load */
+            command_event(CMD_EVENT_VIDEO_APPLY_STATE_CHANGES, NULL);
+#endif
          }
          break;
       case CMD_EVENT_VIDEO_APPLY_STATE_CHANGES:

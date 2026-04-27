@@ -92,7 +92,7 @@
 #define RGUI_MIN_FB_WIDTH 256
 #define RGUI_MAX_FB_WIDTH 560
 
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
 #if defined(RS90) && !defined(MIYOO)
 /* The RS-90 uses a fixed framebuffer size
  * of 240x160 */
@@ -1363,6 +1363,17 @@ static uint16_t argb32_to_rgba4444(uint32_t col)
 
 static uint16_t (*argb32_to_pixel_platform_format)(uint32_t col) = argb32_to_rgba4444;
 
+static INLINE uint16_t rgui_image_pixel_to_platform_format(
+      uint32_t pixel, bool supports_rgba)
+{
+   if (supports_rgba)
+      pixel = (pixel & 0xFF00FF00)
+            | ((pixel & 0x00FF0000) >> 16)
+            | ((pixel & 0x000000FF) << 16);
+
+   return argb32_to_pixel_platform_format(pixel);
+}
+
 /* Returns true if current pixel format supports
  * framebuffer transparency */
 static bool rgui_set_pixel_format_function(void)
@@ -1393,6 +1404,9 @@ static bool rgui_set_pixel_format_function(void)
       argb32_to_pixel_platform_format = argb32_to_bgra4444;
    else if (   string_is_equal(driver_ident, "sdl_dingux")    /* DINGUX SDL */
             || string_is_equal(driver_ident, "sdl_rs90")
+#if defined(MIYOOMINI)
+            || string_is_equal(driver_ident, "sdl2")          /* MIYOOMINI SDL2 */
+#endif
             || string_is_equal(driver_ident, "xvideo"))
    {
       argb32_to_pixel_platform_format = argb32_to_rgb565;
@@ -2312,9 +2326,10 @@ static void rgui_process_wallpaper(
       for (y = 0; y < background_buf->height; y++)
       {
          background_buf->data[x + (y * background_buf->width)] =
-               argb32_to_pixel_platform_format(image->pixels[
+               rgui_image_pixel_to_platform_format(image->pixels[
                      (x + x_crop_offset) +
-                     ((y + y_crop_offset) * image->width)]);
+                     ((y + y_crop_offset) * image->width)],
+                     image->supports_rgba);
       }
    }
 
@@ -2567,7 +2582,9 @@ static void rgui_process_thumbnail(
    {
       for (y = 0; y < thumbnail->height; y++)
          thumbnail->data[x + (y * thumbnail->width)] =
-            argb32_to_pixel_platform_format(image->pixels[x + (y * thumbnail->width)]);
+            rgui_image_pixel_to_platform_format(
+                  image->pixels[x + (y * thumbnail->width)],
+                  image->supports_rgba);
    }
 
    thumbnail->is_valid    = true;
@@ -2982,7 +2999,7 @@ static void rgui_draw_miyoo_achievement_badge(
             continue;
 
          rgui->frame_buf.data[dst_x + (dst_y * fb_width)] =
-               argb32_to_pixel_platform_format(pixel);
+               rgui_image_pixel_to_platform_format(pixel, img.supports_rgba);
       }
    }
 
@@ -3195,7 +3212,7 @@ static void rgui_load_custom_theme(
    config_file_t *conf         = NULL;
    const char *wallpaper_key   = NULL;
    bool ret                    = false;
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    menu_rgui_aspect_ratio      = RGUI_DINGUX_ASPECT_RATIO;
 #endif
 
@@ -6274,14 +6291,14 @@ static bool rgui_set_aspect_ratio(
     * the usual 426, since the last two bits of the
     * width value must be zero... */
    unsigned max_frame_buf_width = 424;
-#elif defined(DINGUX)
+#elif (defined(DINGUX) || defined(MIYOOMINI))
    /* Dingux devices use a fixed framebuffer size */
    unsigned max_frame_buf_width = RGUI_DINGUX_FB_WIDTH;
 #else
    struct video_viewport vp;
    unsigned max_frame_buf_width = RGUI_MAX_FB_WIDTH;
 #endif
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    unsigned aspect_ratio        = RGUI_DINGUX_ASPECT_RATIO;
    unsigned aspect_ratio_lock   = RGUI_ASPECT_RATIO_LOCK_NONE;
 #else
@@ -6309,7 +6326,7 @@ static bool rgui_set_aspect_ratio(
     * dimensions at will, have to read currently set
     * values */
    rgui->frame_buf.height = p_disp->framebuf_height;
-#elif defined(DINGUX)
+#elif (defined(DINGUX) || defined(MIYOOMINI))
    /* Dingux devices use a fixed framebuffer size */
    rgui->frame_buf.height = RGUI_DINGUX_FB_HEIGHT;
 #elif defined(VITA)
@@ -6490,7 +6507,7 @@ static bool rgui_set_aspect_ratio(
    base_term_width = (base_term_width > rgui->frame_buf.width)
          ? rgui->frame_buf.width
          : base_term_width;
-#if !(defined(GEKKO) || defined(DINGUX))
+#if !(defined(GEKKO) || (defined(DINGUX) || defined(MIYOOMINI)))
    if (vp.full_width < rgui->frame_buf.width)
    {
       rgui->frame_buf.width = (vp.full_width > RGUI_MIN_FB_WIDTH)
@@ -6699,7 +6716,7 @@ static void *rgui_init(void **userdata, bool video_is_threaded)
    settings_t *settings          = config_get_ptr();
    gfx_display_t *p_disp         = disp_get_ptr();
    gfx_animation_t *p_anim       = anim_get_ptr();
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    unsigned aspect_ratio_lock    = RGUI_ASPECT_RATIO_LOCK_NONE;
 #else
    unsigned aspect_ratio_lock    = settings->uints.menu_rgui_aspect_ratio_lock;
@@ -6892,7 +6909,7 @@ static void rgui_set_texture(void *data)
    video_driver_state_t *video_st  = video_state_get_ptr();
    settings_t            *settings = config_get_ptr();
    gfx_display_t          *p_disp  = disp_get_ptr();
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    unsigned internal_upscale_level = RGUI_UPSCALE_NONE;
 #else
    unsigned internal_upscale_level = settings->uints.menu_rgui_internal_upscale_level;
@@ -7667,7 +7684,7 @@ static void rgui_populate_entries(
 {
    rgui_t *rgui                  = (rgui_t*)data;
    settings_t *settings          = config_get_ptr();
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    unsigned aspect_ratio_lock    = RGUI_ASPECT_RATIO_LOCK_NONE;
 #else
    unsigned aspect_ratio_lock    = settings->uints.menu_rgui_aspect_ratio_lock;
@@ -7979,7 +7996,7 @@ static void rgui_frame(void *data, video_frame_info_t *video_info)
    struct menu_state *menu_st          = menu_state_get_ptr();
    bool bg_filler_thickness_enable     = settings->bools.menu_rgui_background_filler_thickness_enable;
    bool border_filler_thickness_enable = settings->bools.menu_rgui_border_filler_thickness_enable;
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    unsigned aspect_ratio               = RGUI_DINGUX_ASPECT_RATIO;
    unsigned aspect_ratio_lock          = RGUI_ASPECT_RATIO_LOCK_NONE;
 #else
@@ -8162,7 +8179,7 @@ static void rgui_frame(void *data, video_frame_info_t *video_info)
    if (     (rgui->window_width  != video_width)
          || (rgui->window_height != video_height))
    {
-#if !defined(GEKKO) && !defined(DINGUX)
+#if !defined(GEKKO) && !(defined(DINGUX) || defined(MIYOOMINI))
       /* If window width or height are less than the
        * RGUI default size of (320-426)x240, must enable
        * dynamic menu 'downscaling'.
@@ -8256,7 +8273,7 @@ static void rgui_toggle(void *userdata, bool menu_on)
    rgui_t               *rgui = (rgui_t*)userdata;
    settings_t       *settings = config_get_ptr();
    gfx_display_t    *p_disp   = disp_get_ptr();
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
    unsigned aspect_ratio_lock = RGUI_ASPECT_RATIO_LOCK_NONE;
 #else
    unsigned aspect_ratio_lock = settings ? settings->uints.menu_rgui_aspect_ratio_lock : 0;

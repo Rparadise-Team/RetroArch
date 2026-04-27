@@ -551,16 +551,16 @@
 #define DEFAULT_ASPECT_RATIO_IDX ASPECT_RATIO_CORE
 #endif
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 /* Enables aspect ratio correction (1:1 PAR) when
  * using the IPU hardware scaler in Dingux devices */
 #define DEFAULT_DINGUX_IPU_KEEP_ASPECT true
 /* Sets image filtering method when using the
  * IPU hardware scaler in Dingux devices */
 #if defined(RETROFW)
-#define DEFAULT_DINGUX_IPU_FILTER_TYPE DINGUX_IPU_FILTER_NEAREST
+#define DEFAULT_DINGUX_IPU_FILTER_TYPE 2
 #else
-#define DEFAULT_DINGUX_IPU_FILTER_TYPE DINGUX_IPU_FILTER_BICUBIC
+#define DEFAULT_DINGUX_IPU_FILTER_TYPE 0
 #endif
 
 #if defined(DINGUX_BETA)

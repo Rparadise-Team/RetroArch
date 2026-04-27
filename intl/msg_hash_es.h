@@ -2074,7 +2074,7 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_VIDEO_SMOOTH,
    "Aplica un ligero desenfoque a la imagen para suavizar los bordes de los píxeles. Esta opción apenas afecta al rendimiento. Desactívala si utilizas shaders."
    )
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_IPU_FILTER_TYPE,
    "Interpolación de imagen"
@@ -2549,7 +2549,7 @@ MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_ASPECT_RATIO_FULL,
    "Completa"
    )
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 MSG_HASH(
    MENU_ENUM_LABEL_VALUE_VIDEO_DINGUX_IPU_KEEP_ASPECT,
    "Mantener relación de aspecto"

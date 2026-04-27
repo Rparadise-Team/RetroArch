@@ -137,7 +137,7 @@
 #include "gfx/common/ctr_defines.h"
 #endif
 
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
 #include "../dingux/dingux_utils.h"
 #endif
 
@@ -3971,7 +3971,7 @@ static size_t setting_get_string_representation_uint_rgui_internal_upscale_level
    return 0;
 }
 
-#if !defined(DINGUX)
+#if !(defined(DINGUX) || defined(MIYOOMINI))
 static size_t setting_get_string_representation_uint_rgui_aspect_ratio(
       rarch_setting_t *setting, char *s, size_t len)
 {
@@ -5239,7 +5239,7 @@ static size_t setting_get_string_representation_uint_video_3ds_display_mode(
 }
 #endif
 
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
 static size_t setting_get_string_representation_uint_video_dingux_ipu_filter_type(
       rarch_setting_t *setting, char *s, size_t len)
 {
@@ -8417,7 +8417,7 @@ static void general_write_handler(rarch_setting_t *setting)
          /* In case refresh rate update forced non-block video. */
          rarch_cmd = CMD_EVENT_VIDEO_SET_BLOCKING_STATE;
          break;
-#if defined(DINGUX) && defined(DINGUX_BETA)
+#if (defined(DINGUX) || defined(MIYOOMINI)) && defined(DINGUX_BETA)
       case MENU_ENUM_LABEL_VIDEO_DINGUX_REFRESH_RATE:
          {
             enum dingux_refresh_rate
@@ -8563,7 +8563,7 @@ static void general_write_handler(rarch_setting_t *setting)
          break;
       case MENU_ENUM_LABEL_VIDEO_SMOOTH:
       case MENU_ENUM_LABEL_VIDEO_CTX_SCALING:
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
       case MENU_ENUM_LABEL_VIDEO_DINGUX_IPU_FILTER_TYPE:
 #if defined(RS90) || defined(MIYOO)
       case MENU_ENUM_LABEL_VIDEO_DINGUX_RS90_SOFTFILTER_TYPE:
@@ -12840,7 +12840,7 @@ static bool setting_append_list(
                menu_settings_list_current_add_range(list, list_info, 0, 4320, 8, true, true);
             }
 
-#if defined(DINGUX) && defined(DINGUX_BETA)
+#if (defined(DINGUX) || defined(MIYOOMINI)) && defined(DINGUX_BETA)
             if (   string_is_equal(settings->arrays.video_driver, "sdl_dingux")
                 || string_is_equal(settings->arrays.video_driver, "sdl_rs90"))
             {
@@ -13224,9 +13224,13 @@ static bool setting_append_list(
             MENU_SETTINGS_LIST_CURRENT_ADD_CMD(list, list_info,
                   CMD_EVENT_VIDEO_APPLY_STATE_CHANGES);
 
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
             if (   string_is_equal(settings->arrays.video_driver, "sdl_dingux")
-                || string_is_equal(settings->arrays.video_driver, "sdl_rs90"))
+                || string_is_equal(settings->arrays.video_driver, "sdl_rs90")
+#if defined(MIYOOMINI)
+                || string_is_equal(settings->arrays.video_driver, "sdl2")
+#endif
+               )
             {
                CONFIG_BOOL(
                      list, list_info,
@@ -13557,7 +13561,7 @@ static bool setting_append_list(
             menu_settings_list_current_add_range(list, list_info, 0, 24, 1, true, true);
 #endif
 
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
             if (string_is_equal(settings->arrays.video_driver, "sdl_dingux"))
             {
                CONFIG_UINT(
@@ -18494,7 +18498,7 @@ static bool setting_append_list(
                (*list)[list_info->index - 1].ui_type   = ST_UI_TYPE_UINT_COMBOBOX;
             }
 
-#if !defined(DINGUX)
+#if !(defined(DINGUX) || defined(MIYOOMINI))
             CONFIG_UINT(
                   list, list_info,
                   &settings->uints.menu_rgui_aspect_ratio,

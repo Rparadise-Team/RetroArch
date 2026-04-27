@@ -17,7 +17,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#if defined(HAVE_SDL2)
+#include <SDL2/SDL.h>
+#else
 #include <SDL/SDL.h>
+#endif
 
 #include <libretro.h>
 
@@ -68,10 +72,17 @@
 typedef struct {
    uint16_t pad_state;
    bool connected;
+#if defined(HAVE_SDL2)
+   SDL_GameController *controller;
+   SDL_Joystick *joystick;
+#endif
 #if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
    bool menu_toggle;
 #endif
    uint32_t rumble_time;
+#if defined(HAVE_SDL2)
+   SDL_TimerID rumble_timer;
+#endif
 } miyoomini_joypad_t;
 
 static miyoomini_joypad_t miyoomini_joypad;
@@ -100,7 +111,13 @@ void miyoomini_rumble(uint16_t strength) {
    }
 }
 
+#if defined(HAVE_SDL2)
+static Uint32 miyoomini_rumble_finish(Uint32 interval, void *param) {
+   (void)param;
+#else
 uint32_t miyoomini_rumble_finish(uint32_t interval) {
+#endif
+   (void)interval;
    miyoomini_rumble(0);
    return 0;
 }
@@ -112,7 +129,13 @@ static bool sdl_miyoomini_joypad_set_rumble(unsigned pad,
    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
    if ( (joypad->rumble_time)&&(strength) ) {
       miyoomini_rumble(strength);
+#if defined(HAVE_SDL2)
+      if (joypad->rumble_timer)
+         SDL_RemoveTimer(joypad->rumble_timer);
+      joypad->rumble_timer = SDL_AddTimer(joypad->rumble_time, miyoomini_rumble_finish, NULL);
+#else
       SDL_SetTimer(joypad->rumble_time, miyoomini_rumble_finish);
+#endif
    }
    return true;
 }
@@ -131,6 +154,41 @@ static bool sdl_miyoomini_joypad_set_rumble_gain(unsigned pad, unsigned gain) {
 static const char *sdl_miyoomini_joypad_name(unsigned port) {
    if (port != 0) return NULL;
    return SDL_MIYOOMINI_JOYPAD_NAME;
+}
+
+static INLINE void sdl_miyoomini_set_button_state(
+      miyoomini_joypad_t *joypad, uint8_t button, bool pressed)
+{
+   unsigned joypad_id = RARCH_BIND_LIST_END;
+
+   switch (button)
+   {
+      case 0:  joypad_id = RETRO_DEVICE_ID_JOYPAD_B;      break;
+      case 1:  joypad_id = RETRO_DEVICE_ID_JOYPAD_Y;      break;
+      case 2:  joypad_id = RETRO_DEVICE_ID_JOYPAD_SELECT; break;
+      case 3:  joypad_id = RETRO_DEVICE_ID_JOYPAD_START;  break;
+      case 4:  joypad_id = RETRO_DEVICE_ID_JOYPAD_UP;     break;
+      case 5:  joypad_id = RETRO_DEVICE_ID_JOYPAD_DOWN;   break;
+      case 6:  joypad_id = RETRO_DEVICE_ID_JOYPAD_LEFT;   break;
+      case 7:  joypad_id = RETRO_DEVICE_ID_JOYPAD_RIGHT;  break;
+      case 8:  joypad_id = RETRO_DEVICE_ID_JOYPAD_A;      break;
+      case 9:  joypad_id = RETRO_DEVICE_ID_JOYPAD_X;      break;
+      case 10: joypad_id = RETRO_DEVICE_ID_JOYPAD_L;      break;
+      case 11: joypad_id = RETRO_DEVICE_ID_JOYPAD_R;      break;
+      case 12: joypad_id = RETRO_DEVICE_ID_JOYPAD_L2;     break;
+      case 13: joypad_id = RETRO_DEVICE_ID_JOYPAD_R2;     break;
+      case 14: joypad_id = RETRO_DEVICE_ID_JOYPAD_L3;     break;
+      case 15: joypad_id = RETRO_DEVICE_ID_JOYPAD_R3;     break;
+      default: break;
+   }
+
+   if (joypad_id >= RARCH_BIND_LIST_END)
+      return;
+
+   if (pressed)
+      BIT16_SET(joypad->pad_state, joypad_id);
+   else
+      BIT16_CLEAR(joypad->pad_state, joypad_id);
 }
 
 static void sdl_miyoomini_joypad_connect(void) {
@@ -165,8 +223,28 @@ static void sdl_miyoomini_joypad_destroy(void) {
    sdl_miyoomini_joypad_disconnect();
 
    /* Stop rumble */
+#if defined(HAVE_SDL2)
+   if (miyoomini_joypad.rumble_timer)
+      SDL_RemoveTimer(miyoomini_joypad.rumble_timer);
+   miyoomini_joypad.rumble_timer = 0;
+#else
    SDL_SetTimer(0, NULL);
+#endif
    miyoomini_rumble(0);
+
+#if defined(HAVE_SDL2)
+   if (miyoomini_joypad.controller)
+   {
+      SDL_GameControllerClose(miyoomini_joypad.controller);
+      miyoomini_joypad.controller = NULL;
+   }
+
+   if (miyoomini_joypad.joystick)
+   {
+      SDL_JoystickClose(miyoomini_joypad.joystick);
+      miyoomini_joypad.joystick = NULL;
+   }
+#endif
 
    /* Flush out all pending events */
    while (SDL_PollEvent(&event));
@@ -183,6 +261,17 @@ static void *sdl_miyoomini_joypad_init(void *data) {
 
    /* Init for rumble */
    if (!SDL_WasInit(SDL_INIT_TIMER)) SDL_InitSubSystem(SDL_INIT_TIMER);
+#if defined(HAVE_SDL2)
+   if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER))
+      SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK);
+
+   if (SDL_IsGameController(0))
+      joypad->controller = SDL_GameControllerOpen(0);
+
+   joypad->joystick = joypad->controller
+         ? SDL_GameControllerGetJoystick(joypad->controller)
+         : SDL_JoystickOpen(0);
+#endif
    settings_t *settings = config_get_ptr();
    unsigned rumble_gain = settings ? settings->uints.input_rumble_gain
                                    : DEFAULT_RUMBLE_GAIN;
@@ -253,6 +342,14 @@ static int16_t sdl_miyoomini_joypad_state(
 static void sdl_miyoomini_joypad_poll(void) {
    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
    SDL_Event event;
+   bool allow_key_fallback = true;
+
+#if defined(HAVE_SDL2)
+   /* If SDL2 joystick/controller events are available, prefer
+    * button events so bind detection records BUTTON, not KEY. */
+   if (joypad->controller || joypad->joystick)
+      allow_key_fallback = false;
+#endif
 
 #if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
    /* Note: The menu toggle key is an awkward special
@@ -272,7 +369,23 @@ static void sdl_miyoomini_joypad_poll(void) {
    {
       switch (event.type)
       {
+#if defined(HAVE_SDL2)
+         case SDL_CONTROLLERBUTTONDOWN:
+            sdl_miyoomini_set_button_state(joypad, (uint8_t)event.cbutton.button, true);
+            break;
+         case SDL_CONTROLLERBUTTONUP:
+            sdl_miyoomini_set_button_state(joypad, (uint8_t)event.cbutton.button, false);
+            break;
+         case SDL_JOYBUTTONDOWN:
+            sdl_miyoomini_set_button_state(joypad, event.jbutton.button, true);
+            break;
+         case SDL_JOYBUTTONUP:
+            sdl_miyoomini_set_button_state(joypad, event.jbutton.button, false);
+            break;
+#endif
          case SDL_KEYDOWN:
+            if (!allow_key_fallback)
+               break;
             switch (event.key.keysym.sym)
             {
                case SDL_MIYOOMINI_SDLK_X:
@@ -335,6 +448,8 @@ static void sdl_miyoomini_joypad_poll(void) {
             }
             break;
          case SDL_KEYUP:
+            if (!allow_key_fallback)
+               break;
             switch (event.key.keysym.sym)
             {
                case SDL_MIYOOMINI_SDLK_X:

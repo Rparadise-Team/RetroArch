@@ -8293,7 +8293,7 @@ unsigned menu_displaylist_build_list(
                      MENU_ENUM_LABEL_VIDEO_CTX_SCALING,
                      PARSE_ONLY_BOOL, false) == 0)
                count++;
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
             if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
                      MENU_ENUM_LABEL_VIDEO_DINGUX_IPU_FILTER_TYPE,
                      PARSE_ONLY_UINT, false) == 0)
@@ -10138,7 +10138,7 @@ unsigned menu_displaylist_build_list(
                         MENU_ENUM_LABEL_SCREEN_ORIENTATION,
                         PARSE_ONLY_UINT, false) == 0)
                   count++;
-#if defined(DINGUX) && defined(DINGUX_BETA)
+#if (defined(DINGUX) || defined(MIYOOMINI)) && defined(DINGUX_BETA)
             if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
                      MENU_ENUM_LABEL_VIDEO_DINGUX_REFRESH_RATE,
                      PARSE_ONLY_UINT, false) == 0)
@@ -10311,9 +10311,13 @@ unsigned menu_displaylist_build_list(
          break;
       case DISPLAYLIST_VIDEO_SCALING_SETTINGS_LIST:
          {
-#if defined(DINGUX)
+#if (defined(DINGUX) || defined(MIYOOMINI))
             if (   string_is_equal(settings->arrays.video_driver, "sdl_dingux")
-                || string_is_equal(settings->arrays.video_driver, "sdl_rs90"))
+                || string_is_equal(settings->arrays.video_driver, "sdl_rs90")
+#if defined(MIYOOMINI)
+                || string_is_equal(settings->arrays.video_driver, "sdl2")
+#endif
+               )
             {
                if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
                         MENU_ENUM_LABEL_VIDEO_SCALE_INTEGER,
@@ -10400,10 +10404,12 @@ unsigned menu_displaylist_build_list(
                      MENU_ENUM_LABEL_VIDEO_VFILTER,
                      PARSE_ONLY_BOOL, false) == 0)
                count++;
+#if !defined(MIYOOMINI)
             if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
                      MENU_ENUM_LABEL_VIDEO_SMOOTH,
                      PARSE_ONLY_BOOL, false) == 0)
                count++;
+#endif
             if (MENU_DISPLAYLIST_PARSE_SETTINGS_ENUM(list,
                      MENU_ENUM_LABEL_VIDEO_CROP_OVERSCAN,
                      PARSE_ONLY_BOOL, false) == 0)
