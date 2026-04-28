@@ -2412,6 +2412,10 @@ MSG_HASH(
    "Изаберите МХз за МИИОО ЦПУ."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Dostignuća"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Брзо чување"
    )

@@ -3531,14 +3531,18 @@ static void config_apply_miyoomini_defaults(config_file_t *conf)
     * when user/global config files are missing. */
    config_set_string(conf, "video_driver", "sdl2");
    config_set_string(conf, "audio_driver", "sdl");
-   config_set_string(conf, "input_driver", "sdl2");
+   config_set_string(conf, "input_driver", "sdl_dingux");
    config_set_string(conf, "input_joypad_driver", "sdl_dingux");
    config_set_string(conf, "menu_driver", "rgui");
    config_set_string(conf, "audio_out_rate", "48000");
    config_set_string(conf, "audio_latency", "64");
-   config_set_string(conf, "video_vsync", "false");
+   config_set_string(conf, "video_vsync", "true");
    config_set_string(conf, "video_threaded", "false");
    config_set_string(conf, "video_smooth", "true");
+   config_set_string(conf, "input_overlay_enable", "true");
+   config_set_string(conf, "input_overlay_opacity", "1.0");
+   config_set_string(conf, "input_overlay_auto_rotate", "false");
+   config_set_string(conf, "input_overlay_auto_scale", "false");
 
    /* Miyoo/Koriki storage layout. */
    config_set_string(conf, "assets_directory", ":/.retroarch/assets");

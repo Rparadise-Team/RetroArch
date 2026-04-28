@@ -1480,6 +1480,10 @@ MSG_HASH(
    "Vælg MHz for MIYOO CPU."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Præstationer"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Hurtig gem"
    )

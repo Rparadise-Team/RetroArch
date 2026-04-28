@@ -9872,6 +9872,10 @@ MSG_HASH(
    "حدد ميغاهيرتز لوحدة المعالجة المركزية MIYOO."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "الإنجازات"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "حفظ الحالة"
    )

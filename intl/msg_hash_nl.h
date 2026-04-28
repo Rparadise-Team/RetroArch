@@ -6660,6 +6660,10 @@ MSG_HASH(
    "Selecteer MHz voor MIYOO CPU."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Achievements Lijst"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Status Opslaan"
    )

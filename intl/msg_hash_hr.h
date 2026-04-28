@@ -1668,6 +1668,10 @@ MSG_HASH(
    "Odaberite MHz za MIYOO CPU."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Postignuća"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Brzo spremanje"
    )

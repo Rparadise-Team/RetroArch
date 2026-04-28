@@ -14192,6 +14192,10 @@ MSG_HASH(
    "Valitse MHz MIYOO-suorittimelle."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Saavutukset"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Tallenna tila"
    )

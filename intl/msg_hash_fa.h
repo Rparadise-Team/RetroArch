@@ -3792,6 +3792,10 @@ MSG_HASH(
    "MHz را برای CPU MIYOO انتخاب کنید."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "دستاوردها"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "ذخیرهٔ وضعیت"
    )

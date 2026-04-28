@@ -764,6 +764,10 @@ MSG_HASH(
    "MIYOO үзәк эшкәрткеч җайланмасы өчен МГцны сайлагыз."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Казанышлар"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Тиз саклау"
    )

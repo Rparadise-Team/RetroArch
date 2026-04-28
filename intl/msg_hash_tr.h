@@ -16220,6 +16220,10 @@ MSG_HASH(
    "MIYOO CPU için MHz'i seçin."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Başarımlar"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Durum Kaydı"
    )

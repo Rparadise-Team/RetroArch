@@ -241,8 +241,14 @@ static void *sdl_audio_init(const char *device,
    sdl->bufsize = out.samples * out.channels * sizeof(int16_t) * frames * 2;
    sdl->buffer  = fifo_new(sdl->bufsize);
 
-   /* Use a moderate prefill to balance startup stability and A/V latency. */
-   size_t prefill_size = sdl->bufsize / 2;
+   /* Keep startup prefill low to avoid large initial A/V delay. */
+   size_t callback_bytes = out.samples * out.channels * sizeof(int16_t);
+   size_t prefill_size   = callback_bytes;
+   size_t prefill_cap    = sdl->bufsize / 4;
+
+   if (prefill_cap > 0 && prefill_size > prefill_cap)
+      prefill_size = prefill_cap;
+
    RARCH_LOG("[SDL audio]: SDL out rate=%u samples=%u channels=%u frames=%d bufsize=%u prefill=%u\n",
          (unsigned)out.freq, (unsigned)out.samples, (unsigned)out.channels, frames,
          (unsigned)sdl->bufsize, (unsigned)prefill_size);
@@ -288,7 +294,9 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
          if (w > 0)
             total += w;
          else if (w < 0 && errno == EAGAIN)
-            usleep(2000);
+            usleep(1000);
+         else if (w < 0 && errno == EINTR)
+            continue;
          else
             break;
       }
@@ -309,12 +317,18 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
    else
    {
       size_t written = 0;
+      size_t low_watermark = (sdl->bufsize * 3) / 4;
+      size_t callback_bytes = SDL_AUDIO_SAMPLES * 2 * sizeof(int16_t);
+
+      if (low_watermark < callback_bytes)
+         low_watermark = callback_bytes;
+
       while (written < size)
       {
          size_t avail;
          SDL_LockAudio();
          avail = FIFO_WRITE_AVAIL(sdl->buffer);
-         if (avail < (sdl->bufsize/3))
+         if (avail < low_watermark)
          {
             SDL_UnlockAudio();
 #ifdef HAVE_THREADS
@@ -335,7 +349,7 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
             current_avail = avail - write_amt;
 
             /* Briefly yield if FIFO remains heavily loaded. */
-            if (current_avail < (sdl->bufsize / 6))
+            if (current_avail < low_watermark)
                SDL_Delay(1);
          }
       }

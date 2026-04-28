@@ -126,6 +126,7 @@ struct sdl_miyoomini_video
    SDL_Surface *overlay_surface;
 #endif
    unsigned msg_count;
+   bool flip_callback_active;
    char msg_tmp[OSD_TEXT_LEN_MAX];
 #ifdef HAVE_CHEEVOS
    SDL_mutex *cheevos_lock;
@@ -191,6 +192,7 @@ static uint16_t sdl_miyoomini_surface_read_pixel565(
 }
 
 static void sdl_miyoomini_apply_state_changes(void *data);
+static void sdl_miyoomini_init_font_color(sdl_miyoomini_video_t *vid);
 
 static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
 {
@@ -703,22 +705,146 @@ static void sdl_miyoomini_clear_msgarea(void* buf, unsigned x, unsigned y, unsig
    if ((vh2) && (sr)) memset(ofs, 0, sr);
 }
 
+static INLINE uint32_t sdl_miyoomini_blend_888(uint32_t dst, uint32_t src, uint8_t alpha)
+{
+   if (alpha == 0)
+      return dst;
+   if (alpha == 255)
+      return src;
+
+   {
+      uint8_t inv_alpha = 255 - alpha;
+      uint8_t sr        = (src >> 16) & 0xFF;
+      uint8_t sg        = (src >> 8)  & 0xFF;
+      uint8_t sb        = (src)       & 0xFF;
+      uint8_t dr        = (dst >> 16) & 0xFF;
+      uint8_t dg        = (dst >> 8)  & 0xFF;
+      uint8_t db        = (dst)       & 0xFF;
+
+      dr = (uint8_t)((sr * alpha + dr * inv_alpha) / 255);
+      dg = (uint8_t)((sg * alpha + dg * inv_alpha) / 255);
+      db = (uint8_t)((sb * alpha + db * inv_alpha) / 255);
+
+      return (dr << 16) | (dg << 8) | db;
+   }
+}
+
+static void sdl_miyoomini_blend_rect_888(
+      uint32_t *screen_buf,
+      int screen_width,
+      int screen_height,
+      int x,
+      int y,
+      int width,
+      int height,
+      uint32_t color,
+      uint8_t alpha)
+{
+   int px, py;
+   int x_end = x + width;
+   int y_end = y + height;
+
+   if (!screen_buf || alpha == 0 || width <= 0 || height <= 0)
+      return;
+
+   if (x < 0)
+      x = 0;
+   if (y < 0)
+      y = 0;
+   if (x_end > screen_width)
+      x_end = screen_width;
+   if (y_end > screen_height)
+      y_end = screen_height;
+   if (x >= x_end || y >= y_end)
+      return;
+
+   for (py = y; py < y_end; py++)
+   {
+      uint32_t *row_ptr = screen_buf + (py * screen_width);
+      for (px = x; px < x_end; px++)
+         row_ptr[px] = sdl_miyoomini_blend_888(row_ptr[px], color, alpha);
+   }
+}
+
 /* Print OSD text, flip callback, direct draw to framebuffer, 32bpp, 2x, rotate180 */
 static void sdl_miyoomini_print_msg(void* data) {
    if (unlikely(!data)) return;
    sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
+   settings_t *settings = config_get_ptr();
+   bool msg_bg_enable   = settings && settings->bools.video_msg_bgcolor_enable;
+   uint8_t msg_bg_alpha = 0;
+   uint32_t msg_bg_rgb  = 0;
+
+   if (msg_bg_enable)
+   {
+      float opacity = settings->floats.video_msg_bgcolor_opacity;
+      if (opacity < 0.0f)
+         opacity = 0.0f;
+      else if (opacity > 1.0f)
+         opacity = 1.0f;
+      msg_bg_alpha = (uint8_t)(opacity * 255.0f);
+      msg_bg_rgb   = ((settings->uints.video_msg_bgcolor_red   & 0xFF) << 16)
+                   | ((settings->uints.video_msg_bgcolor_green & 0xFF) << 8)
+                   |  (settings->uints.video_msg_bgcolor_blue  & 0xFF);
+   }
 
    void *screen_buf;
    const char *str  = vid->msg_tmp;
    uint32_t str_len = strlen_size(str, OSD_TEXT_LEN_MAX);
    if (str_len) {
       screen_buf              = fb_addr + (vinfo.yoffset * res_x * sizeof(uint32_t));
+      sdl_miyoomini_init_font_color(vid);
       bool **font_lut         = vid->osd_font->lut;
       uint32_t str_lines      = (uint32_t)((str_len - 1) / OSD_TEXT_LINE_LEN) + 1;
       uint32_t str_counter    = OSD_TEXT_LINE_LEN;
       const int x_pos_def     = res_x - (FONT_WIDTH_STRIDE * 2);
       int x_pos               = x_pos_def;
       int y_pos               = OSD_TEXT_Y_MARGIN - 4 + (FONT_HEIGHT_STRIDE * 2 * str_lines);
+      unsigned line_chars[OSD_TEXT_LINES_MAX];
+      uint32_t line_step      = FONT_HEIGHT_STRIDE * 2;
+      uint32_t line_char_w    = FONT_WIDTH_STRIDE * 2;
+      uint32_t line_bg_h      = (FONT_HEIGHT * 2) + 4;
+      uint32_t line_bg_y_pad  = 2;
+      uint32_t line_index;
+
+      memset(line_chars, 0, sizeof(line_chars));
+      for (line_index = 0; line_index < str_len; line_index++)
+      {
+         uint32_t line = line_index / OSD_TEXT_LINE_LEN;
+         if (line >= OSD_TEXT_LINES_MAX)
+            break;
+         line_chars[line]++;
+      }
+
+      if (msg_bg_enable && msg_bg_alpha > 0)
+      {
+         for (line_index = 0; line_index < str_lines; line_index++)
+         {
+            unsigned chars = line_chars[line_index];
+            int line_y     = y_pos - ((int)line_index * (int)line_step);
+            int bg_x;
+            int bg_y;
+            int bg_w;
+
+            if (!chars)
+               continue;
+
+            bg_w = ((int)chars * (int)line_char_w) + 2;
+            bg_x = x_pos_def - bg_w + 4;
+            bg_y = line_y - ((int)line_bg_h - (int)line_bg_y_pad);
+
+            sdl_miyoomini_blend_rect_888(
+                  (uint32_t*)screen_buf,
+                  res_x,
+                  res_y,
+                  bg_x,
+                  bg_y,
+                  bg_w,
+                  (int)line_bg_h,
+                  msg_bg_rgb,
+                  msg_bg_alpha);
+         }
+      }
 
       for (; str_len > 0; str_len--) {
          /* Check for out of bounds x coordinates */
@@ -753,26 +879,62 @@ static void sdl_miyoomini_print_msg(void* data) {
                      uint32_t *screen_buf_ptr = (uint32_t*)screen_buf + buff_offset - (i * 2);
 
                      /* Bottom shadow (1) */
-                     screen_buf_ptr[+0] = 0;
-                     screen_buf_ptr[+1] = 0;
-                     screen_buf_ptr[+2] = 0;
-                     screen_buf_ptr[+3] = 0;
+                     if (msg_bg_enable)
+                     {
+                        screen_buf_ptr[+0] = sdl_miyoomini_blend_888(screen_buf_ptr[+0], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[+1] = sdl_miyoomini_blend_888(screen_buf_ptr[+1], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[+2] = sdl_miyoomini_blend_888(screen_buf_ptr[+2], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[+3] = sdl_miyoomini_blend_888(screen_buf_ptr[+3], msg_bg_rgb, msg_bg_alpha);
+                     }
+                     else
+                     {
+                        screen_buf_ptr[+0] = 0;
+                        screen_buf_ptr[+1] = 0;
+                        screen_buf_ptr[+2] = 0;
+                        screen_buf_ptr[+3] = 0;
+                     }
 
                      /* Bottom shadow (2) */
-                     screen_buf_ptr[res_x+0] = 0;
-                     screen_buf_ptr[res_x+1] = 0;
-                     screen_buf_ptr[res_x+2] = 0;
-                     screen_buf_ptr[res_x+3] = 0;
+                     if (msg_bg_enable)
+                     {
+                        screen_buf_ptr[res_x+0] = sdl_miyoomini_blend_888(screen_buf_ptr[res_x+0], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[res_x+1] = sdl_miyoomini_blend_888(screen_buf_ptr[res_x+1], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[res_x+2] = sdl_miyoomini_blend_888(screen_buf_ptr[res_x+2], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[res_x+3] = sdl_miyoomini_blend_888(screen_buf_ptr[res_x+3], msg_bg_rgb, msg_bg_alpha);
+                     }
+                     else
+                     {
+                        screen_buf_ptr[res_x+0] = 0;
+                        screen_buf_ptr[res_x+1] = 0;
+                        screen_buf_ptr[res_x+2] = 0;
+                        screen_buf_ptr[res_x+3] = 0;
+                     }
 
                      /* Text pixel + right shadow (1) */
-                     screen_buf_ptr[(res_x*2)+0] = 0;
-                     screen_buf_ptr[(res_x*2)+1] = 0;
+                     if (msg_bg_enable)
+                     {
+                        screen_buf_ptr[(res_x*2)+0] = sdl_miyoomini_blend_888(screen_buf_ptr[(res_x*2)+0], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[(res_x*2)+1] = sdl_miyoomini_blend_888(screen_buf_ptr[(res_x*2)+1], msg_bg_rgb, msg_bg_alpha);
+                     }
+                     else
+                     {
+                        screen_buf_ptr[(res_x*2)+0] = 0;
+                        screen_buf_ptr[(res_x*2)+1] = 0;
+                     }
                      screen_buf_ptr[(res_x*2)+2] = vid->font_colour32;
                      screen_buf_ptr[(res_x*2)+3] = vid->font_colour32;
 
                      /* Text pixel + right shadow (2) */
-                     screen_buf_ptr[(res_x*3)+0] = 0;
-                     screen_buf_ptr[(res_x*3)+1] = 0;
+                     if (msg_bg_enable)
+                     {
+                        screen_buf_ptr[(res_x*3)+0] = sdl_miyoomini_blend_888(screen_buf_ptr[(res_x*3)+0], msg_bg_rgb, msg_bg_alpha);
+                        screen_buf_ptr[(res_x*3)+1] = sdl_miyoomini_blend_888(screen_buf_ptr[(res_x*3)+1], msg_bg_rgb, msg_bg_alpha);
+                     }
+                     else
+                     {
+                        screen_buf_ptr[(res_x*3)+0] = 0;
+                        screen_buf_ptr[(res_x*3)+1] = 0;
+                     }
                      screen_buf_ptr[(res_x*3)+2] = vid->font_colour32;
                      screen_buf_ptr[(res_x*3)+3] = vid->font_colour32;
                   }
@@ -1416,6 +1578,15 @@ static void sdl_miyoomini_input_driver_init(
       return;
    }
 
+#if defined(MIYOOMINI)
+   if (string_is_equal(input_drv_name, "sdl_dingux")) {
+      *input_data = input_driver_init_wrap(&input_sdl_dingux,
+            joypad_drv_name);
+      if (*input_data) *input = &input_sdl_dingux;
+      return;
+   }
+#endif
+
 #if defined(HAVE_SDL) || defined(HAVE_SDL2)
    if (string_is_equal(input_drv_name, "sdl")) {
       *input_data = input_driver_init_wrap(&input_sdl,
@@ -1762,8 +1933,17 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
     * will cause bad frame pacing) */
    if (unlikely(video_info->input_driver_nonblock_state)) {
       retro_time_t current_time = cpu_features_get_time_usec();
+      retro_time_t ff_frame_time_min = vid->ff_frame_time_min;
 
-      if ((current_time - vid->last_frame_time) < vid->ff_frame_time_min)
+      if (video_info->refresh_rate > 1.0f)
+      {
+         ff_frame_time_min = (retro_time_t)(1000000.0f / video_info->refresh_rate + 0.5f);
+         if (ff_frame_time_min == 0)
+            ff_frame_time_min = 1;
+         vid->ff_frame_time_min = ff_frame_time_min;
+      }
+
+      if ((current_time - vid->last_frame_time) < ff_frame_time_min)
          return true;
 
       vid->last_frame_time = current_time;
@@ -1881,12 +2061,24 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          memcpy(vid->msg_tmp, msg, sizeof(vid->msg_tmp));
       else
          vid->msg_tmp[0] = '\0';
-      GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
+      if (!vid->flip_callback_active)
+      {
+         GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
+         vid->flip_callback_active = true;
+      }
    } else if (vid->msg_count) {
       vid->msg_tmp[0] = 0;
-      GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
+      if (!vid->flip_callback_active)
+      {
+         GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
+         vid->flip_callback_active = true;
+      }
    } else {
-      GFX_SetFlipCallback(NULL, NULL);
+      if (vid->flip_callback_active)
+      {
+         GFX_SetFlipCallback(NULL, NULL);
+         vid->flip_callback_active = false;
+      }
    }
 
    if (likely(!vid->menu_active)) {
@@ -2001,6 +2193,7 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
       unsigned width, unsigned height, float alpha) {
    sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
    unsigned x, y;
+   unsigned x_step, y_step, y_acc;
 
    if (unlikely(!vid || !frame || !width || !height))
       return;
@@ -2012,12 +2205,24 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
       const uint16_t *src = (const uint16_t*)frame;
       uint16_t *dst       = (uint16_t*)vid->menuscreen_rgui->pixels;
 
+      if ((width == RGUI_MENU_WIDTH) && (height == RGUI_MENU_HEIGHT))
+      {
+         memcpy_neon(dst, (void*)src, RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT * sizeof(uint16_t));
+         return;
+      }
+
+      x_step = (width << 16) / RGUI_MENU_WIDTH;
+      y_step = (height << 16) / RGUI_MENU_HEIGHT;
+      y_acc  = 0;
       for (y = 0; y < RGUI_MENU_HEIGHT; y++) {
-         unsigned sy = (y * height) / RGUI_MENU_HEIGHT;
+         unsigned sy = y_acc >> 16;
+         unsigned x_acc = 0;
          for (x = 0; x < RGUI_MENU_WIDTH; x++) {
-            unsigned sx = (x * width) / RGUI_MENU_WIDTH;
+            unsigned sx = x_acc >> 16;
             dst[(y * RGUI_MENU_WIDTH) + x] = src[(sy * width) + sx];
+            x_acc += x_step;
          }
+         y_acc += y_step;
       }
       return;
    }
@@ -2026,10 +2231,14 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
       const uint32_t *src = (const uint32_t*)frame;
       uint16_t *dst       = (uint16_t*)vid->menuscreen_rgui->pixels;
 
+      x_step = (width << 16) / RGUI_MENU_WIDTH;
+      y_step = (height << 16) / RGUI_MENU_HEIGHT;
+      y_acc  = 0;
       for (y = 0; y < RGUI_MENU_HEIGHT; y++) {
-         unsigned sy = (y * height) / RGUI_MENU_HEIGHT;
+         unsigned sy = y_acc >> 16;
+         unsigned x_acc = 0;
          for (x = 0; x < RGUI_MENU_WIDTH; x++) {
-            unsigned sx = (x * width) / RGUI_MENU_WIDTH;
+            unsigned sx = x_acc >> 16;
             uint32_t c  = src[(sy * width) + sx];
             uint8_t r   = (c >> 16) & 0xFF;
             uint8_t g   = (c >> 8) & 0xFF;
@@ -2038,7 +2247,9 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
             dst[(y * RGUI_MENU_WIDTH) + x] = (uint16_t)(((r & 0xF8) << 8) |
                                                         ((g & 0xFC) << 3) |
                                                         (b >> 3));
+            x_acc += x_step;
          }
+         y_acc += y_step;
       }
    }
 }

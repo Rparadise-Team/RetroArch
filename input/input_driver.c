@@ -345,7 +345,7 @@ input_driver_t *input_drivers[] = {
 #if (defined(HAVE_SDL) || defined(HAVE_SDL2)) && !(defined(HAVE_COCOA) || defined(HAVE_COCOA_METAL))
    &input_sdl,
 #endif
-#if defined(DINGUX) && defined(HAVE_SDL_DINGUX)
+#if (defined(DINGUX) && defined(HAVE_SDL_DINGUX)) || defined(MIYOOMINI)
    &input_sdl_dingux,
 #endif
 #ifdef GEKKO

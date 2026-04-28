@@ -6880,6 +6880,10 @@ MSG_HASH(
    "Vyberte MHz pre MIYOO CPU."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Úspechy"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Uložiť stav"
    )

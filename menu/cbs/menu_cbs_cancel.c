@@ -92,7 +92,13 @@ int action_cancel_pop_default(const char *path,
          menu_st->selection_ptr = miyoo_cpu_clock_menu_index();
          handled_submenu = true;
       }
-      if (miyoo_menu_achievements_menu_is_open())
+      if (   miyoo_menu_achievements_menu_is_open()
+          || string_is_equal(menu_label,
+                msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS))
+          || string_is_equal(label,
+                msg_hash_to_str(MENU_ENUM_LABEL_CANNOT_ACTIVATE_ACHIEVEMENTS_WITH_THIS_CORE))
+          || string_is_equal(label,
+                msg_hash_to_str(MENU_ENUM_LABEL_VALUE_CANNOT_ACTIVATE_ACHIEVEMENTS_WITH_THIS_CORE)))
       {
          bool in_hardcore_pause_submenu =
                string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_PAUSE_CANCEL))
@@ -100,8 +106,11 @@ int action_cancel_pop_default(const char *path,
             || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_RESUME_CANCEL))
             || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_RESUME))
             || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_ACHIEVEMENT_RESUME_REQUIRES_RELOAD));
+         bool is_unsupported_core_info =
+               string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_CANNOT_ACTIVATE_ACHIEVEMENTS_WITH_THIS_CORE))
+            || string_is_equal(label, msg_hash_to_str(MENU_ENUM_LABEL_VALUE_CANNOT_ACTIVATE_ACHIEVEMENTS_WITH_THIS_CORE));
 
-         if (in_hardcore_pause_submenu)
+         if (in_hardcore_pause_submenu && !is_unsupported_core_info)
          {
             size_t new_selection_ptr = menu_st->selection_ptr;
             menu_entries_pop_stack(&new_selection_ptr, 0, 1);
@@ -110,7 +119,18 @@ int action_cancel_pop_default(const char *path,
          else
          {
             miyoo_menu_achievements_menu_close();
-            menu_st->selection_ptr = miyoo_menu_achievements_parent_index();
+            {
+               size_t parent_index = miyoo_menu_achievements_parent_index();
+
+               if (parent_index > 0)
+                  menu_st->selection_ptr = parent_index;
+               else
+               {
+                  size_t new_selection_ptr = menu_st->selection_ptr;
+                  menu_entries_pop_stack(&new_selection_ptr, 0, 1);
+                  menu_st->selection_ptr = new_selection_ptr;
+               }
+            }
          }
          handled_submenu = true;
       }

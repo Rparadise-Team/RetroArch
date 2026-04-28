@@ -1642,6 +1642,7 @@ ifeq ($(HAVE_SDL2), 1)
 
    ifeq ($(MIYOOMINI), 1)
       OBJ += gfx/drivers/sdl2_miyoomini_gfx.o
+      OBJ += input/drivers/sdl_dingux_input.o
       OBJ += input/drivers_joypad/sdl_dingux_joypad.o
    else
       OBJ += gfx/drivers/sdl2_gfx.o \

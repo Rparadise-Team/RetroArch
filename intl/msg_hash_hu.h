@@ -15914,6 +15914,10 @@ MSG_HASH(
    "Válassza a MHz-et a MIYOO CPU-hoz."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Trófeák"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Játékállás elmentése"
    )

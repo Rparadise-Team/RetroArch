@@ -492,6 +492,10 @@ MSG_HASH(
    "Selectați MHz pentru procesorul MIYOO."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Realizări"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Salvare rapidă"
    )

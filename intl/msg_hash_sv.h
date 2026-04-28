@@ -15498,6 +15498,10 @@ MSG_HASH(
    "Välj MHz för MIYOO CPU."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Prestationer"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Spara tillstånd"
    )

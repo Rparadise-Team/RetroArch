@@ -1772,6 +1772,10 @@ MSG_HASH(
    "Dewiswch MHz ar gyfer CPU MIYOO."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_ACHIEVEMENTS,
+   "Llwyddiannau"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Cadw cyflym"
    )
