@@ -73,8 +73,8 @@
 #define SDL_NUM_FONT_GLYPHS 256
 #define OSD_TEXT_Y_MARGIN 4
 #define OSD_TEXT_LINES_MAX 2	/* 1 .. 7 */
-#define OSD_TEXT_LINE_LEN_MAX ((uint32_t)(SDL_MIYOOMINI_WIDTH / (FONT_WIDTH_STRIDE * 2))-1)
-#define OSD_TEXT_LEN_MAX (OSD_TEXT_LINE_LEN_MAX * OSD_TEXT_LINES_MAX)
+#define OSD_TEXT_LINE_LEN ((uint32_t)(SDL_MIYOOMINI_WIDTH / FONT_WIDTH_STRIDE)-1)
+#define OSD_TEXT_LEN_MAX (OSD_TEXT_LINE_LEN * OSD_TEXT_LINES_MAX)
 #define CHEEVOS_ICON_DURATION_FRAMES (3 * 60)
 
 typedef struct sdl_miyoomini_video sdl_miyoomini_video_t;
@@ -788,16 +788,11 @@ static void sdl_miyoomini_print_msg(void* data) {
    const char *str  = vid->msg_tmp;
    uint32_t str_len = vid->msg_len_cached;
    if (str_len) {
-      uint32_t osd_line_len = (uint32_t)(SDL_MIYOOMINI_WIDTH / (FONT_WIDTH_STRIDE * 2)) - 1;
-      if (osd_line_len < 1)
-         osd_line_len = 1;
-      else if (osd_line_len > OSD_TEXT_LINE_LEN_MAX)
-         osd_line_len = OSD_TEXT_LINE_LEN_MAX;
       screen_buf              = fb_addr + (vinfo.yoffset * SDL_MIYOOMINI_WIDTH * sizeof(uint32_t));
       sdl_miyoomini_init_font_color(vid);
       bool **font_lut         = vid->osd_font->lut;
-      uint32_t str_lines      = (uint32_t)((str_len - 1) / osd_line_len) + 1;
-      uint32_t str_counter    = osd_line_len;
+      uint32_t str_lines      = (uint32_t)((str_len - 1) / OSD_TEXT_LINE_LEN) + 1;
+      uint32_t str_counter    = OSD_TEXT_LINE_LEN;
       const int x_pos_def     = SDL_MIYOOMINI_WIDTH - (FONT_WIDTH_STRIDE * 2);
       int x_pos               = x_pos_def;
       int y_pos               = OSD_TEXT_Y_MARGIN - 4 + (FONT_HEIGHT_STRIDE * 2 * str_lines);
@@ -840,7 +835,7 @@ static void sdl_miyoomini_print_msg(void* data) {
       for (; str_len > 0; str_len--) {
          /* Check for out of bounds x coordinates */
          if (!str_counter--) {
-            x_pos = x_pos_def; y_pos -= (FONT_HEIGHT_STRIDE * 2); str_counter = osd_line_len;
+            x_pos = x_pos_def; y_pos -= (FONT_HEIGHT_STRIDE * 2); str_counter = OSD_TEXT_LINE_LEN;
          }
          /* Deal with spaces first, for efficiency */
          if (*str == ' ') str++;
@@ -2350,16 +2345,7 @@ static void sdl_miyoomini_update_msg_cache(
 {
    uint32_t i;
    uint32_t msg_len = 0;
-   uint32_t osd_line_len = (uint32_t)(SDL_MIYOOMINI_WIDTH / (FONT_WIDTH_STRIDE * 2)) - 1;
-   uint32_t max_visible_chars;
    const char *src = msg ? msg : "";
-
-   if (osd_line_len < 1)
-      osd_line_len = 1;
-   else if (osd_line_len > OSD_TEXT_LINE_LEN_MAX)
-      osd_line_len = OSD_TEXT_LINE_LEN_MAX;
-
-   max_visible_chars = osd_line_len * OSD_TEXT_LINES_MAX;
 
    if (unlikely(!vid))
       return;
@@ -2369,28 +2355,15 @@ static void sdl_miyoomini_update_msg_cache(
 
    strlcpy(vid->msg_tmp, src, sizeof(vid->msg_tmp));
    msg_len = strlen_size(vid->msg_tmp, OSD_TEXT_LEN_MAX);
-
-   if (msg_len > max_visible_chars)
-   {
-      if (max_visible_chars > 3)
-      {
-         vid->msg_tmp[max_visible_chars - 3] = '.';
-         vid->msg_tmp[max_visible_chars - 2] = '.';
-         vid->msg_tmp[max_visible_chars - 1] = '.';
-      }
-      vid->msg_tmp[max_visible_chars] = '\0';
-      msg_len = max_visible_chars;
-   }
-
    vid->msg_len_cached = msg_len;
-   vid->msg_line_count_cached = msg_len ? (uint32_t)((msg_len - 1) / osd_line_len) + 1 : 0;
+   vid->msg_line_count_cached = msg_len ? (uint32_t)((msg_len - 1) / OSD_TEXT_LINE_LEN) + 1 : 0;
    if (vid->msg_line_count_cached > OSD_TEXT_LINES_MAX)
       vid->msg_line_count_cached = OSD_TEXT_LINES_MAX;
 
    memset(vid->msg_line_chars_cached, 0, sizeof(vid->msg_line_chars_cached));
    for (i = 0; i < msg_len; i++)
    {
-      uint32_t line = i / osd_line_len;
+      uint32_t line = i / OSD_TEXT_LINE_LEN;
       if (line >= OSD_TEXT_LINES_MAX)
          break;
       vid->msg_line_chars_cached[line]++;
