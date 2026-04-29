@@ -2088,11 +2088,7 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       {
          unsigned next_index = vid->screen_index ^ 1;
          unsigned target_slot = vid->screens[next_index] ? next_index : vid->screen_index;
-         unsigned fallback_slot = target_slot ^ 1;
-         if (fallback_slot < 2
-               && vid->screens[fallback_slot]
-               && !vid->screen_fence[fallback_slot])
-            target_slot = fallback_slot;
+         
          if (vid->screen_fence[target_slot]) {
             MI_GFX_WaitAllDone(FALSE, vid->screen_fence[target_slot]);
             vid->screen_fence[target_slot] = 0;
