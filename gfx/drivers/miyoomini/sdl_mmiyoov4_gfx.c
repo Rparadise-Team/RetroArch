@@ -106,6 +106,7 @@ struct sdl_miyoomini_video
    bool was_in_menu;
    retro_time_t last_frame_time;
    retro_time_t ff_frame_time_min;
+   float ff_refresh_rate_cached;
    enum dingux_ipu_filter_type filter_type;
    bool vsync;
    bool keep_aspect;
@@ -127,7 +128,18 @@ struct sdl_miyoomini_video
 #endif
    unsigned msg_count;
    bool flip_callback_active;
+   bool msg_bg_enable_cached;
+   uint8_t msg_bg_alpha_cached;
+   uint32_t msg_bg_rgb_cached;
    char msg_tmp[OSD_TEXT_LEN_MAX];
+   uint32_t msg_len_cached;
+   uint32_t msg_line_count_cached;
+   unsigned msg_line_chars_cached[OSD_TEXT_LINES_MAX];
+   unsigned menu_src_width_cached;
+   unsigned menu_src_height_cached;
+   bool menu_src_rgb32_cached;
+   unsigned menu_x_step_cached;
+   unsigned menu_y_step_cached;
 #ifdef HAVE_CHEEVOS
    SDL_mutex *cheevos_lock;
    uint32_t *cheevos_icon_data;
@@ -193,6 +205,10 @@ static uint16_t sdl_miyoomini_surface_read_pixel565(
 
 static void sdl_miyoomini_apply_state_changes(void *data);
 static void sdl_miyoomini_init_font_color(sdl_miyoomini_video_t *vid);
+static void sdl_miyoomini_update_msg_bg_cache(
+      sdl_miyoomini_video_t *vid, const settings_t *settings);
+static void sdl_miyoomini_update_msg_cache(
+      sdl_miyoomini_video_t *vid, const char *msg);
 
 static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
 {
@@ -770,27 +786,13 @@ static void sdl_miyoomini_blend_rect_888(
 static void sdl_miyoomini_print_msg(void* data) {
    if (unlikely(!data)) return;
    sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
-   settings_t *settings = config_get_ptr();
-   bool msg_bg_enable   = settings && settings->bools.video_msg_bgcolor_enable;
-   uint8_t msg_bg_alpha = 0;
-   uint32_t msg_bg_rgb  = 0;
-
-   if (msg_bg_enable)
-   {
-      float opacity = settings->floats.video_msg_bgcolor_opacity;
-      if (opacity < 0.0f)
-         opacity = 0.0f;
-      else if (opacity > 1.0f)
-         opacity = 1.0f;
-      msg_bg_alpha = (uint8_t)(opacity * 255.0f);
-      msg_bg_rgb   = ((settings->uints.video_msg_bgcolor_red   & 0xFF) << 16)
-                   | ((settings->uints.video_msg_bgcolor_green & 0xFF) << 8)
-                   |  (settings->uints.video_msg_bgcolor_blue  & 0xFF);
-   }
+   bool msg_bg_enable   = vid->msg_bg_enable_cached;
+   uint8_t msg_bg_alpha = vid->msg_bg_alpha_cached;
+   uint32_t msg_bg_rgb  = vid->msg_bg_rgb_cached;
 
    void *screen_buf;
    const char *str  = vid->msg_tmp;
-   uint32_t str_len = strlen_size(str, OSD_TEXT_LEN_MAX);
+   uint32_t str_len = vid->msg_len_cached;
    if (str_len) {
       screen_buf              = fb_addr + (vinfo.yoffset * res_x * sizeof(uint32_t));
       sdl_miyoomini_init_font_color(vid);
@@ -800,27 +802,17 @@ static void sdl_miyoomini_print_msg(void* data) {
       const int x_pos_def     = res_x - (FONT_WIDTH_STRIDE * 2);
       int x_pos               = x_pos_def;
       int y_pos               = OSD_TEXT_Y_MARGIN - 4 + (FONT_HEIGHT_STRIDE * 2 * str_lines);
-      unsigned line_chars[OSD_TEXT_LINES_MAX];
       uint32_t line_step      = FONT_HEIGHT_STRIDE * 2;
       uint32_t line_char_w    = FONT_WIDTH_STRIDE * 2;
       uint32_t line_bg_h      = (FONT_HEIGHT * 2) + 4;
       uint32_t line_bg_y_pad  = 2;
       uint32_t line_index;
 
-      memset(line_chars, 0, sizeof(line_chars));
-      for (line_index = 0; line_index < str_len; line_index++)
-      {
-         uint32_t line = line_index / OSD_TEXT_LINE_LEN;
-         if (line >= OSD_TEXT_LINES_MAX)
-            break;
-         line_chars[line]++;
-      }
-
       if (msg_bg_enable && msg_bg_alpha > 0)
       {
-         for (line_index = 0; line_index < str_lines; line_index++)
+         for (line_index = 0; line_index < vid->msg_line_count_cached; line_index++)
          {
-            unsigned chars = line_chars[line_index];
+            unsigned chars = vid->msg_line_chars_cached[line_index];
             int line_y     = y_pos - ((int)line_index * (int)line_step);
             int bg_x;
             int bg_y;
@@ -1880,6 +1872,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->menu_bg_valid     = false;
    vid->quitting          = false;
    vid->ff_frame_time_min = 16667;
+   vid->ff_refresh_rate_cached = 0.0f;
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
 
@@ -1890,6 +1883,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 
    /* Initialise OSD font */
    sdl_miyoomini_init_font_color(vid);
+   sdl_miyoomini_update_msg_bg_cache(vid, settings);
 
    vid->osd_font = bitmapfont_get_lut();
 
@@ -1935,12 +1929,14 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       retro_time_t current_time = cpu_features_get_time_usec();
       retro_time_t ff_frame_time_min = vid->ff_frame_time_min;
 
-      if (video_info->refresh_rate > 1.0f)
+      if (video_info->refresh_rate > 1.0f
+            && vid->ff_refresh_rate_cached != video_info->refresh_rate)
       {
          ff_frame_time_min = (retro_time_t)(1000000.0f / video_info->refresh_rate + 0.5f);
          if (ff_frame_time_min == 0)
             ff_frame_time_min = 1;
          vid->ff_frame_time_min = ff_frame_time_min;
+         vid->ff_refresh_rate_cached = video_info->refresh_rate;
       }
 
       if ((current_time - vid->last_frame_time) < ff_frame_time_min)
@@ -2057,17 +2053,14 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
          || vid->cheevos_icon_restore_pending
 #endif
       ) {
-      if (msg)
-         memcpy(vid->msg_tmp, msg, sizeof(vid->msg_tmp));
-      else
-         vid->msg_tmp[0] = '\0';
+      sdl_miyoomini_update_msg_cache(vid, msg);
       if (!vid->flip_callback_active)
       {
          GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
          vid->flip_callback_active = true;
       }
    } else if (vid->msg_count) {
-      vid->msg_tmp[0] = 0;
+      sdl_miyoomini_update_msg_cache(vid, NULL);
       if (!vid->flip_callback_active)
       {
          GFX_SetFlipCallback(sdl_miyoomini_print_msg, vid);
@@ -2095,6 +2088,11 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       {
          unsigned next_index = vid->screen_index ^ 1;
          unsigned target_slot = vid->screens[next_index] ? next_index : vid->screen_index;
+         unsigned fallback_slot = target_slot ^ 1;
+         if (fallback_slot < 2
+               && vid->screens[fallback_slot]
+               && !vid->screen_fence[fallback_slot])
+            target_slot = fallback_slot;
          if (vid->screen_fence[target_slot]) {
             MI_GFX_WaitAllDone(FALSE, vid->screen_fence[target_slot]);
             vid->screen_fence[target_slot] = 0;
@@ -2201,6 +2199,17 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
    vid->menu_texture_alpha = alpha;
    vid->menu_surface_dirty = true;
 
+   if (unlikely(width != vid->menu_src_width_cached
+         || height != vid->menu_src_height_cached
+         || rgb32 != vid->menu_src_rgb32_cached))
+   {
+      vid->menu_src_width_cached  = width;
+      vid->menu_src_height_cached = height;
+      vid->menu_src_rgb32_cached  = rgb32;
+      vid->menu_x_step_cached     = (width << 16) / RGUI_MENU_WIDTH;
+      vid->menu_y_step_cached     = (height << 16) / RGUI_MENU_HEIGHT;
+   }
+
    if (!rgb32) {
       const uint16_t *src = (const uint16_t*)frame;
       uint16_t *dst       = (uint16_t*)vid->menuscreen_rgui->pixels;
@@ -2211,8 +2220,8 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
          return;
       }
 
-      x_step = (width << 16) / RGUI_MENU_WIDTH;
-      y_step = (height << 16) / RGUI_MENU_HEIGHT;
+      x_step = vid->menu_x_step_cached;
+      y_step = vid->menu_y_step_cached;
       y_acc  = 0;
       for (y = 0; y < RGUI_MENU_HEIGHT; y++) {
          unsigned sy = y_acc >> 16;
@@ -2230,9 +2239,21 @@ static void sdl_miyoomini_set_texture_frame(void *data, const void *frame, bool 
    {
       const uint32_t *src = (const uint32_t*)frame;
       uint16_t *dst       = (uint16_t*)vid->menuscreen_rgui->pixels;
+      unsigned total_pixels;
 
-      x_step = (width << 16) / RGUI_MENU_WIDTH;
-      y_step = (height << 16) / RGUI_MENU_HEIGHT;
+      if ((width == RGUI_MENU_WIDTH) && (height == RGUI_MENU_HEIGHT))
+      {
+         total_pixels = RGUI_MENU_WIDTH * RGUI_MENU_HEIGHT;
+         for (x = 0; x < total_pixels; x++)
+         {
+            uint32_t p = src[x];
+            dst[x] = ((p >> 8) & 0xF800) | ((p >> 5) & 0x07E0) | ((p >> 3) & 0x001F);
+         }
+         return;
+      }
+
+      x_step = vid->menu_x_step_cached;
+      y_step = vid->menu_y_step_cached;
       y_acc  = 0;
       for (y = 0; y < RGUI_MENU_HEIGHT; y++) {
          unsigned sy = y_acc >> 16;
@@ -2360,6 +2381,67 @@ static void sdl_miyoomini_apply_state_changes(void *data) {
        * be recalculated. Easiest method is to just
        * (re-)set the current output video mode */
       sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
+   }
+
+   sdl_miyoomini_update_msg_bg_cache(vid, settings);
+}
+
+static void sdl_miyoomini_update_msg_bg_cache(
+      sdl_miyoomini_video_t *vid, const settings_t *settings)
+{
+   float opacity = 0.0f;
+
+   if (unlikely(!vid))
+      return;
+
+   vid->msg_bg_enable_cached = settings && settings->bools.video_msg_bgcolor_enable;
+
+   if (!vid->msg_bg_enable_cached || !settings)
+   {
+      vid->msg_bg_alpha_cached = 0;
+      vid->msg_bg_rgb_cached   = 0;
+      return;
+   }
+
+   opacity = settings->floats.video_msg_bgcolor_opacity;
+   if (opacity < 0.0f)
+      opacity = 0.0f;
+   else if (opacity > 1.0f)
+      opacity = 1.0f;
+
+   vid->msg_bg_alpha_cached = (uint8_t)(opacity * 255.0f);
+   vid->msg_bg_rgb_cached   = ((settings->uints.video_msg_bgcolor_red   & 0xFF) << 16)
+                            | ((settings->uints.video_msg_bgcolor_green & 0xFF) << 8)
+                            |  (settings->uints.video_msg_bgcolor_blue  & 0xFF);
+}
+
+static void sdl_miyoomini_update_msg_cache(
+      sdl_miyoomini_video_t *vid, const char *msg)
+{
+   uint32_t i;
+   uint32_t msg_len = 0;
+   const char *src = msg ? msg : "";
+
+   if (unlikely(!vid))
+      return;
+
+   if (string_is_equal(vid->msg_tmp, src))
+      return;
+
+   strlcpy(vid->msg_tmp, src, sizeof(vid->msg_tmp));
+   msg_len = strlen_size(vid->msg_tmp, OSD_TEXT_LEN_MAX);
+   vid->msg_len_cached = msg_len;
+   vid->msg_line_count_cached = msg_len ? (uint32_t)((msg_len - 1) / OSD_TEXT_LINE_LEN) + 1 : 0;
+   if (vid->msg_line_count_cached > OSD_TEXT_LINES_MAX)
+      vid->msg_line_count_cached = OSD_TEXT_LINES_MAX;
+
+   memset(vid->msg_line_chars_cached, 0, sizeof(vid->msg_line_chars_cached));
+   for (i = 0; i < msg_len; i++)
+   {
+      uint32_t line = i / OSD_TEXT_LINE_LEN;
+      if (line >= OSD_TEXT_LINES_MAX)
+         break;
+      vid->msg_line_chars_cached[line]++;
    }
 }
 
