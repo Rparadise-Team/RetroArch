@@ -123,6 +123,7 @@ typedef struct sdl_audio
    bool nonblock;
    bool is_paused;
    size_t bufsize;
+   size_t chunk_size;
    int audiofix;
    bool audioserver_mode;
    int audioserver_fd;
@@ -133,7 +134,7 @@ static void sdl_audio_cb(void *data, Uint8 *stream, int len)
    sdl_audio_t *sdl = (sdl_audio_t*)data;
    size_t avail = FIFO_READ_AVAIL(sdl->buffer);
 
-   if (avail < (size_t)len / 2)
+   if (avail < (size_t)len)
    {
       memset(stream, 0, len);
       if (avail > 0)
@@ -237,12 +238,16 @@ static void *sdl_audio_init(const char *device,
    RARCH_LOG("[SDL audio]: Requested %u ms latency, got %d ms\n",
          latency, (int)(out.samples * frames * 1000 / (*new_rate)));
 
-   /* Create a buffer twice as big as needed */
-   sdl->bufsize = out.samples * out.channels * sizeof(int16_t) * frames * 2;
+   sdl->chunk_size = out.samples * out.channels * sizeof(int16_t);
+
+   /* Keep internal buffering close to requested latency to avoid queue-induced lag. */
+   sdl->bufsize = sdl->chunk_size * frames;
+   if (sdl->bufsize < sdl->chunk_size * 2)
+      sdl->bufsize = sdl->chunk_size * 2;
    sdl->buffer  = fifo_new(sdl->bufsize);
 
    /* Keep startup prefill low to avoid large initial A/V delay. */
-   size_t callback_bytes = out.samples * out.channels * sizeof(int16_t);
+   size_t callback_bytes = sdl->chunk_size;
    size_t prefill_size   = callback_bytes;
    size_t prefill_cap    = sdl->bufsize / 4;
 
@@ -317,8 +322,8 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
    else
    {
       size_t written = 0;
-      size_t low_watermark = (sdl->bufsize * 3) / 4;
-      size_t callback_bytes = SDL_AUDIO_SAMPLES * 2 * sizeof(int16_t);
+      size_t low_watermark = sdl->chunk_size * 2;
+      size_t callback_bytes = sdl->chunk_size;
 
       if (low_watermark < callback_bytes)
          low_watermark = callback_bytes;
