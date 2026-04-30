@@ -140,6 +140,8 @@ struct sdl_miyoomini_video
    bool menu_src_rgb32_cached;
    unsigned menu_x_step_cached;
    unsigned menu_y_step_cached;
+   uint32_t osd_scale_cached;
+   uint32_t osd_line_len_cached;
 #ifdef HAVE_CHEEVOS
    SDL_mutex *cheevos_lock;
    uint32_t *cheevos_icon_data;
@@ -209,6 +211,38 @@ static void sdl_miyoomini_update_msg_bg_cache(
       sdl_miyoomini_video_t *vid, const settings_t *settings);
 static void sdl_miyoomini_update_msg_cache(
       sdl_miyoomini_video_t *vid, const char *msg);
+static uint32_t sdl_miyoomini_get_osd_scale(const sdl_miyoomini_video_t *vid);
+static uint32_t sdl_miyoomini_get_osd_line_len(const sdl_miyoomini_video_t *vid);
+static void sdl_miyoomini_refresh_osd_metrics(sdl_miyoomini_video_t *vid);
+
+static uint32_t sdl_miyoomini_get_osd_scale(const sdl_miyoomini_video_t *vid)
+{
+   (void)vid;
+   return 2;
+}
+
+static uint32_t sdl_miyoomini_get_osd_line_len(const sdl_miyoomini_video_t *vid)
+{
+   unsigned target_w = RGUI_MENU_WIDTH;
+   uint32_t char_w   = FONT_WIDTH_STRIDE;
+   (void)vid;
+
+   if (res_x > 0)
+      target_w = (unsigned)(((uint64_t)RGUI_MENU_WIDTH * (uint64_t)res_x) / (uint64_t)SDL_MIYOOMINI_WIDTH);
+
+   if (!char_w || target_w <= char_w)
+      return 1;
+
+   return (target_w / char_w) - 1;
+}
+
+static void sdl_miyoomini_refresh_osd_metrics(sdl_miyoomini_video_t *vid)
+{
+   if (!vid)
+      return;
+   vid->osd_scale_cached    = sdl_miyoomini_get_osd_scale(vid);
+   vid->osd_line_len_cached = sdl_miyoomini_get_osd_line_len(vid);
+}
 
 static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
 {
@@ -347,15 +381,38 @@ static unsigned sdl_miyoomini_get_cheevos_icon_size(unsigned screen_height)
 static void sdl_miyoomini_scale_argb(const uint32_t *src, unsigned src_w, unsigned src_h,
       uint32_t *dst, unsigned dst_w, unsigned dst_h)
 {
-   unsigned y;
-   for (y = 0; y < dst_h; y++)
+   unsigned x, y;
+   unsigned out_w, out_h, off_x, off_y;
+
+   if (!src || !dst || !src_w || !src_h || !dst_w || !dst_h)
+      return;
+
+   memset(dst, 0, sizeof(uint32_t) * dst_w * dst_h);
+
+   if ((uint64_t)dst_w * src_h <= (uint64_t)dst_h * src_w)
    {
-      unsigned x;
-      unsigned src_y = (y * src_h) / dst_h;
-      for (x = 0; x < dst_w; x++)
+      out_w = dst_w;
+      out_h = (unsigned)(((uint64_t)src_h * dst_w) / src_w);
+   }
+   else
+   {
+      out_h = dst_h;
+      out_w = (unsigned)(((uint64_t)src_w * dst_h) / src_h);
+   }
+
+   if (!out_w) out_w = 1;
+   if (!out_h) out_h = 1;
+
+   off_x = (dst_w - out_w) >> 1;
+   off_y = (dst_h - out_h) >> 1;
+
+   for (y = 0; y < out_h; y++)
+   {
+      unsigned src_y = (y * src_h) / out_h;
+      for (x = 0; x < out_w; x++)
       {
-         unsigned src_x = (x * src_w) / dst_w;
-         dst[y * dst_w + x] = src[src_y * src_w + src_x];
+         unsigned src_x = (x * src_w) / out_w;
+         dst[(off_y + y) * dst_w + (off_x + x)] = src[src_y * src_w + src_x];
       }
    }
 }
@@ -723,26 +780,24 @@ static void sdl_miyoomini_clear_msgarea(void* buf, unsigned x, unsigned y, unsig
 
 static INLINE uint32_t sdl_miyoomini_blend_888(uint32_t dst, uint32_t src, uint8_t alpha)
 {
+   uint32_t inv_alpha;
+   uint32_t rb;
+   uint32_t g;
+
    if (alpha == 0)
       return dst;
    if (alpha == 255)
       return src;
 
-   {
-      uint8_t inv_alpha = 255 - alpha;
-      uint8_t sr        = (src >> 16) & 0xFF;
-      uint8_t sg        = (src >> 8)  & 0xFF;
-      uint8_t sb        = (src)       & 0xFF;
-      uint8_t dr        = (dst >> 16) & 0xFF;
-      uint8_t dg        = (dst >> 8)  & 0xFF;
-      uint8_t db        = (dst)       & 0xFF;
+   inv_alpha = 255 - alpha;
+   rb = (((src & 0x00FF00FFu) * alpha)
+       + ((dst & 0x00FF00FFu) * inv_alpha)
+       + 0x00800080u) >> 8;
+   g  = (((src & 0x0000FF00u) * alpha)
+       + ((dst & 0x0000FF00u) * inv_alpha)
+       + 0x00008000u) >> 8;
 
-      dr = (uint8_t)((sr * alpha + dr * inv_alpha) / 255);
-      dg = (uint8_t)((sg * alpha + dg * inv_alpha) / 255);
-      db = (uint8_t)((sb * alpha + db * inv_alpha) / 255);
-
-      return (dr << 16) | (dg << 8) | db;
-   }
+   return (rb & 0x00FF00FFu) | (g & 0x0000FF00u);
 }
 
 static void sdl_miyoomini_blend_rect_888(
@@ -797,15 +852,25 @@ static void sdl_miyoomini_print_msg(void* data) {
       screen_buf              = fb_addr + (vinfo.yoffset * res_x * sizeof(uint32_t));
       sdl_miyoomini_init_font_color(vid);
       bool **font_lut         = vid->osd_font->lut;
-      uint32_t str_lines      = (uint32_t)((str_len - 1) / OSD_TEXT_LINE_LEN) + 1;
-      uint32_t str_counter    = OSD_TEXT_LINE_LEN;
-      const int x_pos_def     = res_x - (FONT_WIDTH_STRIDE * 2);
+      uint32_t osd_scale      = vid->osd_scale_cached;
+      uint32_t line_len       = vid->osd_line_len_cached;
+      if (!osd_scale || !line_len)
+      {
+         sdl_miyoomini_refresh_osd_metrics(vid);
+         osd_scale = vid->osd_scale_cached;
+         line_len  = vid->osd_line_len_cached;
+      }
+      uint32_t str_lines      = (uint32_t)((str_len - 1) / line_len) + 1;
+      uint32_t str_counter    = line_len;
+      const int x_pos_def     = res_x - (FONT_WIDTH_STRIDE * osd_scale);
       int x_pos               = x_pos_def;
-      int y_pos               = OSD_TEXT_Y_MARGIN - 4 + (FONT_HEIGHT_STRIDE * 2 * str_lines);
-      uint32_t line_step      = FONT_HEIGHT_STRIDE * 2;
-      uint32_t line_char_w    = FONT_WIDTH_STRIDE * 2;
-      uint32_t line_bg_h      = (FONT_HEIGHT * 2) + 4;
+      int y_pos               = OSD_TEXT_Y_MARGIN - 4 + (FONT_HEIGHT_STRIDE * osd_scale * str_lines);
+      uint32_t line_step      = FONT_HEIGHT_STRIDE * osd_scale;
+      uint32_t line_char_w    = FONT_WIDTH_STRIDE * osd_scale;
+      uint32_t line_bg_h      = (FONT_HEIGHT * osd_scale) + 4;
       uint32_t line_bg_y_pad  = 2;
+      int osd_bg_y_min        = OSD_TEXT_Y_MARGIN - 2;
+      int osd_bg_y_max        = OSD_TEXT_Y_MARGIN + (int)(FONT_HEIGHT_STRIDE * osd_scale * OSD_TEXT_LINES_MAX) + 4;
       uint32_t line_index;
 
       if (msg_bg_enable && msg_bg_alpha > 0)
@@ -824,24 +889,36 @@ static void sdl_miyoomini_print_msg(void* data) {
             bg_w = ((int)chars * (int)line_char_w) + 2;
             bg_x = x_pos_def - bg_w + 4;
             bg_y = line_y - ((int)line_bg_h - (int)line_bg_y_pad);
+            {
+               uint32_t bg_h = line_bg_h;
 
-            sdl_miyoomini_blend_rect_888(
-                  (uint32_t*)screen_buf,
-                  res_x,
-                  res_y,
-                  bg_x,
-                  bg_y,
-                  bg_w,
-                  (int)line_bg_h,
-                  msg_bg_rgb,
-                  msg_bg_alpha);
+               if (bg_y < osd_bg_y_min)
+                  bg_y = osd_bg_y_min;
+               if (bg_y >= osd_bg_y_max)
+                  continue;
+               if (bg_y + (int)bg_h > osd_bg_y_max)
+                  bg_h = (uint32_t)(osd_bg_y_max - bg_y);
+               if ((int)bg_h <= 0)
+                  continue;
+
+               sdl_miyoomini_blend_rect_888(
+                     (uint32_t*)screen_buf,
+                     res_x,
+                     res_y,
+                     bg_x,
+                     bg_y,
+                     bg_w,
+                     (int)bg_h,
+                     msg_bg_rgb,
+                     msg_bg_alpha);
+            }
          }
       }
 
       for (; str_len > 0; str_len--) {
          /* Check for out of bounds x coordinates */
          if (!str_counter--) {
-            x_pos = x_pos_def; y_pos -= (FONT_HEIGHT_STRIDE * 2); str_counter = OSD_TEXT_LINE_LEN;
+            x_pos = x_pos_def; y_pos -= (FONT_HEIGHT_STRIDE * osd_scale); str_counter = line_len;
          }
          /* Deal with spaces first, for efficiency */
          if (*str == ' ') str++;
@@ -864,11 +941,11 @@ static void sdl_miyoomini_print_msg(void* data) {
             symbol_lut = font_lut[symbol];
 
             for (j = 0; j < FONT_HEIGHT; j++) {
-               uint32_t buff_offset = ((y_pos - (j * 2) ) * res_x) + x_pos;
+               uint32_t buff_offset = ((y_pos - (j * osd_scale) ) * res_x) + x_pos;
 
                for (i = 0; i < FONT_WIDTH; i++) {
                   if (*(symbol_lut + i + (j * FONT_WIDTH))) {
-                     uint32_t *screen_buf_ptr = (uint32_t*)screen_buf + buff_offset - (i * 2);
+                     uint32_t *screen_buf_ptr = (uint32_t*)screen_buf + buff_offset - (i * osd_scale);
 
                      /* Bottom shadow (1) */
                      if (msg_bg_enable)
@@ -933,7 +1010,7 @@ static void sdl_miyoomini_print_msg(void* data) {
                }
             }
          }
-         x_pos -= FONT_WIDTH_STRIDE * 2;
+         x_pos -= FONT_WIDTH_STRIDE * osd_scale;
       }
       vid->msg_count |= (str_lines << 6);
    }
@@ -969,20 +1046,53 @@ static void sdl_miyoomini_print_msg(void* data) {
 
 /* Nearest neighbor scalers */
 #define NN_SHIFT 16
+static INLINE uint32_t sdl_miyoomini_nn_step(uint32_t src, uint32_t dst)
+{
+   uint32_t step;
+   if (!src || !dst)
+      return 0;
+   step = (uint32_t)(((uint64_t)src << NN_SHIFT) / dst);
+   return step ? step : 1;
+}
+
+static INLINE void sdl_miyoomini_copy_row_fast(void *dst, const void *src, size_t row_bytes)
+{
+   if ((((uintptr_t)dst | (uintptr_t)src | row_bytes) & 3u) == 0)
+      memcpy_neon(dst, (void*)src, (uint32_t)row_bytes);
+   else
+      memcpy(dst, src, row_bytes);
+}
+
 void scalenn_16(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp) {
    if (unlikely(!data||!sw||!sh)) return;
    sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
    uint32_t dw = vid->video_w;
    uint32_t dh = vid->video_h;
 
-   uint32_t x_step = (sw << NN_SHIFT) / dw + 1;
-   uint32_t y_step = (sh << NN_SHIFT) / dh + 1;
+   uint32_t x_step = sdl_miyoomini_nn_step(sw, dw);
+   uint32_t y_step = sdl_miyoomini_nn_step(sh, dh);
 
    uint32_t in_stride  = sp >> 1;
    uint32_t out_stride = dp >> 1;
 
    uint16_t* in_ptr  = (uint16_t*)src;
    uint16_t* out_ptr = (uint16_t*)dst;
+
+   if (dw == sw && dh == sh)
+   {
+      size_t row_bytes = (size_t)sw << 1;
+      if (sp == dp && sp == row_bytes)
+         sdl_miyoomini_copy_row_fast(dst, src, row_bytes * sh);
+      else
+      {
+         uint8_t *s = (uint8_t*)src;
+         uint8_t *d = (uint8_t*)dst;
+         uint32_t i;
+         for (i = 0; i < sh; i++, s += sp, d += dp)
+            sdl_miyoomini_copy_row_fast(d, s, row_bytes);
+      }
+      return;
+   }
 
    uint32_t oy = 0;
    uint32_t y  = 0;
@@ -1100,14 +1210,30 @@ void scalenn_32(void* data, void* __restrict src, void* __restrict dst, uint32_t
    uint32_t dw = vid->video_w;
    uint32_t dh = vid->video_h;
 
-   uint32_t x_step = (sw << NN_SHIFT) / dw + 1;
-   uint32_t y_step = (sh << NN_SHIFT) / dh + 1;
+   uint32_t x_step = sdl_miyoomini_nn_step(sw, dw);
+   uint32_t y_step = sdl_miyoomini_nn_step(sh, dh);
 
    uint32_t in_stride  = sp >> 2;
    uint32_t out_stride = dp >> 2;
 
    uint32_t* in_ptr  = (uint32_t*)src;
    uint32_t* out_ptr = (uint32_t*)dst;
+
+   if (dw == sw && dh == sh)
+   {
+      size_t row_bytes = (size_t)sw << 2;
+      if (sp == dp && sp == row_bytes)
+         sdl_miyoomini_copy_row_fast(dst, src, row_bytes * sh);
+      else
+      {
+         uint8_t *s = (uint8_t*)src;
+         uint8_t *d = (uint8_t*)dst;
+         uint32_t i;
+         for (i = 0; i < sh; i++, s += sp, d += dp)
+            sdl_miyoomini_copy_row_fast(d, s, row_bytes);
+      }
+      return;
+   }
 
    uint32_t oy = 0;
    uint32_t y  = 0;
@@ -1783,7 +1909,7 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
          }
       }
       if (!ok) {
-         RARCH_ERR("[MI_GFX]: Failed to init GFX surface\n");
+         RARCH_ERR("[SDL2/MI_GFX]: Failed to init GFX surface\n");
          for (unsigned i = 0; i < 2; i++) {
             if (vid->screens[i]) {
                GFX_FreeSurface(vid->screens[i]);
@@ -1800,6 +1926,9 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
 
    if (!vid->menu_active && (viewport_changed || surface_size_changed || surface_format_changed))
       sdl_miyoomini_clear_border(fb_addr, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
+
+   if (surface_size_changed || surface_format_changed)
+      sdl_miyoomini_refresh_osd_metrics(vid);
 
    vid->rgb32 = rgb32;
 }
@@ -1818,7 +1947,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    if (file == NULL || !(fscanf(file, "%dx%d", &res_x, &res_y) == 2))
       return NULL;
    fclose(file);
-   RARCH_LOG("[MI_GFX]: Resolution: %dx%d\n", res_x, res_y);
+   RARCH_LOG("[SDL2/MI_GFX]: Resolution: %dx%d\n", res_x, res_y);
    rgui_menu_dest_rect = (SDL_Rect){(res_x - RGUI_MENU_WIDTH * 2) / 2, (res_y - RGUI_MENU_HEIGHT * 2) / 2, RGUI_MENU_WIDTH * 2, RGUI_MENU_HEIGHT * 2};
 
    /* Initialise graphics subsystem, if required */
@@ -1841,7 +1970,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->cheevos_lock = SDL_CreateMutex();
    if (!vid->cheevos_lock)
    {
-      RARCH_ERR("[SDL1]: Failed to create cheevos mutex\n");
+      RARCH_ERR("[SDL2]: Failed to create cheevos mutex\n");
       free(vid);
       return NULL;
    }
@@ -1855,7 +1984,7 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
          0, RGUI_MENU_WIDTH, RGUI_MENU_HEIGHT, 16, 0, 0, 0, 0);
 
    if (!vid->menuscreen||!vid->menuscreen_rgui) {
-      RARCH_ERR("[MI_GFX]: Failed to init GFX surface\n");
+      RARCH_ERR("[SDL2/MI_GFX]: Failed to init GFX surface\n");
       goto error;
    }
 
@@ -1873,6 +2002,8 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->quitting          = false;
    vid->ff_frame_time_min = 16667;
    vid->ff_refresh_rate_cached = 0.0f;
+   vid->osd_scale_cached  = 2;
+   vid->osd_line_len_cached = OSD_TEXT_LINE_LEN;
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
 
@@ -1884,13 +2015,14 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    /* Initialise OSD font */
    sdl_miyoomini_init_font_color(vid);
    sdl_miyoomini_update_msg_bg_cache(vid, settings);
+   sdl_miyoomini_refresh_osd_metrics(vid);
 
    vid->osd_font = bitmapfont_get_lut();
 
    if (!vid->osd_font ||
        vid->osd_font->glyph_max <
             (SDL_NUM_FONT_GLYPHS - 1)) {
-      RARCH_ERR("[SDL1]: Failed to init OSD font\n");
+      RARCH_ERR("[SDL2]: Failed to init OSD font\n");
       goto error;
    }
 
@@ -2425,19 +2557,73 @@ static void sdl_miyoomini_update_msg_cache(
       return;
 
    strlcpy(vid->msg_tmp, src, sizeof(vid->msg_tmp));
-   msg_len = strlen_size(vid->msg_tmp, OSD_TEXT_LEN_MAX);
-   vid->msg_len_cached = msg_len;
-   vid->msg_line_count_cached = msg_len ? (uint32_t)((msg_len - 1) / OSD_TEXT_LINE_LEN) + 1 : 0;
-   if (vid->msg_line_count_cached > OSD_TEXT_LINES_MAX)
-      vid->msg_line_count_cached = OSD_TEXT_LINES_MAX;
-
-   memset(vid->msg_line_chars_cached, 0, sizeof(vid->msg_line_chars_cached));
-   for (i = 0; i < msg_len; i++)
    {
-      uint32_t line = i / OSD_TEXT_LINE_LEN;
-      if (line >= OSD_TEXT_LINES_MAX)
-         break;
-      vid->msg_line_chars_cached[line]++;
+      uint32_t line_len = vid->osd_line_len_cached ? vid->osd_line_len_cached : sdl_miyoomini_get_osd_line_len(vid);
+      uint32_t max_chars = line_len * OSD_TEXT_LINES_MAX;
+      uint32_t max_buf_chars = (uint32_t)sizeof(vid->msg_tmp) - 1;
+      uint32_t glyph_count = 0;
+      const char *scan = vid->msg_tmp;
+      const char *cut_ptr = vid->msg_tmp;
+
+      if (max_chars > max_buf_chars)
+         max_chars = max_buf_chars;
+
+      while (*scan && glyph_count < max_chars)
+      {
+         const char *old_scan = scan;
+         utf8_walk(&scan);
+         if (scan == old_scan)
+            scan++;
+         cut_ptr = scan;
+         glyph_count++;
+      }
+
+      if (*scan)
+      {
+         if (max_chars > 3)
+         {
+            uint32_t keep_glyphs = max_chars - 3;
+            uint32_t keep_count  = 0;
+            const char *keep_scan = vid->msg_tmp;
+            const char *keep_ptr  = vid->msg_tmp;
+
+            while (*keep_scan && keep_count < keep_glyphs)
+            {
+               const char *old_keep = keep_scan;
+               utf8_walk(&keep_scan);
+               if (keep_scan == old_keep)
+                  keep_scan++;
+               keep_ptr = keep_scan;
+               keep_count++;
+            }
+
+            *((char*)keep_ptr) = '\0';
+            strlcat(vid->msg_tmp, "...", sizeof(vid->msg_tmp));
+            glyph_count = keep_count + 3;
+         }
+         else
+         {
+            *((char*)cut_ptr) = '\0';
+         }
+      }
+      else
+         *((char*)cut_ptr) = '\0';
+
+      msg_len = glyph_count;
+      vid->msg_len_cached = msg_len;
+
+      vid->msg_line_count_cached = msg_len ? (uint32_t)((msg_len - 1) / line_len) + 1 : 0;
+      if (vid->msg_line_count_cached > OSD_TEXT_LINES_MAX)
+         vid->msg_line_count_cached = OSD_TEXT_LINES_MAX;
+
+      memset(vid->msg_line_chars_cached, 0, sizeof(vid->msg_line_chars_cached));
+      for (i = 0; i < msg_len; i++)
+      {
+         uint32_t line = i / line_len;
+         if (line >= OSD_TEXT_LINES_MAX)
+            break;
+         vid->msg_line_chars_cached[line]++;
+      }
    }
 }
 
@@ -2526,9 +2712,10 @@ static void sdl_miyoomini_overlay_full_screen(void *data, bool enable) { }
 static void sdl_miyoomini_overlay_set_alpha(void *data, unsigned idx, float mod) {
 	sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t *)data;
 	if ((!idx)&&(vid)&&(vid->overlay_surface)) {
-		uint8_t value = mod * 0xFF;
-		vid->overlay_surface->flags |= SDL_SRCALPHA;
-		SDL_SetSurfaceBlendMode(vid->overlay_surface, SDL_BLENDMODE_BLEND);
+		uint8_t value;
+		if (mod < 0.0f) mod = 0.0f;
+		if (mod > 1.0f) mod = 1.0f;
+		value = (uint8_t)(mod * 0xFF);
 		{
 			Uint8 current_alpha = 0;
 			SDL_GetSurfaceAlphaMod(vid->overlay_surface, &current_alpha);

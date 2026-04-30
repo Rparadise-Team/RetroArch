@@ -2972,6 +2972,20 @@ static void rgui_draw_miyoo_achievement_badge(
    else if (img.height > img.width)
       draw_w = (unsigned)(((uint64_t)size * img.width) / img.height);
 
+   /* Prefer integer upscale for small badges to keep text/pixel edges crisp. */
+   if (img.width <= size && img.height <= size)
+   {
+      unsigned scale_x = size / img.width;
+      unsigned scale_y = size / img.height;
+      unsigned scale_i = scale_x < scale_y ? scale_x : scale_y;
+
+      if (scale_i > 1)
+      {
+         draw_w = img.width * scale_i;
+         draw_h = img.height * scale_i;
+      }
+   }
+
    if (draw_w == 0)
       draw_w = 1;
    if (draw_h == 0)
