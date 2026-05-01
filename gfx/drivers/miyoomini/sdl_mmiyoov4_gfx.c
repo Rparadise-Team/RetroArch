@@ -18,6 +18,7 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -107,6 +108,7 @@ struct sdl_miyoomini_video
    retro_time_t last_frame_time;
    retro_time_t ff_frame_time_min;
    float ff_refresh_rate_cached;
+   float detected_refresh_rate;
    enum dingux_ipu_filter_type filter_type;
    bool vsync;
    bool keep_aspect;
@@ -206,6 +208,7 @@ static uint16_t sdl_miyoomini_surface_read_pixel565(
 }
 
 static void sdl_miyoomini_apply_state_changes(void *data);
+
 static void sdl_miyoomini_init_font_color(sdl_miyoomini_video_t *vid);
 static void sdl_miyoomini_update_msg_bg_cache(
       sdl_miyoomini_video_t *vid, const settings_t *settings);
@@ -2000,14 +2003,36 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    vid->menu_texture_alpha = 1.0f;
    vid->menu_bg_valid     = false;
    vid->quitting          = false;
-   vid->ff_frame_time_min = 16667;
-   vid->ff_refresh_rate_cached = 0.0f;
+   vid->detected_refresh_rate = settings->floats.video_refresh_rate;
+
+   /* Prefer configured refresh rate when available:
+    * SDL display mode reports integer Hz, which may lose
+    * fractional timing detail (e.g. 59.94 -> 60). */
+   if (vid->detected_refresh_rate <= 1.0f)
+   {
+      SDL_DisplayMode mode;
+      if (SDL_GetCurrentDisplayMode(0, &mode) == 0 && mode.refresh_rate > 0)
+         vid->detected_refresh_rate = (float)mode.refresh_rate;
+   }
+
+   if (vid->detected_refresh_rate <= 1.0f)
+      vid->detected_refresh_rate = 60.0f;
+
+   RARCH_LOG("[SDL2/MI_GFX]: Using refresh rate %.3f Hz\n", vid->detected_refresh_rate);
+
+   vid->ff_frame_time_min = (retro_time_t)(1000000.0 / (double)vid->detected_refresh_rate + 0.5);
+   if (vid->ff_frame_time_min == 0)
+      vid->ff_frame_time_min = 1;
+   vid->ff_refresh_rate_cached = vid->detected_refresh_rate;
+   vid->last_frame_time = cpu_features_get_time_usec();
+
+   driver_ctl(RARCH_DRIVER_CTL_SET_REFRESH_RATE, &vid->detected_refresh_rate);
    vid->osd_scale_cached  = 2;
    vid->osd_line_len_cached = OSD_TEXT_LINE_LEN;
 
    sdl_miyoomini_set_output(vid, vid->content_width, vid->content_height, vid->rgb32);
 
-   GFX_SetFlipFlags(vid->vsync ? (GFX_BLOCKING | GFX_FLIPWAIT) : 0);
+   GFX_SetFlipFlags(vid->vsync ? (GFX_BLOCKING | GFX_FLIPWAIT) : GFX_FLIPWAIT);
 
    sdl_miyoomini_input_driver_init(input_drv_name,
          joypad_drv_name, input, input_data);
@@ -2049,6 +2074,7 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
     *   core skips a frame) */
    if (unlikely(!vid || (!frame && !vid->menu_active))) return true;
 
+
    /* If fast forward is currently active, we may
     * push frames at an 'unlimited' rate. Since the
     * display has a fixed refresh rate of 60 Hz, this
@@ -2062,9 +2088,10 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
       retro_time_t ff_frame_time_min = vid->ff_frame_time_min;
 
       if (video_info->refresh_rate > 1.0f
-            && vid->ff_refresh_rate_cached != video_info->refresh_rate)
+            && fabsf(vid->ff_refresh_rate_cached - video_info->refresh_rate) > 0.0001f)
       {
-         ff_frame_time_min = (retro_time_t)(1000000.0f / video_info->refresh_rate + 0.5f);
+         double frame_time = 1000000.0 / (double)video_info->refresh_rate;
+         ff_frame_time_min = (retro_time_t)(frame_time + 0.5);
          if (ff_frame_time_min == 0)
             ff_frame_time_min = 1;
          vid->ff_frame_time_min = ff_frame_time_min;
@@ -2414,8 +2441,11 @@ static void sdl_miyoomini_gfx_set_nonblock_state(void *data, bool toggle,
    if (vid->vsync != vsync)
    {
       vid->vsync              = vsync;
-      GFX_SetFlipFlags(vsync ? (GFX_BLOCKING | GFX_FLIPWAIT) : 0);
+      GFX_SetFlipFlags(vsync ? (GFX_BLOCKING | GFX_FLIPWAIT) : GFX_FLIPWAIT);
    }
+
+   if (toggle)
+      vid->last_frame_time = cpu_features_get_time_usec();
 }
 
 static void sdl_miyoomini_gfx_check_window(sdl_miyoomini_video_t *vid) {
@@ -2473,7 +2503,13 @@ static void sdl_miyoomini_gfx_viewport_info(void *data, struct video_viewport *v
    vp->height = vp->full_height = vid->content_height;
 }
 
-static float sdl_miyoomini_get_refresh_rate(void *data) { return 60.0f; }
+static float sdl_miyoomini_get_refresh_rate(void *data)
+{
+   sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
+   if (!vid || vid->detected_refresh_rate <= 1.0f)
+      return 60.0f;
+   return vid->detected_refresh_rate;
+}
 
 static void sdl_miyoomini_set_filtering(void *data, unsigned index, bool smooth, bool ctx_scaling) {
    sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
