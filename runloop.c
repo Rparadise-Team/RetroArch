@@ -32,12 +32,12 @@
 #endif
 #endif
 
-#if defined(DINGUX)
+#if defined(DINGUX) || defined(MIYOOMINI)
 #include <sys/types.h>
 #include <unistd.h>
 #endif
 
-#if (defined(__linux__) || defined(__unix__) || defined(DINGUX)) && !defined(EMSCRIPTEN)
+#if (defined(__linux__) || defined(__unix__) || defined(DINGUX) || defined(MIYOOMINI)) && !defined(EMSCRIPTEN)
 #include <signal.h>
 #endif
 

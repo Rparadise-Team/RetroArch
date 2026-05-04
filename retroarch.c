@@ -32,9 +32,10 @@
 #if defined(DINGUX) || defined(MIYOOMINI)
 #include <sys/types.h>
 #include <unistd.h>
+#include <streams/file_stream.h>
 #endif
 
-#if (defined(__linux__) || defined(__unix__) || defined(DINGUX)) && !defined(EMSCRIPTEN)
+#if (defined(__linux__) || defined(__unix__) || defined(DINGUX) || defined(MIYOOMINI)) && !defined(EMSCRIPTEN)
 #include <signal.h>
 #endif
 
@@ -8645,6 +8646,72 @@ bool retroarch_main_quit(void)
 #endif
 
 #if defined(MIYOOMINI)
+	{
+      const char *core_path         = path_get(RARCH_PATH_CORE);
+      const char *content_path      = path_get(RARCH_PATH_CONTENT);
+      const char *home_dir          = getenv("HOME");
+      const char *tape_path         = "/mnt/SDCARD/.simplemenu/tape.sav";
+      void *tape_data               = NULL;
+      int64_t tape_size             = 0;
+      unsigned tape_value           = 0;
+      bool valid_tape               = false;
+
+      if (filestream_read_file(tape_path, &tape_data, &tape_size) && tape_size > 0)
+      {
+         char tape_buf[32];
+         size_t tape_len = (tape_size < (int64_t)(sizeof(tape_buf) - 1))
+            ? (size_t)tape_size : (sizeof(tape_buf) - 1);
+
+         memcpy(tape_buf, tape_data, tape_len);
+         tape_buf[tape_len] = '\0';
+
+         {
+            char *endptr = NULL;
+            unsigned long parsed_tape = strtoul(tape_buf, &endptr, 10);
+
+            if (endptr != tape_buf && parsed_tape <= 7)
+            {
+               tape_value = (unsigned)parsed_tape;
+               valid_tape = (tape_value == 4 || tape_value == 5);
+            }
+         }
+      }
+
+      if (!string_is_empty(home_dir)
+            && !string_is_empty(core_path)
+            && !string_is_empty(content_path)
+            && valid_tape
+            && settings->bools.savestate_auto_load
+            && settings->bools.savestate_auto_save)
+      {
+         char run_path[PATH_MAX_LENGTH];
+         FILE *run_file = NULL;
+
+         fill_pathname_join_special(run_path, home_dir, "run", sizeof(run_path));
+
+         run_file = fopen(run_path, "w");
+
+         if (run_file)
+         {
+            fprintf(run_file, "-L \"%s\" \"%s\"\n", core_path, content_path);
+            fclose(run_file);
+         }
+      }
+      else
+      {
+         char run_path[PATH_MAX_LENGTH];
+
+         if (!string_is_empty(home_dir))
+         {
+            fill_pathname_join_special(run_path, home_dir, "run", sizeof(run_path));
+            filestream_delete(run_path);
+         }
+      }
+
+      if (tape_data)
+         free(tape_data);
+   }
+
    /* Flush pending writes to FAT32 SD before process exit. */
    sync();
 #endif
