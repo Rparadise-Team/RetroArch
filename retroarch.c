@@ -8669,10 +8669,10 @@ bool retroarch_main_quit(void)
             char *endptr = NULL;
             unsigned long parsed_tape = strtoul(tape_buf, &endptr, 10);
 
-            if (endptr != tape_buf && parsed_tape <= 7)
+            if (endptr != tape_buf && parsed_tape <= 5)
             {
                tape_value = (unsigned)parsed_tape;
-               valid_tape = (tape_value == 4 || tape_value == 5);
+               valid_tape = (tape_value == 2 || tape_value == 3);
             }
          }
       }
