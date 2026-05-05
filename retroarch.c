@@ -8681,7 +8681,6 @@ bool retroarch_main_quit(void)
             && !string_is_empty(core_path)
             && !string_is_empty(content_path)
             && valid_tape
-            && settings->bools.savestate_auto_load
             && settings->bools.savestate_auto_save)
       {
          char run_path[PATH_MAX_LENGTH];
