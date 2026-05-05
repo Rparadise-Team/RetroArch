@@ -7322,10 +7322,10 @@ static void rgui_update_savestate_thumbnail_image(void *data)
       {
          /* Keep achievement badges compact on 640x480 / 752x560 class displays. */
          unsigned badge_max = rgui->font_height_stride * 5;
-         if (badge_max < 45)
-            badge_max = 45;
-         if (badge_max > 70)
-            badge_max = 70;
+         if (badge_max < 64)
+            badge_max = 64;
+         if (badge_max > 64)
+            badge_max = 64;
          rgui->mini_left_thumbnail.max_width  = badge_max;
          rgui->mini_left_thumbnail.max_height = badge_max;
       }
