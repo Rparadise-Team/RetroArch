@@ -166,19 +166,20 @@ struct sdl_miyoomini_video
 #endif
 };
 
+static INLINE uint32_t sdl_div255(uint32_t x)
+{
+   /* División por 255 sin instrucción DIV — solo shifts y suma.
+    * Equivalente exacto a x/255 para x en [0, 65280].
+    * El Cortex-A7 no tiene UDIV hardware, esto ahorra ~18 ciclos por canal. */
+   return (x + (x >> 8) + 1) >> 8;
+}
+
 static INLINE uint16_t sdl_miyoomini_blend_565(uint16_t bg, uint16_t fg, uint8_t alpha)
 {
    uint32_t inv_alpha = 255 - alpha;
-   uint32_t bg_r      = (bg >> 11) & 0x1F;
-   uint32_t bg_g      = (bg >> 5)  & 0x3F;
-   uint32_t bg_b      = bg & 0x1F;
-   uint32_t fg_r      = (fg >> 11) & 0x1F;
-   uint32_t fg_g      = (fg >> 5)  & 0x3F;
-   uint32_t fg_b      = fg & 0x1F;
-   uint32_t out_r     = ((fg_r * alpha) + (bg_r * inv_alpha) + 127) / 255;
-   uint32_t out_g     = ((fg_g * alpha) + (bg_g * inv_alpha) + 127) / 255;
-   uint32_t out_b     = ((fg_b * alpha) + (bg_b * inv_alpha) + 127) / 255;
-
+   uint32_t out_r = sdl_div255(((fg >> 11) & 0x1F) * alpha + ((bg >> 11) & 0x1F) * inv_alpha);
+   uint32_t out_g = sdl_div255(((fg >>  5) & 0x3F) * alpha + ((bg >>  5) & 0x3F) * inv_alpha);
+   uint32_t out_b = sdl_div255(( fg        & 0x1F) * alpha + ( bg        & 0x1F) * inv_alpha);
    return (uint16_t)((out_r << 11) | (out_g << 5) | out_b);
 }
 
@@ -249,7 +250,7 @@ static void sdl_miyoomini_refresh_osd_metrics(sdl_miyoomini_video_t *vid)
 
 static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
 {
-   unsigned x, y;
+   unsigned y;
    SDL_Surface *screen = vid->screen;
 
    if (!screen || !screen->pixels || !screen->w || !screen->h)
@@ -258,14 +259,39 @@ static void sdl_miyoomini_capture_menu_background(sdl_miyoomini_video_t *vid)
    if (SDL_MUSTLOCK(screen))
       SDL_LockSurface(screen);
 
-   for (y = 0; y < RGUI_MENU_HEIGHT; y++)
+   /* Fast path: superficie es RGB565 nativa (BytesPerPixel==2) y resolución
+    * coincide exactamente con RGUI_MENU_WIDTH x RGUI_MENU_HEIGHT.
+    * Usamos memcpy por filas — toma el path memcpy_neon automáticamente. */
+   if (screen->format->BytesPerPixel == 2
+         && (unsigned)screen->w == RGUI_MENU_WIDTH
+         && (unsigned)screen->h == RGUI_MENU_HEIGHT)
    {
-      unsigned src_y = (y * (unsigned)screen->h) / RGUI_MENU_HEIGHT;
-      for (x = 0; x < RGUI_MENU_WIDTH; x++)
+      const uint8_t *src = (const uint8_t*)screen->pixels;
+      uint16_t *dst      = vid->menu_bg_texture;
+      size_t row_bytes   = RGUI_MENU_WIDTH * sizeof(uint16_t);
+      for (y = 0; y < RGUI_MENU_HEIGHT; y++)
       {
-         unsigned src_x = (x * (unsigned)screen->w) / RGUI_MENU_WIDTH;
-         vid->menu_bg_texture[(y * RGUI_MENU_WIDTH) + x] =
-               sdl_miyoomini_surface_read_pixel565(screen, src_x, src_y);
+         memcpy(dst + y * RGUI_MENU_WIDTH,
+                src + y * screen->pitch,
+                row_bytes);
+      }
+   }
+   else
+   {
+      /* Fallback general: escalado con nearest-neighbour + conversión de formato */
+      unsigned x;
+      unsigned x_step = ((unsigned)screen->w  << 16) / RGUI_MENU_WIDTH;
+      unsigned y_step = ((unsigned)screen->h << 16) / RGUI_MENU_HEIGHT;
+      unsigned y_acc  = 0;
+      for (y = 0; y < RGUI_MENU_HEIGHT; y++, y_acc += y_step)
+      {
+         unsigned src_y = y_acc >> 16;
+         unsigned x_acc = 0;
+         for (x = 0; x < RGUI_MENU_WIDTH; x++, x_acc += x_step)
+         {
+            vid->menu_bg_texture[(y * RGUI_MENU_WIDTH) + x] =
+                  sdl_miyoomini_surface_read_pixel565(screen, x_acc >> 16, src_y);
+         }
       }
    }
 
