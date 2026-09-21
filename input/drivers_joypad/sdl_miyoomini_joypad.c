@@ -70,12 +70,10 @@
 #define SDL_MIYOOMINI_SDLK_LEFT   SDLK_LEFT
 
 typedef struct {
-   uint16_t pad_state;
+   uint16_t pad_state;       /* Estado físico inmediato del hardware */
+   uint16_t reported_state;  /* Estado consolidado visible para RetroArch */
+   uint8_t  delay_timer;     /* Temporizador de frames para el buffer */
    bool connected;
-#if defined(HAVE_SDL2)
-   SDL_GameController *controller;
-   SDL_Joystick *joystick;
-#endif
 #if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
    bool menu_toggle;
 #endif
@@ -156,108 +154,6 @@ static const char *sdl_miyoomini_joypad_name(unsigned port) {
    return SDL_MIYOOMINI_JOYPAD_NAME;
 }
 
-static INLINE void sdl_miyoomini_set_button_state(
-      miyoomini_joypad_t *joypad, uint8_t button, bool pressed)
-{
-   unsigned joypad_id = RARCH_BIND_LIST_END;
-
-   switch (button)
-   {
-      case 0:  joypad_id = RETRO_DEVICE_ID_JOYPAD_B;      break;
-      case 1:  joypad_id = RETRO_DEVICE_ID_JOYPAD_Y;      break;
-      case 2:  joypad_id = RETRO_DEVICE_ID_JOYPAD_SELECT; break;
-      case 3:  joypad_id = RETRO_DEVICE_ID_JOYPAD_START;  break;
-      case 4:  joypad_id = RETRO_DEVICE_ID_JOYPAD_UP;     break;
-      case 5:  joypad_id = RETRO_DEVICE_ID_JOYPAD_DOWN;   break;
-      case 6:  joypad_id = RETRO_DEVICE_ID_JOYPAD_LEFT;   break;
-      case 7:  joypad_id = RETRO_DEVICE_ID_JOYPAD_RIGHT;  break;
-      case 8:  joypad_id = RETRO_DEVICE_ID_JOYPAD_A;      break;
-      case 9:  joypad_id = RETRO_DEVICE_ID_JOYPAD_X;      break;
-      case 10: joypad_id = RETRO_DEVICE_ID_JOYPAD_L;      break;
-      case 11: joypad_id = RETRO_DEVICE_ID_JOYPAD_R;      break;
-      case 12: joypad_id = RETRO_DEVICE_ID_JOYPAD_L2;     break;
-      case 13: joypad_id = RETRO_DEVICE_ID_JOYPAD_R2;     break;
-      case 14: joypad_id = RETRO_DEVICE_ID_JOYPAD_L3;     break;
-      case 15: joypad_id = RETRO_DEVICE_ID_JOYPAD_R3;     break;
-      default: break;
-   }
-
-   if (joypad_id >= RARCH_BIND_LIST_END)
-      return;
-
-   if (pressed)
-      BIT16_SET(joypad->pad_state, joypad_id);
-   else
-      BIT16_CLEAR(joypad->pad_state, joypad_id);
-}
-
-static bool sdl_miyoomini_set_key_state(
-      miyoomini_joypad_t *joypad, SDL_Keycode key, SDL_Scancode scancode, bool pressed)
-{
-   unsigned joypad_id = RARCH_BIND_LIST_END;
-
-   switch (key)
-   {
-      case SDL_MIYOOMINI_SDLK_X:      joypad_id = RETRO_DEVICE_ID_JOYPAD_X;      break;
-      case SDL_MIYOOMINI_SDLK_A:      joypad_id = RETRO_DEVICE_ID_JOYPAD_A;      break;
-      case SDL_MIYOOMINI_SDLK_B:      joypad_id = RETRO_DEVICE_ID_JOYPAD_B;      break;
-      case SDL_MIYOOMINI_SDLK_Y:      joypad_id = RETRO_DEVICE_ID_JOYPAD_Y;      break;
-      case SDL_MIYOOMINI_SDLK_L:      joypad_id = RETRO_DEVICE_ID_JOYPAD_L;      break;
-      case SDL_MIYOOMINI_SDLK_R:      joypad_id = RETRO_DEVICE_ID_JOYPAD_R;      break;
-      case SDL_MIYOOMINI_SDLK_L2:     joypad_id = RETRO_DEVICE_ID_JOYPAD_L2;     break;
-      case SDL_MIYOOMINI_SDLK_R2:     joypad_id = RETRO_DEVICE_ID_JOYPAD_R2;     break;
-      case SDL_MIYOOMINI_SDLK_SELECT: joypad_id = RETRO_DEVICE_ID_JOYPAD_SELECT; break;
-      case SDL_MIYOOMINI_SDLK_START:  joypad_id = RETRO_DEVICE_ID_JOYPAD_START;  break;
-      case SDL_MIYOOMINI_SDLK_L3:     joypad_id = RETRO_DEVICE_ID_JOYPAD_L3;     break;
-      case SDL_MIYOOMINI_SDLK_R3:
-      case SDLK_UNKNOWN:              joypad_id = RETRO_DEVICE_ID_JOYPAD_R3;     break;
-      case SDL_MIYOOMINI_SDLK_UP:     joypad_id = RETRO_DEVICE_ID_JOYPAD_UP;     break;
-      case SDL_MIYOOMINI_SDLK_RIGHT:  joypad_id = RETRO_DEVICE_ID_JOYPAD_RIGHT;  break;
-      case SDL_MIYOOMINI_SDLK_DOWN:   joypad_id = RETRO_DEVICE_ID_JOYPAD_DOWN;   break;
-      case SDL_MIYOOMINI_SDLK_LEFT:   joypad_id = RETRO_DEVICE_ID_JOYPAD_LEFT;   break;
-      default:
-         break;
-   }
-
-#if defined(HAVE_SDL2)
-   if (joypad_id >= RARCH_BIND_LIST_END)
-   {
-      switch (scancode)
-      {
-         case SDL_SCANCODE_LSHIFT:    joypad_id = RETRO_DEVICE_ID_JOYPAD_X;      break;
-         case SDL_SCANCODE_SPACE:     joypad_id = RETRO_DEVICE_ID_JOYPAD_A;      break;
-         case SDL_SCANCODE_LCTRL:     joypad_id = RETRO_DEVICE_ID_JOYPAD_B;      break;
-         case SDL_SCANCODE_LALT:      joypad_id = RETRO_DEVICE_ID_JOYPAD_Y;      break;
-         case SDL_SCANCODE_E:         joypad_id = RETRO_DEVICE_ID_JOYPAD_L;      break;
-         case SDL_SCANCODE_T:         joypad_id = RETRO_DEVICE_ID_JOYPAD_R;      break;
-         case SDL_SCANCODE_TAB:       joypad_id = RETRO_DEVICE_ID_JOYPAD_L2;     break;
-         case SDL_SCANCODE_BACKSPACE: joypad_id = RETRO_DEVICE_ID_JOYPAD_R2;     break;
-         case SDL_SCANCODE_RCTRL:     joypad_id = RETRO_DEVICE_ID_JOYPAD_SELECT; break;
-         case SDL_SCANCODE_RETURN:    joypad_id = RETRO_DEVICE_ID_JOYPAD_START;  break;
-         case SDL_SCANCODE_ESCAPE:    joypad_id = RETRO_DEVICE_ID_JOYPAD_L3;     break;
-         case SDL_SCANCODE_UP:        joypad_id = RETRO_DEVICE_ID_JOYPAD_UP;     break;
-         case SDL_SCANCODE_RIGHT:     joypad_id = RETRO_DEVICE_ID_JOYPAD_RIGHT;  break;
-         case SDL_SCANCODE_DOWN:      joypad_id = RETRO_DEVICE_ID_JOYPAD_DOWN;   break;
-         case SDL_SCANCODE_LEFT:      joypad_id = RETRO_DEVICE_ID_JOYPAD_LEFT;   break;
-         default:
-            break;
-      }
-   }
-#else
-   (void)scancode;
-#endif
-
-   if (joypad_id >= RARCH_BIND_LIST_END)
-      return false;
-
-   if (pressed)
-      BIT16_SET(joypad->pad_state, joypad_id);
-   else
-      BIT16_CLEAR(joypad->pad_state, joypad_id);
-
-   return true;
-}
-
 static void sdl_miyoomini_joypad_connect(void) {
    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
 
@@ -299,20 +195,6 @@ static void sdl_miyoomini_joypad_destroy(void) {
 #endif
    miyoomini_rumble(0);
 
-#if defined(HAVE_SDL2)
-   if (miyoomini_joypad.controller)
-   {
-      SDL_GameControllerClose(miyoomini_joypad.controller);
-      miyoomini_joypad.controller = NULL;
-   }
-
-   if (miyoomini_joypad.joystick)
-   {
-      SDL_JoystickClose(miyoomini_joypad.joystick);
-      miyoomini_joypad.joystick = NULL;
-   }
-#endif
-
    /* Flush out all pending events */
    while (SDL_PollEvent(&event));
 
@@ -328,17 +210,6 @@ static void *sdl_miyoomini_joypad_init(void *data) {
 
    /* Init for rumble */
    if (!SDL_WasInit(SDL_INIT_TIMER)) SDL_InitSubSystem(SDL_INIT_TIMER);
-#if defined(HAVE_SDL2)
-   if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER))
-      SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK);
-
-   if (SDL_IsGameController(0))
-      joypad->controller = SDL_GameControllerOpen(0);
-
-   joypad->joystick = joypad->controller
-         ? SDL_GameControllerGetJoystick(joypad->controller)
-         : SDL_JoystickOpen(0);
-#endif
    settings_t *settings = config_get_ptr();
    unsigned rumble_gain = settings ? settings->uints.input_rumble_gain
                                    : DEFAULT_RUMBLE_GAIN;
@@ -361,25 +232,17 @@ static bool sdl_miyoomini_joypad_query_pad(unsigned port) {
 static int32_t sdl_miyoomini_joypad_button(unsigned port, uint16_t joykey) {
    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
    if (port != 0) return 0;
-   return (joypad->pad_state & (1 << joykey));
+   return (joypad->reported_state & (1 << joykey)); // Cambiado a reported_state
 }
 
 static void sdl_miyoomini_joypad_get_buttons(unsigned port, input_bits_t *state) {
    miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
 
-   /* Macros require braces here... */
    if (port == 0) {
-      BITS_COPY16_PTR(state, joypad->pad_state);
+      BITS_COPY16_PTR(state, joypad->reported_state); // Cambiado a reported_state
    } else {
       BIT256_CLEAR_ALL_PTR(state);
    }
-}
-
-static int16_t sdl_miyoomini_joypad_axis_state(unsigned port, uint32_t joyaxis) { return 0; }
-
-static int16_t sdl_miyoomini_joypad_axis(unsigned port, uint32_t joyaxis) {
-   if (port != 0) return 0;
-   return sdl_miyoomini_joypad_axis_state(port, joyaxis);
 }
 
 static int16_t sdl_miyoomini_joypad_state(
@@ -394,91 +257,189 @@ static int16_t sdl_miyoomini_joypad_state(
    if (port_idx != 0) return 0;
 
    for (i = 0; i < RARCH_FIRST_CUSTOM_BIND; i++) {
-      /* Auto-binds are per joypad, not per user. */
       const uint64_t joykey  = (binds[i].joykey != NO_BTN)
          ? binds[i].joykey  : joypad_info->auto_binds[i].joykey;
 
       if ((uint16_t)joykey != NO_BTN &&
-            (joypad->pad_state & (1 << (uint16_t)joykey)))
+            (joypad->reported_state & (1 << (uint16_t)joykey))) // Cambiado a reported_state
          ret |= (1 << i);
    }
 
    return ret;
 }
 
-static void sdl_miyoomini_joypad_poll(void) {
-   miyoomini_joypad_t *joypad = (miyoomini_joypad_t*)&miyoomini_joypad;
-   SDL_Event event;
-   bool allow_key_fallback = true;
+static int16_t sdl_miyoomini_joypad_axis_state(unsigned port, uint32_t joyaxis) { return 0; }
 
-#if defined(HAVE_SDL2)
-   /* If SDL2 joystick/controller events are available, prefer
-    * button events so bind detection records BUTTON, not KEY. */
-   if (joypad->controller || joypad->joystick)
-      allow_key_fallback = false;
-#endif
+static int16_t sdl_miyoomini_joypad_axis(unsigned port, uint32_t joyaxis) {
+   if (port != 0) return 0;
+   return sdl_miyoomini_joypad_axis_state(port, joyaxis);
+}
+
+static void sdl_miyoomini_joypad_poll(void){
+   miyoomini_joypad_t *joypad =
+      (miyoomini_joypad_t*)&miyoomini_joypad;
+
+   SDL_Event event;
 
 #if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
    /* Note: The menu toggle key is an awkward special
     * case - the press/release events happen almost
     * instantaneously, and since we only sample once
     * per frame the input is often 'missed'.
-    * If the toggle key gets pressed, we therefore have
-    * to wait until the *next* frame to release it */
-   if (joypad->menu_toggle) {
+    * If the toggle key gets pressed, we therefore
+    * have to wait until the next frame to release it */
+   if (joypad->menu_toggle)
+   {
       BIT64_CLEAR(lifecycle_state, RARCH_MENU_TOGGLE);
       joypad->menu_toggle = false;
    }
 #endif
 
-   /* All digital inputs map to keyboard keys */
    while (SDL_PollEvent(&event))
    {
       switch (event.type)
       {
-#if defined(HAVE_SDL2)
-         case SDL_CONTROLLERBUTTONDOWN:
-            sdl_miyoomini_set_button_state(joypad, (uint8_t)event.cbutton.button, true);
-            break;
-         case SDL_CONTROLLERBUTTONUP:
-            sdl_miyoomini_set_button_state(joypad, (uint8_t)event.cbutton.button, false);
-            break;
-         case SDL_JOYBUTTONDOWN:
-            sdl_miyoomini_set_button_state(joypad, event.jbutton.button, true);
-            break;
-         case SDL_JOYBUTTONUP:
-            sdl_miyoomini_set_button_state(joypad, event.jbutton.button, false);
-            break;
-#endif
          case SDL_KEYDOWN:
-            if (!allow_key_fallback)
-               break;
-            if (event.key.repeat)
-               break;
-            if (sdl_miyoomini_set_key_state(joypad,
-                     event.key.keysym.sym,
-                     event.key.keysym.scancode, true))
-               break;
-#if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
-            if (event.key.keysym.sym == SDL_MIYOOMINI_SDLK_MENU)
+            switch (event.key.keysym.sym)
             {
+               case SDL_MIYOOMINI_SDLK_X:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_X);
+                  break;
+               case SDL_MIYOOMINI_SDLK_A:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_A);
+                  break;
+               case SDL_MIYOOMINI_SDLK_B:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_B);
+                  break;
+               case SDL_MIYOOMINI_SDLK_Y:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_Y);
+                  break;
+               case SDL_MIYOOMINI_SDLK_L:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_L);
+                  break;
+               case SDL_MIYOOMINI_SDLK_R:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_R);
+                  break;
+               case SDL_MIYOOMINI_SDLK_L2:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_L2);
+                  break;
+               case SDL_MIYOOMINI_SDLK_R2:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_R2);
+                  break;
+               case SDL_MIYOOMINI_SDLK_SELECT:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_SELECT);
+                  break;
+               case SDL_MIYOOMINI_SDLK_START:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_START);
+                  break;
+               case SDL_MIYOOMINI_SDLK_L3:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_L3);
+                  break;
+               case SDL_MIYOOMINI_SDLK_R3:
+               case SDLK_UNKNOWN:	// for stockSDL POWER button
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_R3);
+                  break;
+               case SDL_MIYOOMINI_SDLK_UP:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_UP);
+                  break;
+               case SDL_MIYOOMINI_SDLK_RIGHT:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+                  break;
+               case SDL_MIYOOMINI_SDLK_DOWN:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_DOWN);
+                  break;
+               case SDL_MIYOOMINI_SDLK_LEFT:
+                  BIT16_SET(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_LEFT);
+                  break;
+#if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
+               case SDL_MIYOOMINI_SDLK_MENU:
                   BIT64_SET(lifecycle_state, RARCH_MENU_TOGGLE);
                   joypad->menu_toggle = true;
-            }
+                  break;
 #endif
+               default:
+                  break;
+            }
             break;
          case SDL_KEYUP:
-            if (!allow_key_fallback)
-               break;
-            sdl_miyoomini_set_key_state(joypad,
-                  event.key.keysym.sym,
-                  event.key.keysym.scancode, false);
+            switch (event.key.keysym.sym)
+            {
+               case SDL_MIYOOMINI_SDLK_X:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_X);
+                  break;
+               case SDL_MIYOOMINI_SDLK_A:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_A);
+                  break;
+               case SDL_MIYOOMINI_SDLK_B:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_B);
+                  break;
+               case SDL_MIYOOMINI_SDLK_Y:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_Y);
+                  break;
+               case SDL_MIYOOMINI_SDLK_L:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_L);
+                  break;
+               case SDL_MIYOOMINI_SDLK_R:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_R);
+                  break;
+               case SDL_MIYOOMINI_SDLK_L2:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_L2);
+                  break;
+               case SDL_MIYOOMINI_SDLK_R2:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_R2);
+                  break;
+               case SDL_MIYOOMINI_SDLK_SELECT:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_SELECT);
+                  break;
+               case SDL_MIYOOMINI_SDLK_START:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_START);
+                  break;
+               case SDL_MIYOOMINI_SDLK_L3:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_L3);
+                  break;
+               case SDL_MIYOOMINI_SDLK_R3:
+               case SDLK_UNKNOWN:	// for stockSDL POWER button
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_R3);
+                  break;
+               case SDL_MIYOOMINI_SDLK_UP:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_UP);
+                  break;
+               case SDL_MIYOOMINI_SDLK_RIGHT:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_RIGHT);
+                  break;
+               case SDL_MIYOOMINI_SDLK_DOWN:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_DOWN);
+                  break;
+               case SDL_MIYOOMINI_SDLK_LEFT:
+                  BIT16_CLEAR(joypad->pad_state, RETRO_DEVICE_ID_JOYPAD_LEFT);
+                  break;
+               default:
+                  break;
+            }
             break;
          default:
             break;
       }
    }
-
+	
+	/* --- Lógica del Buffer de 1 Frame --- */
+   if (joypad->pad_state != joypad->reported_state)
+   {
+      if (joypad->delay_timer == 0) {
+         /* Se detecta un cambio físico. Iniciamos la espera de 1 frame
+          * para absorber pulsaciones que entren con milisegundos de retraso. */
+         joypad->delay_timer = 1;
+      } else {
+         /* Ya hemos esperado 1 frame. Consolidamos el estado bloqueando la lectura. */
+         joypad->reported_state = joypad->pad_state;
+         joypad->delay_timer = 0;
+      }
+   }
+   else
+   {
+      /* El estado es estable, mantenemos el temporizador a cero */
+      joypad->delay_timer = 0;
+   }
 }
 
 input_device_driver_t sdl_dingux_joypad = {
