@@ -274,6 +274,13 @@ static int16_t sdl_miyoomini_joypad_axis(unsigned port, uint32_t joyaxis) {
    if (port != 0) return 0;
    return sdl_miyoomini_joypad_axis_state(port, joyaxis);
 }
+	
+#define DIR_BUTTONS_MASK ( \
+   (1 << RETRO_DEVICE_ID_JOYPAD_UP)    | \
+   (1 << RETRO_DEVICE_ID_JOYPAD_DOWN)  | \
+   (1 << RETRO_DEVICE_ID_JOYPAD_LEFT)  | \
+   (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT) \
+)
 
 static void sdl_miyoomini_joypad_poll(void){
    miyoomini_joypad_t *joypad =
@@ -422,31 +429,36 @@ static void sdl_miyoomini_joypad_poll(void){
       }
    }
 	
-   /* --- Lógica del Buffer de 2/60 Frames (~33.3 ms) --- */
-   if (joypad->pad_state != joypad->reported_state)
+   /* --- Lógica de filtrado de entrada --- */
+
+   // 1. Separar dirección (instantánea) de botones de acción
+   uint16_t current_dir    = joypad->pad_state & DIR_BUTTONS_MASK;
+   uint16_t current_action = joypad->pad_state & ~DIR_BUTTONS_MASK;
+   uint16_t reported_action = joypad->reported_state & ~DIR_BUTTONS_MASK;
+
+   // 2. Aplicar el buffer de 2 frames (~33.3 ms) EXCLUSIVAMENTE a los botones de acción
+   if (current_action != reported_action)
    {
       if (joypad->delay_timer == 0)
       {
-         /* Detecta un cambio de botones. Inicia la ventana de 2 ticks a 60 FPS */
          joypad->delay_timer = 2;
       }
       else
       {
-         /* Descuenta 1 tick por cada frame de 60 FPS transcurrido */
          joypad->delay_timer--;
-
-         /* Al cumplirse los 2/60 segundos, consolida el estado de botones acumulados */
          if (joypad->delay_timer == 0)
          {
-            joypad->reported_state = joypad->pad_state;
+            reported_action = current_action;
          }
       }
    }
    else
    {
-      /* El estado se mantiene estable, reinicia el temporizador */
       joypad->delay_timer = 0;
    }
+
+   // 3. Recombinar la dirección instantánea con las acciones consolidadas
+   joypad->reported_state = current_dir | reported_action;
 }
 
 input_device_driver_t sdl_dingux_joypad = {
