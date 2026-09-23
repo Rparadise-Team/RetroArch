@@ -422,22 +422,29 @@ static void sdl_miyoomini_joypad_poll(void){
       }
    }
 	
-	/* --- Lógica del Buffer de 1 Frame --- */
+   /* --- Lógica del Buffer de 2/60 Frames (~33.3 ms) --- */
    if (joypad->pad_state != joypad->reported_state)
    {
-      if (joypad->delay_timer == 0) {
-         /* Se detecta un cambio físico. Iniciamos la espera de 1 frame
-          * para absorber pulsaciones que entren con milisegundos de retraso. */
-         joypad->delay_timer = 1;
-      } else {
-         /* Ya hemos esperado 1 frame. Consolidamos el estado bloqueando la lectura. */
-         joypad->reported_state = joypad->pad_state;
-         joypad->delay_timer = 0;
+      if (joypad->delay_timer == 0)
+      {
+         /* Detecta un cambio de botones. Inicia la ventana de 2 ticks a 60 FPS */
+         joypad->delay_timer = 2;
+      }
+      else
+      {
+         /* Descuenta 1 tick por cada frame de 60 FPS transcurrido */
+         joypad->delay_timer--;
+
+         /* Al cumplirse los 2/60 segundos, consolida el estado de botones acumulados */
+         if (joypad->delay_timer == 0)
+         {
+            joypad->reported_state = joypad->pad_state;
+         }
       }
    }
    else
    {
-      /* El estado es estable, mantenemos el temporizador a cero */
+      /* El estado se mantiene estable, reinicia el temporizador */
       joypad->delay_timer = 0;
    }
 }
