@@ -3796,6 +3796,11 @@ MSG_HASH(
    "دستاوردها"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+   "حساسیت دسته"
+)
+
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "ذخیرهٔ وضعیت"
    )
@@ -3896,4 +3901,25 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
    "منوی سفارشی Miyoo را برگردانید، منوی سریع retroarch عمومی را غیرفعال کنید."
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE,
+   "حساسیت تشخیص فشردن همزمان دکمه‌های عمل را تنظیم کنید."
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE,
+   "حساسیت دسته"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF,
+   "فوری"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST,
+   "سریع"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW,
+   "کند"
+)
+
 #endif

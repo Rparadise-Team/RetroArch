@@ -16214,6 +16214,11 @@ MSG_HASH(
    "Достижения"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+   "Чувствительность геймпада"
+)
+
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Сохранить"
    )
@@ -16314,4 +16319,25 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
    "верните пользовательское меню Miyoo, отключите стандартное быстрое меню ретро-архива."
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE,
+   "Настройте чувствительность распознавания одновременного нажатия кнопок действий."
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE,
+   "Чувствительность геймпада"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF,
+   "Мгновенно"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST,
+   "Быстро"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW,
+   "Медленно"
+)
+
 #endif

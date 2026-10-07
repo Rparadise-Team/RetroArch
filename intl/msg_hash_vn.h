@@ -16230,6 +16230,11 @@ MSG_HASH(
    "Kích hoạt"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+   "Độ nhạy tay cầm"
+)
+
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Lưu trò chơi"
    )
@@ -16330,4 +16335,25 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
    "trả lại Menu tùy chỉnh Miyoo, tắt menu nhanh retroarch chung."
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE,
+   "Điều chỉnh độ nhạy nhận dạng nhấn đồng thời các nút hành động."
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE,
+   "Độ nhạy tay cầm"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF,
+   "Tức thì"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST,
+   "Nhanh"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW,
+   "Chậm"
+)
+
 #endif

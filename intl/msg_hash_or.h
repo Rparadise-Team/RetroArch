@@ -908,6 +908,11 @@ MSG_HASH(
    "ସଫଳତାଗୁଡ଼ିକ"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+   "Joypad Sensitivity"
+)
+
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "ତ୍ୱରିତ ସେଭ୍"
    )
@@ -1008,4 +1013,25 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
    "କଷ୍ଟମ୍ ମେନୁ ମିୟୋ ଫେରସ୍ତ କରନ୍ତୁ, ଜେନେରିକ୍ ରିଟ୍ରୋଚ୍ ଶୀଘ୍ର ମେନୁକୁ ଅକ୍ଷମ କରନ୍ତୁ |"
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE,
+   "Adjust the action-button simultaneous press recognition sensitivity."
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE,
+   "Joypad Sensitivity"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF,
+   "Instant"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST,
+   "Fast"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW,
+   "Slow"
+)
+
 #endif

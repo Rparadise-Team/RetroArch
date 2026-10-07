@@ -588,6 +588,11 @@ MSG_HASH(
    "ජයග්‍රහණ"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+   "ජොයිපෑඩ් සංවේදීතාව"
+)
+
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "ඉක්මන් සුරැකීම"
    )
@@ -688,4 +693,25 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
    "අභිරුචි මෙනුව Miyoo ආපසු ලබා දෙන්න, සාමාන්‍ය ප්‍රතිගාමී ඉක්මන් මෙනුව අක්‍රිය කරන්න."
    )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE,
+   "ක්‍රියා බොත්තම් එකවර එබීමේ හඳුනා ගැනීමේ සංවේදීතාව සීරු කරන්න."
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE,
+   "ජොයිපෑඩ් සංවේදීතාව"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF,
+   "ක්ෂණික"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST,
+   "වේගවත්"
+)
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW,
+   "මන්ද"
+)
+
 #endif
