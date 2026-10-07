@@ -33,6 +33,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
+
 /* Simple joypad driver designed to rationalise
  * the bizarre keyboard/gamepad hybrid setup
  * of OpenDingux devices, exclusive for miyoomini */
@@ -73,6 +77,7 @@ typedef struct {
    uint16_t pad_state;       /* Estado físico inmediato del hardware */
    uint16_t reported_state;  /* Estado consolidado visible para RetroArch */
    uint8_t  delay_timer;     /* Temporizador de frames para el buffer */
+   uint8_t  sense_frames;
    bool connected;
 #if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
    bool menu_toggle;
@@ -207,6 +212,12 @@ static void *sdl_miyoomini_joypad_init(void *data) {
    miyoomini_joypad_t *joypad      = (miyoomini_joypad_t*)&miyoomini_joypad;
 
    memset(joypad, 0, sizeof(miyoomini_joypad_t));
+	
+#if defined(MIYOO_CUSTOM_MENU)
+   joypad->sense_frames = (uint8_t)miyoo_menu_joypad_sense_get();
+#else
+   joypad->sense_frames = 1;
+#endif
 
    /* Init for rumble */
    if (!SDL_WasInit(SDL_INIT_TIMER)) SDL_InitSubSystem(SDL_INIT_TIMER);
@@ -436,19 +447,35 @@ static void sdl_miyoomini_joypad_poll(void){
    uint16_t current_action = joypad->pad_state & ~DIR_BUTTONS_MASK;
    uint16_t reported_action = joypad->reported_state & ~DIR_BUTTONS_MASK;
 
-   // 2. Aplicar el buffer de 2 frames (~33.3 ms) EXCLUSIVAMENTE a los botones de acción
+   // 2. Aplicar el buffer EXCLUSIVAMENTE a los botones de acción
+#if defined(MIYOO_CUSTOM_MENU)
+   joypad->sense_frames =
+      (uint8_t)miyoo_menu_joypad_sense_get();
+#endif
+
    if (current_action != reported_action)
    {
-      if (joypad->delay_timer == 0)
+      if (joypad->sense_frames == 0)
       {
-         joypad->delay_timer = 2;
+         /* Off: reconocimiento inmediato */
+         reported_action = current_action;
+         joypad->delay_timer = 0;
       }
       else
       {
-         joypad->delay_timer--;
+         if (joypad->delay_timer > joypad->sense_frames)
+            joypad->delay_timer = joypad->sense_frames;
+
          if (joypad->delay_timer == 0)
          {
-            reported_action = current_action;
+            joypad->delay_timer = joypad->sense_frames;
+         }
+         else
+         {
+            joypad->delay_timer--;
+
+            if (joypad->delay_timer == 0)
+               reported_action = current_action;
          }
       }
    }

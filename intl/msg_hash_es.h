@@ -16162,6 +16162,10 @@ MSG_HASH(
    "Logros"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+   "Sensibilidad del mando"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE,
    "Guardado rápido"
    )
@@ -16261,5 +16265,25 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN,
    "vuelva el Custom Menu Miyoo, deshabilita el quick menu generico de retroarch."
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE,
+   "Ajusta la sensibilidad de reconocimiento de pulsaciones simultáneas de los botones de acción."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE,
+   "Sensibilidad del mando"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF,
+   "Instantaneo"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST,
+   "Rapido"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW,
+   "Lento"
    )
 #endif

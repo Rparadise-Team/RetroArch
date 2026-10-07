@@ -226,6 +226,7 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_save_cpu_clock_rom, MENU_ENUM_
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_achievements, MENU_ENUM_SUBLABEL_MIYOO_ACHIEVEMENTS)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_netplay_host, MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_HOST)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_netplay_client, MENU_ENUM_SUBLABEL_MIYOO_NETPLAY_CLIENT)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_joypad_sense, MENU_ENUM_SUBLABEL_MIYOO_JOYPAD_SENSE)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_retroarch_settings, MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_quit_retroarch, MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_menu_return, MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN)
@@ -2651,6 +2652,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
             break;
          case MENU_ENUM_LABEL_MIYOO_NETPLAY_CLIENT:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_netplay_client);
+            break;
+		 case MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_joypad_sense);
             break;
          case MENU_ENUM_LABEL_MIYOO_RETROARCH_SETTINGS:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_retroarch_settings);

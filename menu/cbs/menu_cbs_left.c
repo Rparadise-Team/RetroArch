@@ -983,6 +983,22 @@ static int action_left_miyoo_cpu_clock(unsigned type, const char *label,
    miyoo_menu_action_cpu_adjust(-100);
    return 0;
 }
+
+static int action_left_miyoo_joypad_sense(unsigned type, const char *label,
+      bool wraparound)
+{
+   int sense = miyoo_menu_joypad_sense_get();
+
+   if (sense > 0)
+      sense--;
+   else if (wraparound)
+      sense = 2;
+
+   miyoo_menu_joypad_sense_set(sense);
+
+   return 0;
+}
+
 #endif
 
 static int bind_left_generic(unsigned type, const char *label,
@@ -1261,6 +1277,9 @@ static int menu_cbs_init_bind_left_compare_type(menu_file_list_cbs_t *cbs,
 #if defined(MIYOO_CUSTOM_MENU)
          case FILE_TYPE_MIYOO_CPU_CLOCK:
             BIND_ACTION_LEFT(cbs, action_left_miyoo_cpu_clock);
+            break;
+         case FILE_TYPE_MIYOO_JOYPAD_SENSE:
+            BIND_ACTION_LEFT(cbs, action_left_miyoo_joypad_sense);
             break;
 #endif
          default:

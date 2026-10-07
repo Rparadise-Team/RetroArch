@@ -1054,6 +1054,46 @@ static size_t menu_action_setting_disp_set_label_miyoo_saved_cpu_clock(
 
    return (size_t)snprintf(s, len, "%ld MHz", clock_mhz);
 }
+
+static size_t menu_action_setting_disp_set_label_miyoo_joypad_sense(
+      file_list_t *list,
+      unsigned *w, unsigned type, unsigned i,
+      const char *label,
+      char *s, size_t len,
+      const char *path,
+      char *s2, size_t len2)
+{
+   int sense = miyoo_menu_joypad_sense_get();
+
+   switch (sense)
+   {
+      case 0:
+         strlcpy(s,
+               msg_hash_to_str(
+                  MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_OFF),
+               len);
+         break;
+
+      case 2:
+         strlcpy(s,
+               msg_hash_to_str(
+                  MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_SLOW),
+               len);
+         break;
+
+      case 1:
+      default:
+         strlcpy(s,
+               msg_hash_to_str(
+                  MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE_FAST),
+               len);
+         break;
+   }
+
+   *w = (unsigned)strlen(s);
+   return 0;
+}
+
 #endif
 
 static size_t menu_action_setting_disp_set_label_db_entry(
@@ -2360,6 +2400,10 @@ static int menu_cbs_init_bind_get_string_representation_compare_type(
       case FILE_TYPE_MIYOO_CPU_CLOCK:
          BIND_ACTION_GET_VALUE(cbs,
                menu_action_setting_disp_set_label_miyoo_cpu_clock);
+         break;
+	  case FILE_TYPE_MIYOO_JOYPAD_SENSE:
+         BIND_ACTION_GET_VALUE(cbs,
+               menu_action_setting_disp_set_label_miyoo_joypad_sense);
          break;
 #endif
       case MENU_SETTINGS_CHEAT_MATCH:

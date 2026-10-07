@@ -51,6 +51,8 @@ int miyoo_menu_action_state_slot(int slot);
 void miyoo_menu_state_slot_label(int slot, char *out, size_t len);
 void miyoo_menu_state_slot_metadata(int slot, char *out, size_t len);
 void miyoo_menu_update_savestate_thumbnail(unsigned selection);
+int miyoo_menu_joypad_sense_get(void);
+int miyoo_menu_joypad_sense_set(int sense);
 #endif
 
 #endif

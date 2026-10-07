@@ -3827,6 +3827,12 @@ static int menu_displaylist_parse_load_content_settings(
 			   FILE_TYPE_MIYOO_NETPLAY_CLIENT, 0, 0, NULL))
             count++;
 #endif
+         if (menu_entries_append(list,
+			   msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE),
+               msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE),
+               MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE,
+			   FILE_TYPE_MIYOO_JOYPAD_SENSE, 0, 0, NULL))
+            count++;
          if (menu_entries_append(list, 
 			   msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_RETROARCH_SETTINGS),
                msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_RETROARCH_SETTINGS),

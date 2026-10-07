@@ -22,6 +22,13 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#define MIYOO_JOYPAD_SENSE_DEFAULT 1
+#define MIYOO_JOYPAD_SENSE_MIN     0
+#define MIYOO_JOYPAD_SENSE_MAX     2
+
+static int miyoo_joypad_sense = MIYOO_JOYPAD_SENSE_DEFAULT;
+static bool miyoo_joypad_sense_loaded = false;
+
 /**
  * @brief Displays an on-screen notification of the current scaling option.
  * 
@@ -919,6 +926,93 @@ int miyoo_menu_action_netplay_client(void)
 #else
     return -1;
 #endif
+}
+
+int miyoo_menu_joypad_sense_get(void)
+{
+   const char *path = "/mnt/SDCARD/.simplemenu/joypad_sense.txt";
+   RFILE *fp;
+   char buf[16] = {0};
+   int sense = MIYOO_JOYPAD_SENSE_DEFAULT;
+
+   if (miyoo_joypad_sense_loaded)
+      return miyoo_joypad_sense;
+
+   fp = filestream_open(path,
+         RETRO_VFS_FILE_ACCESS_READ,
+         RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+   if (fp)
+   {
+      if (filestream_gets(fp, buf, sizeof(buf)))
+         sense = atoi(buf);
+
+      filestream_close(fp);
+   }
+   else
+   {
+      /* Primera ejecución: crear el archivo con Fast (1). */
+      fp = filestream_open(path,
+            RETRO_VFS_FILE_ACCESS_WRITE,
+            RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+      if (fp)
+      {
+         char data[16];
+         int len = snprintf(data, sizeof(data), "%d\n",
+               MIYOO_JOYPAD_SENSE_DEFAULT);
+
+         if (len > 0)
+            filestream_write(fp, data, (size_t)len);
+
+         filestream_close(fp);
+      }
+   }
+
+   if (sense < MIYOO_JOYPAD_SENSE_MIN ||
+       sense > MIYOO_JOYPAD_SENSE_MAX)
+      sense = MIYOO_JOYPAD_SENSE_DEFAULT;
+
+   miyoo_joypad_sense = sense;
+   miyoo_joypad_sense_loaded = true;
+
+   return miyoo_joypad_sense;
+}
+
+int miyoo_menu_joypad_sense_set(int sense)
+{
+   const char *path = "/mnt/SDCARD/.simplemenu/joypad_sense.txt";
+   RFILE *fp;
+   char data[16];
+   int len;
+
+   if (sense < MIYOO_JOYPAD_SENSE_MIN ||
+       sense > MIYOO_JOYPAD_SENSE_MAX)
+      return -1;
+
+   miyoo_joypad_sense = sense;
+   miyoo_joypad_sense_loaded = true;
+
+   len = snprintf(data, sizeof(data), "%d\n", sense);
+   if (len <= 0)
+      return -1;
+
+   fp = filestream_open(path,
+         RETRO_VFS_FILE_ACCESS_WRITE,
+         RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+   if (!fp)
+   {
+      RARCH_LOG("[MIYOO][Joypad] Cannot save Sense to %s\n", path);
+      return -1;
+   }
+
+   filestream_write(fp, data, (size_t)len);
+   filestream_close(fp);
+
+   RARCH_LOG("[MIYOO][Joypad] Sense = %d\n", sense);
+
+   return 0;
 }
 
 void miyoo_menu_netplay_menu_open(void)
