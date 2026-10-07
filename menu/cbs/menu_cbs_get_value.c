@@ -1064,6 +1064,9 @@ static size_t menu_action_setting_disp_set_label_miyoo_joypad_sense(
       char *s2, size_t len2)
 {
    int sense = miyoo_menu_joypad_sense_get();
+	
+   if (!string_is_empty(path))
+	   strlcpy(s2, path, len2);
 
    switch (sense)
    {
@@ -1091,7 +1094,7 @@ static size_t menu_action_setting_disp_set_label_miyoo_joypad_sense(
    }
 
    *w = (unsigned)strlen(s);
-   return 0;
+   return *w;
 }
 
 #endif
