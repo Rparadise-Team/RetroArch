@@ -65,6 +65,14 @@
 #include "../retroarch.h"
 #include "../verbosity.h"
 
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+#include "drivers/miyoomini/miyoo_prof.h"
+/* gfx/drivers/miyoomini/sdl_miyoomini_gfx.c (v1) / sdl_mmiyoov4_gfx.c (v4) */
+void *sdl_miyoomini_get_filter_target(void *data,
+      unsigned width, unsigned height, size_t pitch);
+bool sdl_miyoomini_frame_unused(void *data);
+#endif
+
 #define TIME_TO_FPS(last_time, new_time, frames) ((1000000.0f * (frames)) / ((new_time) - (last_time)))
 
 #define FRAME_DELAY_AUTO_DEBUG 0
@@ -3763,6 +3771,9 @@ void video_driver_frame(const void *data, unsigned width,
    bool widgets_active            = p_dispwidget->active;
 #endif
    recording_state_t *recording_st= recording_state_get_ptr();
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+   bool miyoo_frame_unused        = false;
+#endif
 
    status_text[0]                 = '\0';
    video_driver_msg[0]            = '\0';
@@ -3770,6 +3781,9 @@ void video_driver_frame(const void *data, unsigned width,
    if (!video_driver_active)
       return;
 
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+   MP_BEGIN(mp_vframe);
+#endif
    new_time                      = cpu_features_get_time_usec();
    runloop_st->core_run_time     = new_time - runloop_st->core_run_time;
 
@@ -3783,9 +3797,22 @@ void video_driver_frame(const void *data, unsigned width,
    video_st->frame_cache_height  = height;
    video_st->frame_cache_pitch   = pitch;
 
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+   /* While RGUI is shown the Miyoo driver never reads the content
+    * frame: skip pixel conversion and softfilter work on it */
+   if (     data
+         && !VIDEO_DRIVER_IS_THREADED_INTERNAL(video_st)
+         && video_st->current_video == &video_sdl2
+         && sdl_miyoomini_frame_unused(video_st->data))
+      miyoo_frame_unused = true;
+#endif
+
    if (
             video_st->scaler_ptr
          && data
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+         && !miyoo_frame_unused
+#endif
          && (video_driver_pix_fmt == RETRO_PIXEL_FORMAT_0RGB1555)
          && (data != RETRO_HW_FRAME_BUFFER_VALID)
       )
@@ -4092,20 +4119,45 @@ void video_driver_frame(const void *data, unsigned width,
             pitch, runloop_idle);
 
 #ifdef HAVE_VIDEO_FILTER
-   if (render_frame && data && video_st->state_filter)
+   if (render_frame && data && video_st->state_filter
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+         && !miyoo_frame_unused
+#endif
+      )
    {
       unsigned output_width                             = 0;
       unsigned output_height                            = 0;
       unsigned output_pitch                             = 0;
+      void *filter_out                                  = video_st->state_buffer;
 
       rarch_softfilter_get_output_size(video_st->state_filter,
             &output_width, &output_height, width, height);
 
       output_pitch = (output_width) * video_st->state_out_bpp;
 
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+      /* Filter straight into the MI_GFX surface when the driver
+       * would only copy the result 1:1 (saves a full-frame copy) */
+      if (     !recording_st->data
+            && !VIDEO_DRIVER_IS_THREADED_INTERNAL(video_st)
+            && video_st->current_video == &video_sdl2)
+      {
+         void *direct = sdl_miyoomini_get_filter_target(video_st->data,
+               output_width, output_height, output_pitch);
+         if (direct)
+            filter_out = direct;
+      }
+#endif
+
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+      MP_BEGIN(mp_filter);
+#endif
       rarch_softfilter_process(video_st->state_filter,
-            video_st->state_buffer, output_pitch,
+            filter_out, output_pitch,
             data, width, height, pitch);
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+      MP_END(MP_FILTER, mp_filter);
+#endif
 
       if (     video_info.post_filter_record
             && recording_st->data
@@ -4116,7 +4168,7 @@ void video_driver_frame(const void *data, unsigned width,
                output_width, output_height, output_pitch,
                runloop_idle);
 
-      data   = video_st->state_buffer;
+      data   = filter_out;
       width  = output_width;
       height = output_height;
       pitch  = output_pitch;
@@ -4427,6 +4479,9 @@ void video_driver_frame(const void *data, unsigned width,
    else if (!video_info.crt_switch_resolution)
 #endif
       video_st->flags          &= ~VIDEO_FLAG_CRT_SWITCHING_ACTIVE;
+#if defined(MIYOOMINI) && defined(HAVE_SDL2)
+   MP_END(MP_VFRAME, mp_vframe);
+#endif
 }
 
 static void video_driver_reinit_context(settings_t *settings, int flags)

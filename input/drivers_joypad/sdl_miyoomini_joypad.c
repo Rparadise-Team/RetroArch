@@ -293,7 +293,9 @@ static int16_t sdl_miyoomini_joypad_axis(unsigned port, uint32_t joyaxis) {
    (1 << RETRO_DEVICE_ID_JOYPAD_RIGHT) \
 )
 
-static void sdl_miyoomini_joypad_poll(void){
+#include "../../gfx/drivers/miyoomini/miyoo_prof.h"
+
+static void sdl_miyoomini_joypad_poll_impl(void){
    miyoomini_joypad_t *joypad =
       (miyoomini_joypad_t*)&miyoomini_joypad;
 
@@ -488,6 +490,12 @@ static void sdl_miyoomini_joypad_poll(void){
    joypad->reported_state = current_dir | reported_action;
 }
 
+static void sdl_miyoomini_joypad_poll_wrap(void){
+   MP_BEGIN(mp_input);
+   sdl_miyoomini_joypad_poll_impl();
+   MP_END(MP_INPUT, mp_input);
+}
+
 input_device_driver_t sdl_dingux_joypad = {
    sdl_miyoomini_joypad_init,
    sdl_miyoomini_joypad_query_pad,
@@ -496,7 +504,7 @@ input_device_driver_t sdl_dingux_joypad = {
    sdl_miyoomini_joypad_state,
    sdl_miyoomini_joypad_get_buttons,
    sdl_miyoomini_joypad_axis,
-   sdl_miyoomini_joypad_poll,
+   sdl_miyoomini_joypad_poll_wrap,
    sdl_miyoomini_joypad_set_rumble,
    sdl_miyoomini_joypad_set_rumble_gain,
    NULL, /* set_sensor_state */

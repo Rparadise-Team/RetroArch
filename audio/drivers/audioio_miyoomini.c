@@ -44,6 +44,7 @@
 #include "../audio_driver.h"
 #include "../../verbosity.h"
 #include "volume/volume.h"
+#include "../../gfx/drivers/miyoomini/miyoo_prof.h"
 
 /* MI_AO_SendFrame Max bytes */
 #define MIAO_MAX_BUFSIZE 51200
@@ -144,7 +145,7 @@ error:
    return NULL;
 }
 
-static ssize_t miao_write(void *data, const void *buf, size_t size)
+static ssize_t miao_write_impl(void *data, const void *buf, size_t size)
 {
    miao_audio_t *miaoaudio = (miao_audio_t*)data;
    if ((!size)||(miaoaudio->is_paused)) return 0;
@@ -188,6 +189,14 @@ static ssize_t miao_write(void *data, const void *buf, size_t size)
       } else return 0;
    }
    return write_bytes;
+}
+
+static ssize_t miao_write(void *data, const void *buf, size_t size)
+{
+   MP_BEGIN(mp_audio);
+   ssize_t ret = miao_write_impl(data, buf, size);
+   MP_END(MP_AUDIO, mp_audio);
+   return ret;
 }
 
 static bool miao_stop(void *data)

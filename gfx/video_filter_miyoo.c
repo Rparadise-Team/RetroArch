@@ -291,6 +291,7 @@ extern const struct softfilter_implementation *upscale_256x_320x240_get_implemen
 extern const struct softfilter_implementation *picoscale_256x_320x240_get_implementation(softfilter_simd_mask_t simd);
 extern const struct softfilter_implementation *upscale_240x160_320x240_get_implementation(softfilter_simd_mask_t simd);
 extern const struct softfilter_implementation *upscale_mix_240x160_320x240_get_implementation(softfilter_simd_mask_t simd);
+extern const struct softfilter_implementation *gbaoffset_get_implementation(softfilter_simd_mask_t simd);
 
 static const softfilter_get_implementation_t soft_plugs_builtin[] = {
    blargg_ntsc_snes_get_implementation,
@@ -319,7 +320,30 @@ static const softfilter_get_implementation_t soft_plugs_builtin[] = {
    picoscale_256x_320x240_get_implementation,
    upscale_240x160_320x240_get_implementation,
    upscale_mix_240x160_320x240_get_implementation,
+   gbaoffset_get_implementation,
 };
+
+#if defined(HAVE_DYLIB)
+/* True when the config's "filter" is one of the built-in filters */
+static bool softfilter_builtin_has(config_file_t *conf)
+{
+   unsigned i;
+   char name[64];
+   softfilter_simd_mask_t mask = (softfilter_simd_mask_t)cpu_features_get();
+
+   name[0] = '\0';
+   if (!config_get_array(conf, "filter", name, sizeof(name)))
+      return false;
+
+   for (i = 0; i < ARRAY_SIZE(soft_plugs_builtin); i++)
+   {
+      const struct softfilter_implementation *impl = soft_plugs_builtin[i](mask);
+      if (impl && string_is_equal(impl->short_ident, name))
+         return true;
+   }
+   return false;
+}
+#endif
 
 static bool append_softfilter_plugs(rarch_softfilter_t *filt,
       struct string_list *list)
@@ -356,7 +380,7 @@ static bool append_softfilter_plugs(rarch_softfilter_t *filt,
    unsigned i;
    softfilter_simd_mask_t mask = (softfilter_simd_mask_t)cpu_features_get();
  #endif
-   for (i = 0; i < list->size; i++)
+   for (i = 0; list && i < list->size; i++)
    {
       softfilter_get_implementation_t cb;
       const struct softfilter_implementation *impl = NULL;
@@ -441,6 +465,12 @@ rarch_softfilter_t *rarch_softfilter_new(const char *filter_config,
    }
 
 #if defined(HAVE_DYLIB)
+#if defined(HAVE_FILTERS_BUILTIN)
+   /* A built-in filter (Grid2x, Grid3x...) always wins over a .so
+    * with the same ident: skip dlopen()ing the whole filter folder */
+   if (softfilter_builtin_has(filt->conf))
+      goto plugs_ready;
+#endif
    fill_pathname_basedir(basedir, filter_config, sizeof(basedir));
 
    if (!frontend_driver_get_core_extension(ext_name, sizeof(ext_name)))
@@ -453,6 +483,9 @@ rarch_softfilter_t *rarch_softfilter_new(const char *filter_config,
       RARCH_ERR("[SoftFilter]: Could not build up string list...\n");
       goto error;
    }
+#if defined(HAVE_FILTERS_BUILTIN)
+plugs_ready:
+#endif
 #endif
    if (!append_softfilter_plugs(filt, plugs))
    {
@@ -470,6 +503,22 @@ rarch_softfilter_t *rarch_softfilter_new(const char *filter_config,
       RARCH_ERR("[SoftFitler]: Failed to create softfilter graph...\n");
       goto error;
    }
+
+#ifdef HAVE_DYLIB
+   /* Keep only the library of the selected filter loaded */
+   {
+      unsigned i;
+      for (i = 0; i < filt->num_plugs; i++)
+      {
+         if (filt->plugs[i].lib && filt->plugs[i].impl != filt->impl)
+         {
+            dylib_close(filt->plugs[i].lib);
+            filt->plugs[i].lib  = NULL;
+            filt->plugs[i].impl = NULL;
+         }
+      }
+   }
+#endif
 
    return filt;
 

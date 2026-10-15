@@ -85,6 +85,9 @@ struct sdl_miyoomini_video
    SDL_Surface *screen;
    uint16_t screen_fence[2];
    unsigned screen_index;
+   /* screens[] pixels already filled by the softfilter (see
+    * sdl_miyoomini_get_filter_target), or NULL */
+   void *direct_buf;
    void (*scale_func)(void* data, void* __restrict src, void* __restrict dst, uint32_t sw, uint32_t sh, uint32_t sp, uint32_t dp);
    /* Scaling/padding/cropping parameters */
    unsigned content_width;
@@ -1893,6 +1896,7 @@ static void sdl_miyoomini_set_output(sdl_miyoomini_video_t* vid, unsigned width,
       }
       vid->screen_index = 1;
       vid->screen       = vid->screens[vid->screen_index];
+      vid->direct_buf   = NULL;
    }
 
    if (!vid->menu_active && (viewport_changed || surface_size_changed || surface_format_changed))
@@ -2017,6 +2021,50 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 error:
    sdl_miyoomini_gfx_free(vid);
    return NULL;
+}
+
+/* Pick the screens[] buffer for the next frame, waiting until
+ * MI_GFX is done reading it */
+static INLINE void sdl_miyoomini_select_screen(sdl_miyoomini_video_t *vid) {
+   unsigned next_index  = vid->screen_index ^ 1;
+   unsigned target_slot = vid->screens[next_index] ? next_index : vid->screen_index;
+
+   if (vid->screen_fence[target_slot]) {
+      MI_GFX_WaitAllDone(FALSE, vid->screen_fence[target_slot]);
+      vid->screen_fence[target_slot] = 0;
+   }
+   vid->screen_index = target_slot;
+   vid->screen       = vid->screens[target_slot];
+}
+
+/* Called by video_driver_frame() before running a softfilter.
+ * When the filtered frame would only be copied 1:1 into the GFX
+ * surface (scale1x1), hand out the next surface so the filter writes
+ * there directly, saving one full-frame copy. Output is identical.
+ * Returns NULL when the regular path must be used. */
+void *sdl_miyoomini_get_filter_target(void *data,
+      unsigned width, unsigned height, size_t pitch) {
+   sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
+
+   if (unlikely(!vid) || vid->menu_active)
+      return NULL;
+   if (   (vid->content_width  != width)
+       || (vid->content_height != height)
+       || (vid->scale_func != (vid->rgb32 ? scale1x1_32 : scale1x1_16)))
+      return NULL;
+
+   sdl_miyoomini_select_screen(vid);
+   if (unlikely(!vid->screen) || ((size_t)vid->screen->pitch != pitch))
+      return NULL;
+
+   vid->direct_buf = vid->screen->pixels;
+   return vid->direct_buf;
+}
+
+/* True while the driver shows RGUI and ignores the content frame */
+bool sdl_miyoomini_frame_unused(void *data) {
+   sdl_miyoomini_video_t *vid = (sdl_miyoomini_video_t*)data;
+   return vid && vid->menu_active;
 }
 
 static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
@@ -2205,24 +2253,23 @@ static bool sdl_miyoomini_gfx_frame(void *data, const void *frame,
                     (vid->content_height != height) )) {
          sdl_miyoomini_set_output(vid, width, height, vid->rgb32);
       }
-      {
-         unsigned next_index = vid->screen_index ^ 1;
-         unsigned target_slot = vid->screens[next_index] ? next_index : vid->screen_index;
-         
-         if (vid->screen_fence[target_slot]) {
-            MI_GFX_WaitAllDone(FALSE, vid->screen_fence[target_slot]);
-            vid->screen_fence[target_slot] = 0;
-         }
-         vid->screen_index = target_slot;
-         vid->screen       = vid->screens[target_slot];
+      if (frame && frame == vid->direct_buf) {
+         /* Softfilter already wrote this frame into vid->screen */
+         vid->direct_buf = NULL;
+      } else {
+         vid->direct_buf = NULL;
+         sdl_miyoomini_select_screen(vid);
+         if (unlikely(!vid->screen))
+            return false;
+         /* SW Blit frame to GFX surface with scaling */
+         MP_BEGIN(mp_scale);
+         vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
+         MP_END(MP_SCALE, mp_scale);
       }
-      if (unlikely(!vid->screen))
-         return false;
-      /* SW Blit frame to GFX surface with scaling */
-      vid->scale_func(vid, (void*)frame, vid->screen->pixels, width, height, pitch, vid->screen->pitch);
       /* HW Blit GFX surface to Framebuffer and Flip */
       GFX_UpdateRect(vid->screen, vid->video_x, vid->video_y, vid->video_w, vid->video_h);
       vid->screen_fence[vid->screen_index] = flipFence;
+      MP_FRAME();
    } else {
       if ((vid->menu_texture_alpha < 0.999f) && vid->menu_bg_valid)
       {

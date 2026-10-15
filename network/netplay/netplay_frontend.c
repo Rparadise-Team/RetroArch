@@ -82,6 +82,10 @@
 
 #include "netplay_private.h"
 
+#if defined(MIYOOMINI)
+#include "netplay_miyoo.h"
+#endif
+
 #ifdef TCP_NODELAY
 #define SET_TCP_NODELAY(fd) \
    { \
@@ -92,6 +96,12 @@
    }
 #else
 #define SET_TCP_NODELAY(fd)
+#endif
+
+#if defined(MIYOOMINI)
+#define SET_LOW_LATENCY(fd) netplay_miyoo_socket_lowlatency(fd);
+#else
+#define SET_LOW_LATENCY(fd)
 #endif
 
 #if defined(F_SETFD) && defined(FD_CLOEXEC)
@@ -3320,6 +3330,7 @@ static int handle_connection(netplay_t *netplay, netplay_address_t *addr,
    }
 
    SET_TCP_NODELAY(new_fd)
+   SET_LOW_LATENCY(new_fd)
    SET_FD_CLOEXEC(new_fd)
 
    return new_fd;
@@ -3333,6 +3344,7 @@ static bool netplay_tunnel_connect(int fd, const struct addrinfo *addr)
       return false;
 
    SET_TCP_NODELAY(fd)
+   SET_LOW_LATENCY(fd)
    SET_FD_CLOEXEC(fd)
 
    result = socket_connect(fd, (void*)addr);
@@ -6785,6 +6797,7 @@ static int init_tcp_connection(netplay_t *netplay, const struct addrinfo *addr,
       return -1;
 
    SET_TCP_NODELAY(fd)
+   SET_LOW_LATENCY(fd)
    SET_FD_CLOEXEC(fd)
 
    if (!is_server)
@@ -8507,7 +8520,7 @@ static void netplay_announce_cb(retro_task_t *task, void *task_data,
 
    if (err || !data || !data->data || !data->len || data->status != 200)
    {
-      RARCH_ERR("[Netplay] Failed to announce session to the lobby server.");
+      RARCH_ERR("[Netplay] Failed to announce session to the lobby server.\n");
       return;
    }
 
@@ -8632,6 +8645,16 @@ static void netplay_announce(netplay_t *netplay)
    struct retro_system_info *system = &runloop_state_get_ptr()->system.info;
    struct string_list *subsystem    = path_get_subsystem_list();
    settings_t *settings             = config_get_ptr();
+
+#if defined(MIYOOMINI)
+   /* No route to the lobby (local Wi-Fi only): try again later */
+   if (!netplay_miyoo_has_internet())
+   {
+      netplay->next_announce =
+         cpu_features_get_time_usec() + NETPLAY_ANNOUNCE_TIME;
+      return;
+   }
+#endif
 
    net_http_urlencode(&username, netplay->nick);
 
@@ -8782,7 +8805,8 @@ static void netplay_mitm_query_cb(retro_task_t *task, void *task_data,
 
    if (err || !data || !data->data || !data->len || data->status != 200)
    {
-      RARCH_ERR("[Netplay] Failed to query the lobby server for tunnel information.");
+      RARCH_ERR("[Netplay] Failed to query the lobby server for tunnel information (%s, HTTP %d).\n",
+            err ? err : "no error", data ? data->status : 0);
       return;
    }
 
@@ -8859,11 +8883,37 @@ static bool netplay_mitm_query(const char *handle)
       size_t _len = strlcpy(query, FILE_PATH_LOBBY_LIBRETRO_URL "tunnel?name=",
             sizeof(query));
       strlcpy(query + _len, handle, sizeof(query) - _len);
+#if defined(MIYOOMINI)
+      if (!netplay_miyoo_has_internet())
+      {
+         RARCH_LOG("[Netplay] No internet route, relay server skipped (local network only).\n");
+         return false;
+      }
+      {
+         /* Wi-Fi on the Miyoo drops the odd request: a failed query
+          * would silently fall back to direct mode, which usually
+          * leaves the room unreachable, so try again a few times */
+         int attempt;
+         for (attempt = 1; attempt <= 3; attempt++)
+         {
+            if (task_push_http_transfer(query, true, NULL,
+                  netplay_mitm_query_cb, NULL))
+               /* Make sure we've the tunnel address before continuing. */
+               task_queue_wait(NULL, NULL);
+            if (!string_is_empty(host_room->mitm_address) && host_room->mitm_port)
+               break;
+            RARCH_WARN("[Netplay] Tunnel query attempt %d failed.\n", attempt);
+            host_room->mitm_address[0] = '\0';
+            host_room->mitm_port       = 0;
+         }
+      }
+#else
       if (!task_push_http_transfer(query, true, NULL,
             netplay_mitm_query_cb, NULL))
          return false;
       /* Make sure we've the tunnel address before continuing. */
       task_queue_wait(NULL, NULL);
+#endif
    }
 
    return !string_is_empty(host_room->mitm_address) && host_room->mitm_port;
@@ -9042,6 +9092,10 @@ void deinit_netplay(void)
 
       netplay_free(netplay);
 
+#if defined(MIYOOMINI)
+      netplay_miyoo_wifi_powersave(false);
+#endif
+
 #ifdef HAVE_NETPLAYDISCOVERY
       deinit_lan_ad_server_socket();
 #ifdef HAVE_NETPLAYDISCOVERY_NSNET
@@ -9117,6 +9171,12 @@ bool init_netplay(const char *server, unsigned port, const char *mitm_session)
       quirks |= NETPLAY_QUIRK_ENDIAN_DEPENDENT;
    if (serialization_quirks & RETRO_SERIALIZATION_QUIRK_PLATFORM_DEPENDENT)
       quirks |= NETPLAY_QUIRK_PLATFORM_DEPENDENT;
+
+#if defined(MIYOOMINI)
+   /* Before any network traffic, so the relay query runs with the
+    * radio awake too */
+   netplay_miyoo_wifi_powersave(true);
+#endif
 
    if (!(net_st->flags & NET_DRIVER_ST_FLAG_NETPLAY_IS_CLIENT))
    {
@@ -9231,6 +9291,9 @@ failure:
                     | NET_DRIVER_ST_FLAG_NETPLAY_IS_CLIENT
                     | NET_DRIVER_ST_FLAG_NETPLAY_CLIENT_DEFERRED);
    deinit_netplay();
+#if defined(MIYOOMINI)
+   netplay_miyoo_wifi_powersave(false);
+#endif
 
    {
       const char *_msg = msg_hash_to_str(MSG_NETPLAY_FAILED);

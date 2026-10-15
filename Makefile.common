@@ -2376,6 +2376,9 @@ ifeq ($(HAVE_NETWORKING), 1)
    OBJ += \
 	  network/netplay/netplay_frontend.o \
 	  network/netplay/netplay_room_parse.o
+   ifeq ($(MIYOOMINI), 1)
+      OBJ += network/netplay/netplay_miyoo.o
+   endif
 
    # RetroAchievements
    ifeq ($(HAVE_CHEEVOS), 1)
@@ -2646,6 +2649,9 @@ ifeq ($(HAVE_STATIC_VIDEO_FILTERS), 1)
           gfx/video_filters/picoscale_256x_320x240.o \
           gfx/video_filters/upscale_240x160_320x240.o \
           gfx/video_filters/upscale_mix_240x160_320x240.o
+   ifeq ($(MIYOOMINI), 1)
+      OBJ += gfx/video_filters/gbaoffset.o
+   endif
 endif
 
 ifeq ($(WANT_IOSUHAX), 1)

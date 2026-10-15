@@ -9,6 +9,7 @@
 #include <SDL2/SDL.h>
 #include <mi_sys.h>
 #include <mi_gfx.h>
+#include "miyoo_prof.h"
 
 #if SDL_MAJOR_VERSION >= 2
 #define SDL_HWSURFACE 0x00000001u
@@ -109,6 +110,60 @@ MI_GFX_Opt_t		OvrOpt;
 uint32_t		mma_db[MMADBMAX];
 #endif
 
+
+#ifdef MIYOO_PROFILE
+/* Diagnostic only: CPU/wall time per step of GFX_FlipThread */
+#include <time.h>
+enum { PF_WAKE, PF_WAIT_MAIN, PF_OVERLAY, PF_CALLBACK, PF_PAN, PF_LOCK, PF_IDLE, PF_N };
+static const char *pf_name[PF_N] = { "wake", "wait_main", "overlay", "callback", "pan", "lock", "idle" };
+static uint64_t pf_cpu[PF_N], pf_wall[PF_N], pf_c, pf_w;
+static uint32_t pf_frames;
+static inline uint64_t pf_ns(clockid_t c) { struct timespec t; clock_gettime(c, &t); return (uint64_t)t.tv_sec * 1000000000ull + t.tv_nsec; }
+static inline void pf_mark(int i) {
+	uint64_t c = pf_ns(CLOCK_THREAD_CPUTIME_ID), w = pf_ns(CLOCK_MONOTONIC);
+	pf_cpu[i] += c - pf_c; pf_wall[i] += w - pf_w; pf_c = c; pf_w = w;
+}
+static void pf_report(void) {
+	int i; uint64_t tc = 0, tw = 0;
+	if (++pf_frames < 300) return;
+	for (i = 0; i < PF_N; i++) { tc += pf_cpu[i]; tw += pf_wall[i]; }
+	fprintf(stderr, "[FLIPPROF] %u flips, thread cpu %.1f%% |", pf_frames, tw ? 100.0 * tc / tw : 0.0);
+	for (i = 0; i < PF_N; i++)
+		fprintf(stderr, " %s cpu=%lluus wall=%lluus |", pf_name[i],
+			(unsigned long long)(pf_cpu[i] / pf_frames / 1000), (unsigned long long)(pf_wall[i] / pf_frames / 1000));
+	fprintf(stderr, "\n");
+	memset(pf_cpu, 0, sizeof(pf_cpu)); memset(pf_wall, 0, sizeof(pf_wall)); pf_frames = 0;
+}
+
+/* Main-thread per-frame profiler, see miyoo_prof.h */
+static const char *mp_name[MP_N] = { "core", "vframe", "filter", "scale",
+	"flip_wait", "flip_flush", "flip_dma", "flip_blit", "audio", "input" };
+static uint64_t mp_cpu[MP_N], mp_wall[MP_N];
+static uint32_t mp_frames;
+void mp_begin(mp_t *t) { t->c = pf_ns(CLOCK_THREAD_CPUTIME_ID); t->w = pf_ns(CLOCK_MONOTONIC); }
+void mp_end(int id, mp_t *t) {
+	mp_cpu[id]  += pf_ns(CLOCK_THREAD_CPUTIME_ID) - t->c;
+	mp_wall[id] += pf_ns(CLOCK_MONOTONIC) - t->w;
+}
+void mp_frame_done(void) {
+	int i;
+	if (++mp_frames < 300) return;
+	fprintf(stderr, "[MPROF] %u frames, per frame:", mp_frames);
+	for (i = 0; i < MP_N; i++)
+		fprintf(stderr, " %s cpu=%lluus wall=%lluus |", mp_name[i],
+			(unsigned long long)(mp_cpu[i] / mp_frames / 1000), (unsigned long long)(mp_wall[i] / mp_frames / 1000));
+	fprintf(stderr, "\n");
+	memset(mp_cpu, 0, sizeof(mp_cpu)); memset(mp_wall, 0, sizeof(mp_wall)); mp_frames = 0;
+}
+#define PF_INIT()  do { pf_c = pf_ns(CLOCK_THREAD_CPUTIME_ID); pf_w = pf_ns(CLOCK_MONOTONIC); } while (0)
+#define PF_MARK(i) pf_mark(i)
+#define PF_REPORT() pf_report()
+#else
+#define PF_INIT()
+#define PF_MARK(i)
+#define PF_REPORT()
+#endif
+
 //
 //	Actual Flip thread
 //
@@ -116,30 +171,41 @@ static void* GFX_FlipThread(void* param) {
 	uint32_t	target_offset;
 	MI_U16		Fence;
 	pthread_mutex_lock(&flip_mx);
+	PF_INIT();
 	while(1) {
 		while (!now_flipping) pthread_cond_wait(&flip_req, &flip_mx);
+		PF_MARK(PF_IDLE);
 		Fence = flipFence;
 		do {	target_offset = vinfo.yoffset + 480;
 			if ( target_offset == 1440 ) target_offset = 0;
 			vinfo.yoffset = target_offset;
 			pthread_cond_signal(&flip_start);
 			pthread_mutex_unlock(&flip_mx);
+			PF_MARK(PF_WAKE);
 #ifdef	HAVE_OVERLAY
 			if (ovrsurface) {
 				MI_GFX_WaitAllDone(FALSE, flipFence);
+				PF_MARK(PF_WAIT_MAIN);
 				OvrDst.phyAddr = finfo.smem_start + (640*target_offset*4);
 				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
 				MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0;
+				PF_MARK(PF_OVERLAY);
 				if (flip_callback) flip_callback(userdata_callback);
+				PF_MARK(PF_CALLBACK);
 			} else
 #endif
 			if (flip_callback) {
 				// Wait done always when callback is active
 				MI_GFX_WaitAllDone(FALSE, flipFence); Fence = 0;
+				PF_MARK(PF_WAIT_MAIN);
 				flip_callback(userdata_callback);
-			} else if (Fence) { MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0; }
+				PF_MARK(PF_CALLBACK);
+			} else if (Fence) { MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0; PF_MARK(PF_WAIT_MAIN); }
 			ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
+			PF_MARK(PF_PAN);
+			PF_REPORT();
 			pthread_mutex_lock(&flip_mx);
+			PF_MARK(PF_LOCK);
 		} while(--now_flipping);
 	}
 	return 0;
@@ -265,9 +331,11 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
 			return;
 		}
 
+		MP_BEGIN(fx);
 		if (flags & GFX_FLIPWAIT) {
 			// wait for recent flip is done
 			if (flipFence) MI_GFX_WaitAllDone(FALSE, flipFence);
+			MP_END(MP_FLIP_WAIT, fx);
 			// prepare intermediate buffer if needed
 			if (shadowsize < surfacesize) {
 				if (shadowPa) MI_SYS_MMA_Free(shadowPa);
@@ -279,15 +347,22 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
 			// copy surface to intermediate buffer
 			uint32_t ofs = surface->pitch * stSrcRect.s32Ypos;
 			uint32_t size = surface->pitch * stSrcRect.u32Height;
+			MP_RESTART(fx);
 			MI_SYS_FlushInvCache((uint8_t*)surface->pixels + ofs, ALIGN4K(size));
+			MP_END(MP_FLIP_FLUSH, fx);
+			MP_RESTART(fx);
 			MI_SYS_MemcpyPa(shadowPa + ofs, gfx_surface_get_phy(surface) + ofs, size);
+			MP_END(MP_FLIP_DMA, fx);
 			// blit from intermediate buffer
 			stSrc.phyAddr = shadowPa;
 		} else {
-		NOWAIT:	FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
+		NOWAIT:	MP_RESTART(fx);
+			FlushCacheNeeded(surface->pixels, surface->pitch, stSrcRect.s32Ypos, stSrcRect.u32Height);
+			MP_END(MP_FLIP_FLUSH, fx);
 			stSrc.phyAddr = gfx_surface_get_phy(surface);
 		}
 
+		MP_RESTART(fx);
 		pthread_mutex_lock(&flip_mx);
 		if (flags & GFX_BLOCKING) {
 			while (now_flipping == 2) pthread_cond_wait(&flip_start, &flip_mx);
@@ -306,6 +381,7 @@ void	GFX_FlipExec(SDL_Surface *surface, uint32_t flags) {
 			now_flipping = 2;
 		}
 		pthread_mutex_unlock(&flip_mx);
+		MP_END(MP_FLIP_BLIT, fx);
 	}
 }
 void	GFX_Flip(SDL_Surface *surface) { GFX_FlipExec(surface, flipFlags); }

@@ -246,6 +246,10 @@
 #include "ai/game_ai.h"
 #endif
 
+#if defined(MIYOOMINI)
+#include "gfx/drivers/miyoomini/miyoo_prof.h"
+#endif
+
 #define SHADER_FILE_WATCH_DELAY_MSEC 500
 
 #define QUIT_DELAY_USEC 3 * 1000000 /* 3 seconds */
@@ -7416,7 +7420,15 @@ int runloop_iterate(void)
          preempt_run(runloop_st->preempt_data, runloop_st);
       else
 #endif
+      {
+#if defined(MIYOOMINI)
+         MP_BEGIN(mp_core);
+#endif
          core_run();
+#if defined(MIYOOMINI)
+         MP_END(MP_CORE, mp_core);
+#endif
+      }
    }
 
    /* Increment runtime tick counter after each call to
