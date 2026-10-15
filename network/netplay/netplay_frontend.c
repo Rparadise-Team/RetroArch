@@ -84,6 +84,9 @@
 
 #if defined(MIYOOMINI)
 #include "netplay_miyoo.h"
+#if defined(MIYOO_CUSTOM_MENU)
+#include "../../miyoo.h"
+#endif
 #endif
 
 #ifdef TCP_NODELAY
@@ -7047,7 +7050,7 @@ static bool netplay_init_socket_buffers(netplay_t *netplay)
     * frames of input data, plus the headers for each of them */
    size_t i;
    size_t packet_buffer_size = netplay->zbuffer_size +
-      NETPLAY_MAX_STALL_FRAMES * 16;
+      netplay->max_stall_frames * 16;
    netplay->packet_buffer_size = packet_buffer_size;
 
    for (i = 0; i < netplay->connections_size; i++)
@@ -7218,10 +7221,33 @@ bool netplay_wait_and_init_serialization(netplay_t *netplay)
 
 static bool netplay_init_buffers(netplay_t *netplay)
 {
-   /* Enough to get ahead or behind by MAX_STALL_FRAMES frames,
+   netplay->max_stall_frames = NETPLAY_MAX_STALL_FRAMES;
+#if defined(MIYOOMINI)
+   /* Every buffered frame holds a full save state: 124 of them on the
+    * server is several hundred MB for large states (CPS3, big Neo Geo
+    * sets...), and the OOM killer then takes RetroArch down. Shrink the
+    * rollback window to what the free memory can hold. */
+   {
+      size_t state_size = core_serialize_size_special();
+      if (state_size)
+      {
+         uint32_t frames = netplay_miyoo_max_stall_frames(state_size,
+               netplay->is_server, NETPLAY_MAX_STALL_FRAMES);
+         if (!frames)
+         {
+            RARCH_ERR("[Netplay] Not enough memory for %u KB save states.\n",
+                  (unsigned)(state_size / 1024));
+            return false;
+         }
+         netplay->max_stall_frames = frames;
+      }
+   }
+#endif
+
+   /* Enough to get ahead or behind by max_stall_frames frames,
       plus one for other remote clients,
       plus one to send the stall message. */
-   netplay->buffer_size = NETPLAY_MAX_STALL_FRAMES + 2;
+   netplay->buffer_size = netplay->max_stall_frames + 2;
 
    /* If we're the server,
       we need enough to get ahead AND behind by MAX_STALL_FRAMES frame. */
@@ -8221,7 +8247,7 @@ static bool netplay_poll(netplay_t *netplay, bool block_libretro_input)
    switch (netplay->stall)
    {
       case NETPLAY_STALL_RUNNING_FAST:
-         if ((netplay->unread_frame_count + NETPLAY_MAX_STALL_FRAMES - 2) >
+         if ((netplay->unread_frame_count + netplay->max_stall_frames - 2) >
                netplay->self_frame_count)
          {
             struct netplay_connection *connection;
@@ -8296,10 +8322,10 @@ static bool netplay_poll(netplay_t *netplay, bool block_libretro_input)
 
       /* Are we too far ahead? */
       if (netplay->stall == NETPLAY_STALL_NONE &&
-            netplay->self_frame_count >= NETPLAY_MAX_STALL_FRAMES)
+            netplay->self_frame_count >= netplay->max_stall_frames)
       {
          uint32_t min_frame_count = netplay->self_frame_count -
-            NETPLAY_MAX_STALL_FRAMES;
+            netplay->max_stall_frames;
 
          if (netplay->unread_frame_count <= min_frame_count)
          {
@@ -9094,6 +9120,11 @@ void deinit_netplay(void)
 
 #if defined(MIYOOMINI)
       netplay_miyoo_wifi_powersave(false);
+#if defined(MIYOO_CUSTOM_MENU)
+      /* Also covers the other side hanging up and RetroArch quitting
+       * through any path, not just the custom menu entries */
+      miyoo_menu_netplay_on_stopped();
+#endif
 #endif
 
 #ifdef HAVE_NETPLAYDISCOVERY
@@ -9293,6 +9324,11 @@ failure:
    deinit_netplay();
 #if defined(MIYOOMINI)
    netplay_miyoo_wifi_powersave(false);
+#if defined(MIYOO_CUSTOM_MENU)
+   /* netplay_new() may have failed before net_st->data was set, and
+    * then deinit_netplay() never gets to restore achievements */
+   miyoo_menu_netplay_on_stopped();
+#endif
 #endif
 
    {

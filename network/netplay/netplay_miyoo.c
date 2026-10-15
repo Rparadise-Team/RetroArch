@@ -261,3 +261,43 @@ bool netplay_miyoo_has_internet(void)
    fclose(f);
    return found;
 }
+
+/* Largest stall window whose save state buffers fit in half of the
+ * available memory (the rest is left to the core and the system), or
+ * 0 when not even a short one fits. */
+uint32_t netplay_miyoo_max_stall_frames(size_t state_size, bool is_server,
+      uint32_t max_frames)
+{
+   char line[128];
+   unsigned long avail_kb = 0;
+   uint64_t budget, slots;
+   uint32_t frames;
+   FILE *f = fopen("/proc/meminfo", "r");
+
+   if (!f)
+      return max_frames;
+   while (fgets(line, sizeof(line), f))
+      if (sscanf(line, "MemAvailable: %lu kB", &avail_kb) == 1)
+         break;
+   fclose(f);
+   if (!avail_kb)
+      return max_frames;
+
+   /* Besides the frame buffers: zbuffer (2 states) plus send and receive
+    * packet buffers (2 states each) for the first connection */
+   budget = (uint64_t)avail_kb * 1024 / 2;
+   slots  = budget / state_size;
+   slots  = (slots > 6) ? slots - 6 : 0;
+   if (is_server)
+      slots /= 2;
+   frames = (slots > 2) ? (uint32_t)(slots - 2) : 0;
+
+   if (frames > max_frames)
+      frames = max_frames;
+
+   RARCH_LOG("[Netplay] Save state %u KB, %lu KB free: stall window %u frames.\n",
+         (unsigned)(state_size / 1024), avail_kb, frames);
+
+   /* Below this any Wi-Fi hiccup stalls the game every few frames */
+   return (frames < 8) ? 0 : frames;
+}

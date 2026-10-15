@@ -4907,12 +4907,14 @@ bool command_event(enum event_command cmd, void *data)
             char netplay_server[256];
             char netplay_session[256];
             unsigned netplay_port = 0;
+            command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
+
 #if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+            /* After the deinit, which restores achievements of any
+             * previous session */
             if (miyoo_menu_action_netplay_client() != 0)
                return false;
 #endif
-
-            command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
 
             netplay_server[0]  = '\0';
             netplay_session[0] = '\0';
@@ -4951,12 +4953,14 @@ bool command_event(enum event_command cmd, void *data)
             char netplay_server[256];
             char netplay_session[256];
             unsigned netplay_port = 0;
+            command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
+
 #if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+            /* After the deinit, which restores achievements of any
+             * previous session */
             if (miyoo_menu_action_netplay_client() != 0)
                return false;
 #endif
-
-            command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
 
             netplay_server[0]  = '\0';
             netplay_session[0] = '\0';

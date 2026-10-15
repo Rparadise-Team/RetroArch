@@ -524,6 +524,8 @@ struct netplay
 
    size_t connections_size;
    size_t buffer_size;
+   /* How far ahead/behind we may run before stalling (frames) */
+   uint32_t max_stall_frames;
    size_t zbuffer_size;
    /* The size of our packet buffers */
    size_t packet_buffer_size;

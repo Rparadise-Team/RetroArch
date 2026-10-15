@@ -33,6 +33,7 @@ int miyoo_menu_action_netplay_host(void);
 int miyoo_menu_action_netplay_client(void);
 bool miyoo_menu_netplay_cheevos_suspended(void);
 void miyoo_menu_netplay_on_stopped(void);
+void miyoo_menu_netplay_recover_cheevos(void);
 void miyoo_menu_netplay_menu_open(void);
 void miyoo_menu_netplay_menu_close(void);
 bool miyoo_menu_netplay_menu_is_open(void);

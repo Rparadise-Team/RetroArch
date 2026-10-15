@@ -851,6 +851,79 @@ int miyoo_menu_action_save_cpu_rom(void)
     }
 }
 
+/* Survives a crash: RetroArch can die in the middle of netplay (out of
+ * memory with large save states) and then the restore below never runs,
+ * leaving cheevos_enable = false in the cfg for good. */
+#define MIYOO_NETPLAY_CHEEVOS_MARKER "/mnt/SDCARD/.simplemenu/netplay_cheevos.txt"
+
+static void miyoo_netplay_cheevos_marker_write(bool enable)
+{
+    RFILE *fp = filestream_open(MIYOO_NETPLAY_CHEEVOS_MARKER,
+          RETRO_VFS_FILE_ACCESS_WRITE,
+          RETRO_VFS_FILE_ACCESS_HINT_NONE);
+
+    if (!fp)
+       return;
+    filestream_write(fp, enable ? "1\n" : "0\n", 2);
+    filestream_close(fp);
+}
+
+static void miyoo_netplay_suspend_cheevos(settings_t *settings, const char *flow)
+{
+    if (!miyoo_netplay_saved_cheevos_valid)
+    {
+       miyoo_netplay_saved_cheevos_enable = settings->bools.cheevos_enable;
+       miyoo_netplay_saved_cheevos_valid  = true;
+       miyoo_netplay_cheevos_suspended    = false;
+       miyoo_netplay_cheevos_marker_write(miyoo_netplay_saved_cheevos_enable);
+    }
+
+    settings->bools.cheevos_enable = false;
+    miyoo_netplay_update_cheevos_cfg(false);
+    RARCH_LOG("[MIYOO][Netplay] Forcing cheevos_enable=false before netplay %s.\n", flow);
+#ifdef HAVE_CHEEVOS
+    rcheevos_unload();
+    rcheevos_hardcore_enabled_changed();
+#endif
+}
+
+static void miyoo_netplay_restore_cheevos(settings_t *settings, const char *reason)
+{
+    settings->bools.cheevos_enable = miyoo_netplay_saved_cheevos_enable;
+    miyoo_netplay_update_cheevos_cfg(miyoo_netplay_saved_cheevos_enable);
+    RARCH_LOG("[MIYOO][Netplay] %s, restoring cheevos_enable=%s.\n", reason,
+          miyoo_netplay_saved_cheevos_enable ? "true" : "false");
+#ifdef HAVE_CHEEVOS
+    rcheevos_hardcore_enabled_changed();
+#endif
+    miyoo_netplay_saved_cheevos_valid = false;
+    miyoo_netplay_cheevos_suspended   = false;
+    filestream_delete(MIYOO_NETPLAY_CHEEVOS_MARKER);
+}
+
+/* Called before achievements are loaded: if a previous run died while
+ * netplay had them suspended, put the user's setting back. */
+void miyoo_menu_netplay_recover_cheevos(void)
+{
+    settings_t *settings = config_get_ptr();
+    RFILE *fp;
+    char buf[8] = {0};
+
+    if (!settings || miyoo_netplay_saved_cheevos_valid)
+       return;
+
+    fp = filestream_open(MIYOO_NETPLAY_CHEEVOS_MARKER,
+          RETRO_VFS_FILE_ACCESS_READ,
+          RETRO_VFS_FILE_ACCESS_HINT_NONE);
+    if (!fp)
+       return;
+    filestream_gets(fp, buf, sizeof(buf));
+    filestream_close(fp);
+
+    miyoo_netplay_saved_cheevos_enable = (buf[0] == '1');
+    miyoo_netplay_restore_cheevos(settings, "Netplay did not end cleanly last time");
+}
+
 int miyoo_menu_action_netplay_host(void)
 {
 #ifdef HAVE_NETWORKING
@@ -859,20 +932,10 @@ int miyoo_menu_action_netplay_host(void)
     if (!settings)
        return -1;
 
-    if (!miyoo_netplay_saved_cheevos_valid)
-    {
-       miyoo_netplay_saved_cheevos_enable = settings->bools.cheevos_enable;
-       miyoo_netplay_saved_cheevos_valid  = true;
-       miyoo_netplay_cheevos_suspended    = false;
-    }
-
-    settings->bools.cheevos_enable = false;
-    miyoo_netplay_update_cheevos_cfg(false);
-    RARCH_LOG("[MIYOO][Netplay] Forcing cheevos_enable=false before netplay start.\n");
-#ifdef HAVE_CHEEVOS
-    rcheevos_unload();
-    rcheevos_hardcore_enabled_changed();
-#endif
+    /* Ends any running session first, so its deinit doesn't restore
+     * achievements behind our back */
+    command_event(CMD_EVENT_NETPLAY_DEINIT, NULL);
+    miyoo_netplay_suspend_cheevos(settings, "start");
 
     if (command_event(CMD_EVENT_NETPLAY_ENABLE_HOST, NULL))
     {
@@ -881,17 +944,7 @@ int miyoo_menu_action_netplay_host(void)
     }
 
     if (miyoo_netplay_saved_cheevos_valid)
-    {
-       settings->bools.cheevos_enable = miyoo_netplay_saved_cheevos_enable;
-       miyoo_netplay_update_cheevos_cfg(miyoo_netplay_saved_cheevos_enable);
-       RARCH_LOG("[MIYOO][Netplay] Netplay start failed, restoring cheevos_enable=%s.\n",
-             miyoo_netplay_saved_cheevos_enable ? "true" : "false");
-#ifdef HAVE_CHEEVOS
-       rcheevos_hardcore_enabled_changed();
-#endif
-       miyoo_netplay_saved_cheevos_valid = false;
-       miyoo_netplay_cheevos_suspended   = false;
-    }
+       miyoo_netplay_restore_cheevos(settings, "Netplay start failed");
     return -1;
 #else
     return -1;
@@ -906,21 +959,7 @@ int miyoo_menu_action_netplay_client(void)
     if (!settings)
        return -1;
 
-    if (!miyoo_netplay_saved_cheevos_valid)
-    {
-       miyoo_netplay_saved_cheevos_enable = settings->bools.cheevos_enable;
-       miyoo_netplay_saved_cheevos_valid  = true;
-       miyoo_netplay_cheevos_suspended    = false;
-    }
-
-    settings->bools.cheevos_enable = false;
-    miyoo_netplay_update_cheevos_cfg(false);
-    RARCH_LOG("[MIYOO][Netplay] Forcing cheevos_enable=false before netplay client flow.\n");
-#ifdef HAVE_CHEEVOS
-    rcheevos_unload();
-    rcheevos_hardcore_enabled_changed();
-#endif
-
+    miyoo_netplay_suspend_cheevos(settings, "client flow");
     miyoo_netplay_cheevos_suspended = true;
     return 0;
 #else
@@ -1044,15 +1083,7 @@ void miyoo_menu_netplay_on_stopped(void)
          || !miyoo_netplay_cheevos_suspended)
        return;
 
-    settings->bools.cheevos_enable = miyoo_netplay_saved_cheevos_enable;
-    miyoo_netplay_update_cheevos_cfg(miyoo_netplay_saved_cheevos_enable);
-    RARCH_LOG("[MIYOO][Netplay] Netplay stopped, restoring cheevos_enable=%s.\n",
-          miyoo_netplay_saved_cheevos_enable ? "true" : "false");
-#ifdef HAVE_CHEEVOS
-    rcheevos_hardcore_enabled_changed();
-#endif
-    miyoo_netplay_saved_cheevos_valid = false;
-    miyoo_netplay_cheevos_suspended   = false;
+    miyoo_netplay_restore_cheevos(settings, "Netplay stopped");
 }
 
 void miyoo_menu_achievements_menu_open(size_t parent_index)

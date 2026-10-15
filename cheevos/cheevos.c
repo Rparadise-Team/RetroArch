@@ -1949,8 +1949,13 @@ bool rcheevos_load(const void *data)
 {
    const struct retro_game_info *info = (const struct retro_game_info*)data;
    settings_t *settings               = config_get_ptr();
-   bool cheevos_enable                = settings
-      && settings->bools.cheevos_enable;
+   bool cheevos_enable;
+
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+   miyoo_menu_netplay_recover_cheevos();
+#endif
+
+   cheevos_enable = settings && settings->bools.cheevos_enable;
 
 #if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
    if (miyoo_menu_netplay_cheevos_suspended())
