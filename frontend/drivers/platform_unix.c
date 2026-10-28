@@ -1261,9 +1261,11 @@ static enum frontend_powerstate frontend_unix_get_powerstate(
 
         FILE *fp;
         fp = popen(cmd, "r");
-        if (fgets(buf, axp_response_size, fp) != NULL)
-            sscanf(buf,  "{\"battery\":%d, \"voltage\":%d, \"charging\":%d}", &bat, &vol, &crg);
-        pclose(fp);
+        if (fp) {
+            if (fgets(buf, axp_response_size, fp) != NULL)
+                sscanf(buf,  "{\"battery\":%d, \"voltage\":%d, \"charging\":%d}", &bat, &vol, &crg);
+            pclose(fp);
+        }
     } else {
         FILE *file = fopen("/sys/devices/gpiochip0/gpio/gpio59/value", "r");
         if (file!=NULL) {

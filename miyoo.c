@@ -213,6 +213,15 @@ void miyoo_menu_context_begin(void)
 
     miyoo_menu_active           = true;
     miyoo_native_quickmenu_open = false;
+    /* The stack is flushed back to the Miyoo menu root, so no submenu
+     * is open. The menu may have been closed without passing through
+     * miyoo_menu_context_end() (netplay closes it when it connects),
+     * and a stale flag here sends B to the native RetroArch menu. */
+    miyoo_state_menu_mode        = 0;
+    miyoo_cpu_menu_open          = false;
+    miyoo_netplay_menu_open      = false;
+    miyoo_achievements_menu_open = false;
+    miyoo_achievements_parent    = 0;
     menu_driver_ctl(RARCH_MENU_CTL_SET_PENDING_QUICK_MENU, &flush_stack);
 
     if (miyoo_cpu_clock_read(&clock_hz))
@@ -581,7 +590,8 @@ static bool miyoo_shell_escape_single_quotes(const char *in, char *out, size_t o
 static void miyoo_netplay_update_cheevos_cfg_file(const char *cfg_path, bool enable, bool append_if_missing)
 {
     char escaped_cfg_path[(PATH_MAX_LENGTH * 2) + 8];
-    char cmd[(PATH_MAX_LENGTH * 3) + 256];
+    /* The escaped path appears three times in the command */
+    static char cmd[(sizeof(escaped_cfg_path) * 3) + 256];
     const char *value = enable ? "true" : "false";
 
     if (!miyoo_shell_escape_single_quotes(cfg_path, escaped_cfg_path, sizeof(escaped_cfg_path)))
