@@ -13,6 +13,22 @@ MSG_HASH(
    "Glavni meni"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Reši konflikte: Zadrži lokalno"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Rešava sve konflikte otpremanjem lokalnih datoteka na server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Reši konflikte: Zadrži sa servera"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Rešava sve konflikte preuzimanjem datoteka sa servera i zamenom lokalnih kopija."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Podešavanja"
    )

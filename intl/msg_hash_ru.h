@@ -226,6 +226,22 @@ MSG_HASH(
    "Ручной запуск облачной синхронизации."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Решение конфликтов: оставить локальные копии"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Решить все конфликты путём загрузки локальных файлов на сервер."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Решение конфликтов: оставить файлы с сервера"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Решить все конфликты путём скачивания файлов с сервера и замены локальных копий."
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_QUIT_RETROARCH_NOSAVE,
    "Закрыть RetroArch. Сохранение конфигурации при выходе отключено."
    )

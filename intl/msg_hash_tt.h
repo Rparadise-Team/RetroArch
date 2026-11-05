@@ -13,6 +13,22 @@ MSG_HASH(
    "Көйләүләр"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Каршылыкларны чишү: җирле файлларны калдыру"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Барлык каршылыкларны җирле файлларны серверга йөкләп чишә."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Каршылыкларны чишү: сервердагыларны калдыру"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Барлык каршылыкларны сервер файлларын йөкләп алып, җирле күчермәләрне алыштырып чишә."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_MUSIC_TAB,
    "Музыка"
    )

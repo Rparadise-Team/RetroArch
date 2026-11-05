@@ -13,6 +13,22 @@ MSG_HASH(
    "メインメニュー"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "競合の解決:ローカルを保持"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "サーバーにローカルファイルをアップロードしてすべての競合を解決します。"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "競合の解決: サーバーを保持"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "サーバーファイルをダウンロードし、ローカルコピーを置き換えてすべての競合を解決します。"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "設定"
    )

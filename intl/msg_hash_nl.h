@@ -13,6 +13,22 @@ MSG_HASH(
    "Hoofdmenu"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Conflicten oplossen: lokale versie behouden"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Los alle conflicten op door lokale bestanden te uploaden naar de server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Conflicten oplossen: versie van de server behouden"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Los alle conflicten op door serverbestanden te downloaden, waardoor lokale kopieën worden vervangen."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Instellingen"
    )

@@ -13,6 +13,22 @@ MSG_HASH(
    "فهرست اصلی"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "حل تعارض‌ها: نگه‌داشتن نسخه محلی"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "همه تعارض‌ها را با بارگذاری فایل‌های محلی روی سرور حل می‌کند."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "حل تعارض‌ها: نگه‌داشتن نسخه سرور"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "همه تعارض‌ها را با بارگیری فایل‌های سرور و جایگزینی نسخه‌های محلی حل می‌کند."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "تنظیمات"
    )

@@ -13,6 +13,22 @@ MSG_HASH(
    "תפריט ראשי"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "פתרון התנגשויות: שמירת המקומי"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "פותר את כל ההתנגשויות על ידי העלאת הקבצים המקומיים לשרת."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "פתרון התנגשויות: שמירת השרת"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "פותר את כל ההתנגשויות על ידי הורדת קבצי השרת והחלפת העותקים המקומיים."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "הגדרות"
    )

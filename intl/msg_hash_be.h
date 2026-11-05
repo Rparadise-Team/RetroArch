@@ -13,6 +13,22 @@ MSG_HASH(
    "Галоўнае меню"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Вырашыць канфлікты: пакінуць лакальныя"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Вырашае ўсе канфлікты, запампоўваючы лакальныя файлы на сервер."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Вырашыць канфлікты: пакінуць серверныя"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Вырашае ўсе канфлікты, спампоўваючы файлы з сервера і замяняючы лакальныя копіі."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Налады"
    )

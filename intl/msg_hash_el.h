@@ -13,6 +13,22 @@ MSG_HASH(
    "Κεντρικό Μενού"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Επίλυση διενέξεων: Διατήρηση τοπικών"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Επιλύει όλες τις διενέξεις ανεβάζοντας τα τοπικά αρχεία στον διακομιστή."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Επίλυση διενέξεων: Διατήρηση διακομιστή"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Επιλύει όλες τις διενέξεις κατεβάζοντας τα αρχεία του διακομιστή και αντικαθιστώντας τα τοπικά αντίγραφα."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Ρυθμίσεις"
    )

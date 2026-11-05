@@ -13,6 +13,22 @@ MSG_HASH(
    "Ana Menü"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Çakışmaları Çöz: Yereli Koru"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Tüm çakışmaları yerel dosyaları sunucuya yükleyerek çözer."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Çakışmaları Çöz: Sunucuyu Koru"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Tüm çakışmaları sunucu dosyalarını indirip yerel kopyaların yerine koyarak çözer."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Ayarlar"
    )

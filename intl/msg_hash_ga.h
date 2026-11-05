@@ -218,6 +218,22 @@ MSG_HASH(
    "Spreag sioncrónú scamall de láimh."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Réitigh Coimhlintí: Fan Áitiúil"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Réitigh gach coimhlint trí chomhaid áitiúla a uaslódáil chuig an bhfreastalaí."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Réiteach Coimhlintí: Coinnigh an Freastalaí"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Réitigh gach coimhlint trí chomhaid an fhreastalaí a íoslódáil, agus cóipeanna áitiúla a athsholáthar."
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_QUIT_RETROARCH_NOSAVE,
    "Scoir feidhmchlár RetroArch. Tá sábháil chumraíochta ar scor díchumasaithe. Scoir feidhmchlár RetroArch. Tá sábháil chumraíochta ar scor díchumasaithe."
    )

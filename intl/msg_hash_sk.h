@@ -13,6 +13,22 @@ MSG_HASH(
    "Hlavné menu"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Riešenie konfliktov: Ponechať lokálne"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Vyrieši všetky konflikty nahraním lokálnych súborov na server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Riešenie konfliktov: Ponechať na serveri"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Vyrieši všetky konflikty stiahnutím súborov zo servera, ktoré nahradia lokálne kópie."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Nastavenia"
    )

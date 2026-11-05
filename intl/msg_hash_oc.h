@@ -13,6 +13,22 @@ MSG_HASH(
    "Menú principal"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Resòlvre los conflictes : gardar lo local"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Resòlv totes los conflictes en mandant los fichièrs locals al servidor."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Resòlvre los conflictes : gardar lo servidor"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Resòlv totes los conflictes en telecargant los fichièrs del servidor e en remplaçant las còpias localas."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Paramètres"
    )

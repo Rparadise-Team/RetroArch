@@ -13,6 +13,22 @@ MSG_HASH(
    "Prif Ddewislen"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Datrys Gwrthdaro: Cadw'r Lleol"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Datrys pob gwrthdaro drwy lwytho'r ffeiliau lleol i'r gweinydd."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Datrys Gwrthdaro: Cadw'r Gweinydd"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Datrys pob gwrthdaro drwy lwytho ffeiliau'r gweinydd i lawr, gan ddisodli'r copïau lleol."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Gosodiadau"
    )

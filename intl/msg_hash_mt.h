@@ -623,3 +623,19 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Solvi l-Kunflitti: Żomm il-Lokali"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Isolvi l-kunflitti kollha billi jtella' l-fajls lokali fuq is-server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Solvi l-Kunflitti: Żomm tas-Server"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Isolvi l-kunflitti kollha billi jniżżel il-fajls tas-server u jissostitwixxi l-kopji lokali."
+   )

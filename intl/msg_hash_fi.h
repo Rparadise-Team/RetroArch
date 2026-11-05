@@ -13,6 +13,22 @@ MSG_HASH(
    "Päävalikko"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Ratkaise ristiriidat: säilytä paikallinen"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Ratkaise kaikki ristiriidat lähettämällä paikalliset tiedostot palvelimelle."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Ratkaise ristiriidat: säilytä palvelimen"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Ratkaise kaikki ristiriidat lataamalla tiedostot palvelimelta ja korvaamalla paikalliset kopiot."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Asetukset"
    )

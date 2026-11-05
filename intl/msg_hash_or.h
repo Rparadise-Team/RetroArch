@@ -13,6 +13,22 @@ MSG_HASH(
    "ସେଟିଂ"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "ବିବାଦ ସମାଧାନ: ସ୍ଥାନୀୟ ରଖନ୍ତୁ"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "ସ୍ଥାନୀୟ ଫାଇଲଗୁଡ଼ିକୁ ସର୍ଭରକୁ ଅପଲୋଡ୍ କରି ସମସ୍ତ ବିବାଦ ସମାଧାନ କରେ।"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "ବିବାଦ ସମାଧାନ: ସର୍ଭର ରଖନ୍ତୁ"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "ସର୍ଭର ଫାଇଲଗୁଡ଼ିକ ଡାଉନଲୋଡ୍ କରି ଓ ସ୍ଥାନୀୟ ପ୍ରତିଲିପି ବଦଳାଇ ସମସ୍ତ ବିବାଦ ସମାଧାନ କରେ।"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_HISTORY_TAB,
    "ଇତିଵୃତ୍ତି"
    )

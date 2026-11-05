@@ -214,6 +214,22 @@ MSG_HASH(
    "Starta molnsynkronisering manuellt."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Lös konflikter: Behåll lokal"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Lös alla konflikter genom att ladda upp lokala filer till servern."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Lös konflikter: Behåll server"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Lös alla konflikter genom att ladda ner serverfiler, ersätter lokala kopior."
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_QUIT_RETROARCH_NOSAVE,
    "Avsluta RetroArch-programmet. Konfiguration sparas vid avslut är inaktiverat."
    )

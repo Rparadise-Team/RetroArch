@@ -13,6 +13,22 @@ MSG_HASH(
    "සැකසුම්"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "ගැටුම් විසඳන්න: ස්ථානීය තබා ගන්න"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "ස්ථානීය ගොනු සේවාදායකයට උඩුගත කිරීමෙන් සියලු ගැටුම් විසඳයි."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "ගැටුම් විසඳන්න: සේවාදායකය තබා ගන්න"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "සේවාදායක ගොනු බාගත කර ස්ථානීය පිටපත් ප්‍රතිස්ථාපනය කිරීමෙන් සියලු ගැටුම් විසඳයි."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_FAVORITES_TAB,
    "ප්‍රියතමයන්"
    )

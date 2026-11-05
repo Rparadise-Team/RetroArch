@@ -13,6 +13,22 @@ MSG_HASH(
    "Favourites"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Resolve Conflicts: Keep Local"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Resolve all conflicts by uploading local files to the server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Resolve Conflicts: Keep Server"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Resolve all conflicts by downloading server files, replacing local copies."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_TAB,
    "Net-play"
    )

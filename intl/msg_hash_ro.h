@@ -623,3 +623,19 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Rezolvă conflictele: păstrează localul"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Rezolvă toate conflictele încărcând fișierele locale pe server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Rezolvă conflictele: păstrează serverul"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Rezolvă toate conflictele descărcând fișierele de pe server și înlocuind copiile locale."
+   )

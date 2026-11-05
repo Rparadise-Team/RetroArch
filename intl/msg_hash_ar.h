@@ -13,6 +13,22 @@ MSG_HASH(
    "القائمة الرئيسية"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "حل التعارضات: الاحتفاظ بالمحلي"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "حل جميع التعارضات برفع الملفات المحلية إلى الخادم."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "حل التعارضات: الاحتفاظ بنسخة الخادم"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "حل جميع التعارضات بتنزيل ملفات الخادم واستبدال النسخ المحلية."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "الإعدادات"
    )

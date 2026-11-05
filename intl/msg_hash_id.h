@@ -13,6 +13,22 @@ MSG_HASH(
    "Menu Utama"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Selesaikan Konflik: Pertahankan Lokal"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Menyelesaikan semua konflik dengan mengunggah berkas lokal ke server."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Selesaikan Konflik: Pertahankan Server"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Menyelesaikan semua konflik dengan mengunduh berkas server dan mengganti salinan lokal."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_SETTINGS_TAB,
    "Pengaturan"
    )

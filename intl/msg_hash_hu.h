@@ -218,6 +218,22 @@ MSG_HASH(
    "A felhőbe szinkronizálás kézi indítása."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Ütközések feloldása: a helyi fájl megtartása"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_LOCAL,
+   "Minden ütközés feloldása a helyi fájlok feltöltésével a szerverre."
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Ütközések feloldása: a szerver fájljainak megtartása"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
+   "Minden ütközés feloldása a fájlok letöltésével a szerverről, felülírva a helyi másolatokat."
+   )
+MSG_HASH(
    MENU_ENUM_SUBLABEL_QUIT_RETROARCH_NOSAVE,
    "Kilépés a RetroArch alkalmazásból. Konfiguráció mentése kilépéskor: letiltva."
    )
