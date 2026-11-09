@@ -7654,6 +7654,14 @@ MSG_HASH(
    "A játékosok megállíthatják a játékot netplay közben."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (bemenetre várás)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Az előrejelzés és visszatekerés helyett megvárja minden játékos bemenetét. Képkockánként egy helyett egyetlen állapotmentést használ, és nagy vagy vissza nem tekerhető állapotú magokhoz való, némi bemeneti késleltetés árán. Az ilyen magok kikapcsolva is használják."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Slave módú kliensek"
    )

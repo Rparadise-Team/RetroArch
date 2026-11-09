@@ -5792,11 +5792,7 @@ int action_ok_close_content(const char *path, const char *label, unsigned type, 
 #if defined(MIYOO_CUSTOM_MENU)
 static size_t miyoo_cpu_clock_menu_index(void)
 {
-#ifdef HAVE_NETWORKING
-   return 4;
-#else
-   return 3;
-#endif
+   return miyoo_menu_root_index(MIYOO_ROOT_CPU_CLOCK);
 }
 
 static int action_ok_miyoo_menu_return(const char *path,
@@ -6026,6 +6022,21 @@ static int action_ok_miyoo_netplay_client(const char *path,
 #else
    return -1;
 #endif
+}
+
+/* Opens the top level core options list as the Quick Menu does (empty
+ * path, CORE_OPTIONS label); the flag lets Back come to this entry. */
+static int action_ok_miyoo_core_options(const char *path,
+      const char *label, unsigned type, size_t idx, size_t entry_idx)
+{
+   int ret = generic_action_ok_displaylist_push("", NULL,
+         msg_hash_to_str(MENU_ENUM_LABEL_CORE_OPTIONS),
+         MENU_SETTING_ACTION_CORE_OPTIONS, idx, entry_idx,
+         ACTION_OK_DL_CORE_OPTIONS_LIST);
+
+   if (ret == 0)
+      miyoo_menu_core_options_menu_open();
+   return ret;
 }
 
 static int action_ok_miyoo_quick_menu(const char *path,
@@ -9965,6 +9976,9 @@ static int menu_cbs_init_bind_ok_compare_type(menu_file_list_cbs_t *cbs,
             break;
          case FILE_TYPE_MIYOO_NETPLAY_CLIENT:
             BIND_ACTION_OK(cbs, action_ok_miyoo_netplay_client);
+            break;
+         case FILE_TYPE_MIYOO_CORE_OPTIONS:
+            BIND_ACTION_OK(cbs, action_ok_miyoo_core_options);
             break;
          case FILE_TYPE_MIYOO_QUICK_MENU:
             BIND_ACTION_OK(cbs, action_ok_miyoo_quick_menu);

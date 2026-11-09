@@ -7686,6 +7686,14 @@ MSG_HASH(
    "允许玩家在联机时暂停。"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "锁步 (等待输入)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "等待所有玩家的输入，而不是预测并回滚。只使用一个即时存档而不是每帧一个，适合状态很大或无法回滚的核心，代价是输入延迟略有增加。这类核心即使关闭此项也会使用它。"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "允许从属模式客户端"
    )

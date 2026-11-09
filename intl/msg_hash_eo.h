@@ -1383,3 +1383,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (atendi enigon)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Atendas la enigon de ĉiuj ludantoj anstataŭ antaŭdiri kaj rebobeni. Uzas unu konservitan staton anstataŭ unu po kadro kaj taŭgas por kernoj kun grandaj aŭ nerebobeneblaj statoj, je la kosto de iom da eniga prokrasto. Tiaj kernoj uzas ĝin eĉ kiam ĝi estas malŝaltita."
+   )

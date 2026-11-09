@@ -7650,6 +7650,14 @@ MSG_HASH(
    "Permet als jugadors posar la partida en pausa durant el joc en línia."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (esperar entrades)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Espera les entrades de tots els jugadors en lloc de predir i rebobinar. Fa servir un sol desament ràpid en lloc d'un per fotograma i és adequat per a nuclis amb estats grans o que no es poden rebobinar, a canvi d'una mica més de retard d'entrada. Aquests nuclis el fan servir encara que estigui desactivat."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Permet clients en mode esclau"
    )

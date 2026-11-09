@@ -6359,3 +6359,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (aguardar entradas)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Aguarda as entradas de todos os jogadores em vez de prever e rebobinar. Usa um único estado gravado em vez de um por fotograma e é indicado para núcleos com estados grandes ou que não podem ser rebobinados, à custa de algum atraso de entrada. Esses núcleos usam-no mesmo quando desativado."
+   )

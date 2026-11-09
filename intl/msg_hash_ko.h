@@ -7706,6 +7706,14 @@ MSG_HASH(
    "플레이어들이 넷플레이 도중 일시정지를 할 수 있게 허용합니다."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "락스텝 (입력 대기)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "예측하고 되감는 대신 모든 플레이어의 입력을 기다립니다. 프레임마다 하나가 아닌 하나의 상태 저장만 사용하며, 상태가 크거나 되감을 수 없는 코어에 적합하지만 입력 지연이 약간 늘어납니다. 이런 코어는 꺼져 있어도 이 방식을 사용합니다."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "슬레이브 모드 클라이언트 허용"
    )

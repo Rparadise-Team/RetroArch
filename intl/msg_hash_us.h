@@ -7762,6 +7762,14 @@ MSG_HASH(
    "Allow players to pause during netplay."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Wait for every player's input instead of predicting and rewinding. Uses one savestate instead of one per frame and suits cores whose states are large or cannot be rewound, at the cost of some input latency. Such cores use it even when this is off."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Allow Slave-Mode Clients"
    )

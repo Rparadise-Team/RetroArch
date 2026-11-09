@@ -4499,3 +4499,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (tunggu input)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Menunggu input semua pemain alih-alih memprediksi dan memutar balik. Menggunakan satu savestate alih-alih satu per frame dan cocok untuk core dengan state besar atau yang tidak dapat diputar balik, dengan biaya sedikit latensi input. Core seperti itu tetap menggunakannya meskipun dinonaktifkan."
+   )

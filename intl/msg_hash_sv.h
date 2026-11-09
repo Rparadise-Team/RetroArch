@@ -7454,6 +7454,14 @@ MSG_HASH(
    "Tillåt spelare att pausa under Netplay."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (vänta på indata)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Väntar på alla spelares indata i stället för att förutsäga och spola tillbaka. Använder ett enda sparläge i stället för ett per bildruta och passar kärnor med stora tillstånd eller tillstånd som inte kan spolas tillbaka, till priset av lite indatafördröjning. Sådana kärnor använder det även när det är avstängt."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Tillåt klienter i slavläge"
    )

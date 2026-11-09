@@ -7538,6 +7538,14 @@ MSG_HASH(
    "Permite aos xogadores facer unha pausa durante o xogo en rede."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (agardar entradas)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Agarda polas entradas de todos os xogadores en lugar de predicir e rebobinar. Usa un único gardado rápido en vez de un por fotograma e é axeitado para núcleos con estados grandes ou que non se poden rebobinar, a cambio de algo máis de atraso de entrada. Eses núcleos úsano aínda que estea desactivado."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Permitir clientes en modo escravo"
    )

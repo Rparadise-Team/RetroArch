@@ -6990,6 +6990,14 @@ MSG_HASH(
    "建立的主機允許開啟選單時暫停執行的項目, 容易造成主機或用戶中斷連線不建議開啟。"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "鎖步 (等待輸入)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "等待所有玩家的輸入，而不是預測並回溯。只使用一個即時存檔而非每幀一個，適合狀態很大或無法回溯的核心，代價是輸入延遲略為增加。這類核心即使關閉此項也會使用它。"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "允許主副模式用戶端"
    )

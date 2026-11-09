@@ -7694,6 +7694,14 @@ MSG_HASH(
    "Cho phép người chơi tạm dừng trong chế độ chơi mạng."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (chờ đầu vào)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Chờ đầu vào của mọi người chơi thay vì dự đoán và tua lại. Dùng một bản lưu trạng thái thay vì một bản cho mỗi khung hình, phù hợp với các lõi có trạng thái lớn hoặc không thể tua lại, đổi lại độ trễ đầu vào tăng một chút. Các lõi đó vẫn dùng nó ngay cả khi tắt."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Cho phép máy khách chế độ lệ thuộc"
    )

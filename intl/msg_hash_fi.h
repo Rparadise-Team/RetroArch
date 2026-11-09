@@ -6430,6 +6430,14 @@ MSG_HASH(
    "Salli pelaajien keskeyttää verkkopelin aikana."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (odota syötteitä)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Odottaa kaikkien pelaajien syötteitä ennustamisen ja takaisinkelauksen sijaan. Käyttää yhtä tilatallennusta yhden ruutua kohden sijaan ja sopii ytimille, joiden tilat ovat suuria tai joita ei voi kelata taaksepäin, hieman suuremman syöteviiveen kustannuksella. Tällaiset ytimet käyttävät sitä myös, kun se on pois päältä."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Salli slave-tilan asiakkaat"
    )

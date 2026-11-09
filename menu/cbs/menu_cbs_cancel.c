@@ -35,11 +35,7 @@
 #if defined(MIYOO_CUSTOM_MENU)
 static size_t miyoo_cpu_clock_menu_index(void)
 {
-#ifdef HAVE_NETWORKING
-   return 4;
-#else
-   return 3;
-#endif
+   return miyoo_menu_root_index(MIYOO_ROOT_CPU_CLOCK);
 }
 #endif
 
@@ -72,7 +68,29 @@ int action_cancel_pop_default(const char *path,
          size_t new_selection_ptr = menu_st->selection_ptr;
          miyoo_menu_netplay_menu_close();
          menu_entries_pop_stack(&new_selection_ptr, 0, 1);
-         menu_st->selection_ptr = 8;
+         menu_st->selection_ptr = miyoo_menu_root_index(MIYOO_ROOT_NETPLAY_CLIENT);
+         if (menu_st->driver_ctx->navigation_set)
+            menu_st->driver_ctx->navigation_set(menu_st->userdata, false);
+         menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
+         return 0;
+      }
+   }
+
+   /* Core options opened from the Miyoo menu: Back from the top level
+    * list returns to its entry; deeper lists (categories, value
+    * dropdowns) pop as usual, below. */
+   if (miyoo_menu_core_options_menu_is_open())
+   {
+      const char *menu_path = NULL;
+      menu_entries_get_last_stack(&menu_path, NULL, NULL, NULL, NULL);
+
+      if (   string_is_equal(menu_label, msg_hash_to_str(MENU_ENUM_LABEL_CORE_OPTIONS))
+          && string_is_empty(menu_path))
+      {
+         size_t new_selection_ptr = menu_st->selection_ptr;
+         miyoo_menu_core_options_menu_close();
+         menu_entries_pop_stack(&new_selection_ptr, 0, 1);
+         menu_st->selection_ptr = miyoo_menu_root_index(MIYOO_ROOT_CORE_OPTIONS);
          if (menu_st->driver_ctx->navigation_set)
             menu_st->driver_ctx->navigation_set(menu_st->userdata, false);
          menu_st->flags |= MENU_ST_FLAG_ENTRIES_NEED_REFRESH;
@@ -82,7 +100,8 @@ int action_cancel_pop_default(const char *path,
 
    if (   miyoo_menu_context_active()
        && !miyoo_menu_context_is_native_quickmenu()
-       && !miyoo_menu_netplay_menu_is_open())
+       && !miyoo_menu_netplay_menu_is_open()
+       && !miyoo_menu_core_options_menu_is_open())
    {
       bool handled_submenu = false;
 

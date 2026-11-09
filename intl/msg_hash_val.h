@@ -3443,3 +3443,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (esperar entrades)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Espera les entrades de tots els jugadors en lloc de predir i rebobinar. Utilitza un sol guardat ràpid en lloc d'un per fotograma i és adequat per a nuclis amb estats grans o que no es poden rebobinar, a canvi d'un poc més de retard d'entrada. Estos nuclis l'utilitzen encara que estiga desactivat."
+   )

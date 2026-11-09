@@ -7674,6 +7674,14 @@ MSG_HASH(
    "Lig d’imreoirí sos a chur le linn súgartha ar an ngréasán."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (fan le hionchur)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Fanann sé le hionchur gach imreora in ionad tuar agus athchasadh. Úsáideann sé staid shábháilte amháin in ionad ceann in aghaidh an fhráma agus oireann sé do chroíthe a bhfuil staideanna móra acu nó nach féidir a athchasadh, ar chostas beagán moille ionchuir. Úsáideann croíthe den sórt sin é fiú nuair atá sé múchta."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Ceadaigh Cliant Mód Sclábhaí"
    )

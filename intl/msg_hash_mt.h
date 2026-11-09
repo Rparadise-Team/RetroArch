@@ -639,3 +639,11 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
    "Isolvi l-kunflitti kollha billi jniżżel il-fajls tas-server u jissostitwixxi l-kopji lokali."
    )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (stenna l-input)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Jistenna l-input tal-plejers kollha minflok ma jbassar u jerġa' lura. Juża save state wieħed minflok wieħed għal kull frame u huwa adattat għal cores bi stati kbar jew li ma jistgħux jerġgħu lura, bi prezz ta' ftit dewmien fl-input. Dawn il-cores jużawh anke meta jkun mitfi."
+   )

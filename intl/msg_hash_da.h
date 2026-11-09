@@ -1627,3 +1627,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (vent på input)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Venter på alle spilleres input i stedet for at forudsige og spole tilbage. Bruger én gemt tilstand i stedet for én pr. billede og passer til kerner med store tilstande eller tilstande, der ikke kan spoles tilbage, på bekostning af lidt inputforsinkelse. Sådanne kerner bruger det, selv når det er slået fra."
+   )

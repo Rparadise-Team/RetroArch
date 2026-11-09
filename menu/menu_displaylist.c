@@ -3771,6 +3771,14 @@ static int menu_displaylist_parse_load_content_settings(
                msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_RESUME),
                MENU_ENUM_LABEL_MIYOO_RESUME, FILE_TYPE_MIYOO_RESUME, 0, 0, NULL))
             count++;
+         /* The Quick Menu's own entry: same action, translations,
+          * sublabel and icon */
+         if (menu_entries_append(list,
+               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_RESTART_CONTENT),
+               msg_hash_to_str(MENU_ENUM_LABEL_RESTART_CONTENT),
+               MENU_ENUM_LABEL_RESTART_CONTENT,
+               MENU_SETTING_ACTION_RUN, 0, 0, NULL))
+            count++;
          if (menu_entries_append(list,
 			   msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_SAVE_STATE),
                msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_SAVE_STATE),
@@ -3827,6 +3835,14 @@ static int menu_displaylist_parse_load_content_settings(
 			   FILE_TYPE_MIYOO_NETPLAY_CLIENT, 0, 0, NULL))
             count++;
 #endif
+         /* Own entry so Back from the core options returns here;
+          * label and sublabel are the Quick Menu's translations */
+         if (menu_entries_append(list,
+               msg_hash_to_str(MENU_ENUM_LABEL_VALUE_CORE_OPTIONS),
+               msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_CORE_OPTIONS),
+               MENU_ENUM_LABEL_MIYOO_CORE_OPTIONS,
+               FILE_TYPE_MIYOO_CORE_OPTIONS, 0, 0, NULL))
+            count++;
          if (menu_entries_append(list,
 			   msg_hash_to_str(MENU_ENUM_LABEL_VALUE_MIYOO_JOYPAD_SENSE),
                msg_hash_to_str(MENU_ENUM_LABEL_MIYOO_JOYPAD_SENSE),
@@ -9353,6 +9369,7 @@ unsigned menu_displaylist_build_list(
                {MENU_ENUM_LABEL_NETPLAY_CHAT_COLOR_NAME,            PARSE_ONLY_UINT,   true},
                {MENU_ENUM_LABEL_NETPLAY_CHAT_COLOR_MSG,             PARSE_ONLY_UINT,   true},
                {MENU_ENUM_LABEL_NETPLAY_ALLOW_PAUSING,              PARSE_ONLY_BOOL,   true},
+               {MENU_ENUM_LABEL_NETPLAY_LOCKSTEP,                   PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_NETPLAY_ALLOW_SLAVES,               PARSE_ONLY_BOOL,   true},
                {MENU_ENUM_LABEL_NETPLAY_REQUIRE_SLAVES,             PARSE_ONLY_BOOL,   false},
                {MENU_ENUM_LABEL_NETPLAY_CHECK_FRAMES,               PARSE_ONLY_INT,    true},

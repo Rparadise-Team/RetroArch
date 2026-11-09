@@ -5001,7 +5001,11 @@ bool command_event(enum event_command cmd, void *data)
          break;
       case CMD_EVENT_NETPLAY_ENABLE_HOST:
          {
-            if (netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE, NULL))
+            /* A lockstep host starts on the running content, as a joiner
+             * does: joiners get its state, and reloading restarts the
+             * game */
+            if (     netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE, NULL)
+                  || netplay_driver_ctl(RARCH_NETPLAY_CTL_USE_LOCKSTEP, NULL))
             {
                netplay_driver_ctl(RARCH_NETPLAY_CTL_ENABLE_SERVER, NULL);
                command_event(CMD_EVENT_NETPLAY_INIT, NULL);

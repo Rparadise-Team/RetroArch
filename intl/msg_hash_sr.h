@@ -2559,3 +2559,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (čekaj unos)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Čeka unos svih igrača umesto predviđanja i premotavanja. Koristi jedno sačuvano stanje umesto jednog po frejmu i pogodan je za jezgra sa velikim stanjima ili stanjima koja se ne mogu premotati, uz nešto veće kašnjenje unosa. Takva jezgra ga koriste čak i kada je isključen."
+   )

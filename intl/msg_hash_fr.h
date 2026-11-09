@@ -7626,6 +7626,14 @@ MSG_HASH(
    "Permettre aux joueurs de mettre en pause pendant le jeu en réseau."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (attendre les entrées)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Attend les entrées de tous les joueurs au lieu de prédire et de rembobiner. Utilise une seule sauvegarde instantanée au lieu d'une par image et convient aux cœurs dont les états sont volumineux ou ne peuvent pas être rembobinés, au prix d'un peu de latence d'entrée. Ces cœurs l'utilisent même si cette option est désactivée."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Autoriser les clients en mode passif"
    )

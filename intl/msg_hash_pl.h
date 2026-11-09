@@ -6498,6 +6498,14 @@ MSG_HASH(
    "Pozwól graczom wstrzymać podczas netplay."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (czekaj na wejście)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Czeka na dane wejściowe wszystkich graczy zamiast przewidywać i cofać. Używa jednego zapisu stanu zamiast jednego na klatkę i nadaje się dla rdzeni o dużych stanach lub takich, których nie da się cofnąć, kosztem nieco większego opóźnienia wejścia. Takie rdzenie używają go nawet, gdy jest wyłączony."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Zezwalaj na klientów w trybie slave"
    )

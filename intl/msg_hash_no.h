@@ -5519,3 +5519,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (vent på inndata)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Venter på inndata fra alle spillere i stedet for å forutsi og spole tilbake. Bruker én lagret tilstand i stedet for én per bilde og passer for kjerner med store tilstander eller tilstander som ikke kan spoles tilbake, på bekostning av litt inndataforsinkelse. Slike kjerner bruker det selv når det er slått av."
+   )

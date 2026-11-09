@@ -7622,6 +7622,14 @@ MSG_HASH(
    "Permite que os jogadores pausem o conteúdo."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (aguardar entradas)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Aguarda as entradas de todos os jogadores em vez de prever e rebobinar. Usa um único save state em vez de um por quadro e é indicado para núcleos com estados grandes ou que não podem ser rebobinados, ao custo de um pouco mais de atraso de entrada. Esses núcleos o usam mesmo quando desativado."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Permitir clientes em modo escravo"
    )

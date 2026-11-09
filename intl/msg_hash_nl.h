@@ -6807,3 +6807,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (wacht op invoer)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Wacht op de invoer van alle spelers in plaats van te voorspellen en terug te spoelen. Gebruikt één savestate in plaats van één per frame en is geschikt voor cores met grote of niet-terugspoelbare states, ten koste van wat invoervertraging. Zulke cores gebruiken het ook als dit uit staat."
+   )

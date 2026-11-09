@@ -4803,3 +4803,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (esperar entraes)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Espera poles entraes de tolos xugadores en cuenta de predicir y rebobinar. Usa un namái guardáu rápidu en cuenta d'ún per fotograma y val pa núcleos con estaos grandes o que nun se puen rebobinar, a cambéu de dalgo más de retrasu d'entrada. Esos núcleos úsenlu magar tea desactiváu."
+   )

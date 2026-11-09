@@ -191,6 +191,7 @@ static bool miyoo_native_quickmenu_open  = false;
 static int miyoo_state_menu_mode         = 0;
 static bool miyoo_cpu_menu_open          = false;
 static bool miyoo_netplay_menu_open      = false;
+static bool miyoo_core_options_menu_open = false;
 static bool miyoo_netplay_saved_cheevos_valid  = false;
 static bool miyoo_netplay_saved_cheevos_enable = false;
 static bool miyoo_netplay_cheevos_suspended    = false;
@@ -206,6 +207,44 @@ static bool miyoo_cpu_clock_read(long *clock_hz);
 static bool miyoo_cpu_clock_matches_target(long target_hz);
 static bool miyoo_cpu_clock_sync_initialized = false;
 
+bool miyoo_menu_root_entry_shown(enum miyoo_menu_root_entry entry)
+{
+    switch (entry)
+    {
+       case MIYOO_ROOT_SYNC_NOW:
+       case MIYOO_ROOT_NETPLAY_HOST:
+       case MIYOO_ROOT_NETPLAY_CLIENT:
+#ifdef HAVE_NETWORKING
+          return true;
+#else
+          return false;
+#endif
+       case MIYOO_ROOT_ACHIEVEMENTS:
+#ifdef HAVE_CHEEVOS
+          {
+             settings_t *settings = config_get_ptr();
+             return settings && settings->bools.cheevos_enable;
+          }
+#else
+          return false;
+#endif
+       default:
+          break;
+    }
+    return true;
+}
+
+size_t miyoo_menu_root_index(enum miyoo_menu_root_entry entry)
+{
+    size_t idx = 0;
+    int i;
+
+    for (i = MIYOO_ROOT_RESUME; i < (int)entry; i++)
+       if (miyoo_menu_root_entry_shown((enum miyoo_menu_root_entry)i))
+          idx++;
+    return idx;
+}
+
 void miyoo_menu_context_begin(void)
 {
     bool flush_stack = true;
@@ -220,6 +259,7 @@ void miyoo_menu_context_begin(void)
     miyoo_state_menu_mode        = 0;
     miyoo_cpu_menu_open          = false;
     miyoo_netplay_menu_open      = false;
+    miyoo_core_options_menu_open = false;
     miyoo_achievements_menu_open = false;
     miyoo_achievements_parent    = 0;
     menu_driver_ctl(RARCH_MENU_CTL_SET_PENDING_QUICK_MENU, &flush_stack);
@@ -237,6 +277,7 @@ void miyoo_menu_context_end(void)
     miyoo_state_menu_mode       = 0;
     miyoo_cpu_menu_open         = false;
     miyoo_netplay_menu_open     = false;
+    miyoo_core_options_menu_open = false;
     miyoo_achievements_menu_open = false;
     miyoo_achievements_parent    = 0;
 
@@ -1064,6 +1105,21 @@ int miyoo_menu_joypad_sense_set(int sense)
    return 0;
 }
 
+void miyoo_menu_core_options_menu_open(void)
+{
+    miyoo_core_options_menu_open = true;
+}
+
+void miyoo_menu_core_options_menu_close(void)
+{
+    miyoo_core_options_menu_open = false;
+}
+
+bool miyoo_menu_core_options_menu_is_open(void)
+{
+    return miyoo_core_options_menu_open;
+}
+
 void miyoo_menu_netplay_menu_open(void)
 {
     miyoo_netplay_menu_open = true;
@@ -1152,9 +1208,9 @@ int miyoo_menu_state_menu_get_mode(void)
 int miyoo_menu_state_parent_index(int mode)
 {
     if (mode == 1)
-        return 1;
+        return (int)miyoo_menu_root_index(MIYOO_ROOT_SAVE_STATE);
     if (mode == 2)
-        return 2;
+        return (int)miyoo_menu_root_index(MIYOO_ROOT_LOAD_STATE);
     return 0;
 }
 

@@ -7646,6 +7646,14 @@ MSG_HASH(
    "Oyuncuların netplay sırasında duraklamasına izin verin."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (girişleri bekle)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Tahmin edip geri sarmak yerine tüm oyuncuların girişini bekler. Kare başına bir yerine tek bir durum kaydı kullanır ve büyük ya da geri sarılamayan durumlara sahip çekirdekler için uygundur; bunun bedeli biraz giriş gecikmesidir. Bu çekirdekler kapalıyken bile kullanır."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Bağımlı Kip İstemcilerine İzin Ver"
    )

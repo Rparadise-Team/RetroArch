@@ -230,6 +230,8 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_joypad_sense, MENU_ENUM_SUBLAB
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_retroarch_settings, MENU_ENUM_SUBLABEL_MIYOO_RETROARCH_SETTINGS)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_quit_retroarch, MENU_ENUM_SUBLABEL_MIYOO_QUIT_RETROARCH)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_menu_return, MENU_ENUM_SUBLABEL_MIYOO_MENU_RETURN)
+/* Shares the Quick Menu entry's translated sublabel */
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_miyoo_core_options, MENU_ENUM_SUBLABEL_CORE_OPTIONS)
 
 static int action_bind_sublabel_miyoo_state_slot(
       file_list_t *list, unsigned type, unsigned i,
@@ -982,6 +984,7 @@ DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_fade_chat,             MENU_
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_chat_color_name,       MENU_ENUM_SUBLABEL_NETPLAY_CHAT_COLOR_NAME)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_chat_color_msg,        MENU_ENUM_SUBLABEL_NETPLAY_CHAT_COLOR_MSG)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_allow_pausing,         MENU_ENUM_SUBLABEL_NETPLAY_ALLOW_PAUSING)
+DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_lockstep,              MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_allow_slaves,          MENU_ENUM_SUBLABEL_NETPLAY_ALLOW_SLAVES)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_require_slaves,        MENU_ENUM_SUBLABEL_NETPLAY_REQUIRE_SLAVES)
 DEFAULT_SUBLABEL_MACRO(action_bind_sublabel_netplay_check_frames,          MENU_ENUM_SUBLABEL_NETPLAY_CHECK_FRAMES)
@@ -2667,6 +2670,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
          case MENU_ENUM_LABEL_MIYOO_MENU_RETURN:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_menu_return);
             break;
+         case MENU_ENUM_LABEL_MIYOO_CORE_OPTIONS:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_miyoo_core_options);
+            break;
 #endif
          case MENU_ENUM_LABEL_CRT_SWITCH_RESOLUTION:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_crt_switchres);
@@ -3955,6 +3961,9 @@ int menu_cbs_init_bind_sublabel(menu_file_list_cbs_t *cbs,
             break;
          case MENU_ENUM_LABEL_NETPLAY_ALLOW_PAUSING:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_netplay_allow_pausing);
+            break;
+         case MENU_ENUM_LABEL_NETPLAY_LOCKSTEP:
+            BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_netplay_lockstep);
             break;
          case MENU_ENUM_LABEL_NETPLAY_ALLOW_SLAVES:
             BIND_ACTION_SUBLABEL(cbs, action_bind_sublabel_netplay_allow_slaves);

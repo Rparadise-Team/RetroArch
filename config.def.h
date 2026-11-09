@@ -1357,6 +1357,16 @@
 /* Allow players to pause */
 #define DEFAULT_NETPLAY_ALLOW_PAUSING false
 
+/* Sync both analog sticks of joypad ports (netplay protocol 8).
+ * Off, and not in the menu: the cores played on this device read the
+ * d-pad, and with it off every RetroArch version can still join. */
+#define DEFAULT_NETPLAY_ANALOG_JOYPADS false
+
+/* Wait for every player's input instead of guessing and rewinding.
+ * Cores whose states are too large or not deterministic enough to
+ * rewind on play lockstep whatever this says. */
+#define DEFAULT_NETPLAY_LOCKSTEP false
+
 /* Allow connections in slave mode */
 #define DEFAULT_NETPLAY_ALLOW_SLAVES true
 

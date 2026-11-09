@@ -7027,3 +7027,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (čakať na vstup)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Čaká na vstupy všetkých hráčov namiesto predvídania a pretáčania. Používa jediný uložený stav namiesto jedného na snímku a hodí sa pre jadrá s veľkými stavmi alebo stavmi, ktoré sa nedajú pretočiť, za cenu mierne vyššej odozvy vstupu. Takéto jadrá ho používajú, aj keď je vypnutý."
+   )

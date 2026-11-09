@@ -7530,6 +7530,14 @@ MSG_HASH(
    "Spielern erlauben, während des Netzwerkspiels zu pausieren."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (auf Eingaben warten)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Wartet auf die Eingaben aller Spieler, statt vorherzusagen und zurückzuspulen. Nutzt einen einzigen Speicherstand statt einem pro Frame und eignet sich für Cores mit großen oder nicht zurückspulbaren Zuständen, kostet aber etwas Eingabelatenz. Solche Cores nutzen es auch, wenn es deaktiviert ist."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Erlaube Slave-Modus für Clients"
    )

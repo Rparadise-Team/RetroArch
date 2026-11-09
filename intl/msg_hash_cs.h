@@ -7322,6 +7322,14 @@ MSG_HASH(
    "Umožnit hráčům pauzu během hry po síti."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (čekat na vstup)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Čeká na vstupy všech hráčů místo předvídání a přetáčení. Používá jediný uložený stav místo jednoho na snímek a hodí se pro jádra s velkými stavy nebo stavy, které nelze přetočit, za cenu mírně vyšší odezvy vstupu. Taková jádra jej používají, i když je vypnutý."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Povolení klientů v podřízeném režimu"
    )

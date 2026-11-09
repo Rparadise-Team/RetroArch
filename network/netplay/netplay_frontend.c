@@ -230,6 +230,8 @@ net_driver_state_t *networking_state_get_ptr(void)
 }
 
 static bool netplay_build_savestate(netplay_t* netplay, retro_ctx_serialize_info_t* serial_info, bool force_capture_achievements);
+static bool netplay_grow_states(netplay_t *netplay, size_t state_size);
+static bool netplay_init_socket_buffers(netplay_t *netplay);
 static bool netplay_process_savestate(netplay_t* netplay, retro_ctx_serialize_info_t* serial_info);
 
 /* Align to 8-byte boundary */
@@ -1055,7 +1057,11 @@ bool netplay_handshake_init(netplay_t *netplay,
       );
 
       if (connection->netplay_protocol < LOW_NETPLAY_PROTOCOL_VERSION ||
-            connection->netplay_protocol > HIGH_NETPLAY_PROTOCOL_VERSION)
+            connection->netplay_protocol > HIGH_NETPLAY_PROTOCOL_VERSION ||
+            (   netplay->analog_joypads
+             && connection->netplay_protocol < NETPLAY_PROTOCOL_ANALOG_JOYPADS) ||
+            (   netplay->lockstep
+             && connection->netplay_protocol < NETPLAY_PROTOCOL_LOCKSTEP))
       {
          /* Send it so that a proper notification can be shown there. */
          netplay_handshake_init_send(netplay, connection, 0);
@@ -1846,7 +1852,7 @@ static bool netplay_handshake_pre_sync(netplay_t *netplay,
          netplay->have_updown_device = true;
 
       pad.port   = (unsigned)i;
-      pad.device = device;
+      pad.device = NETPLAY_DEVICE_FOR_CORE(device);
       core_set_controller_port_device(&pad);
    }
 
@@ -2105,9 +2111,11 @@ bool netplay_delta_frame_ready(netplay_t *netplay, struct delta_frame *delta,
          return false;
    }
 
-   delta->used  = true;
-   delta->frame = frame;
-   delta->crc   = 0;
+   delta->used           = true;
+   delta->frame          = frame;
+   delta->crc            = 0;
+   delta->local_crc      = 0;
+   delta->have_local_crc = false;
 
    for (i = 0; i < MAX_INPUT_DEVICES; i++)
    {
@@ -2124,29 +2132,59 @@ bool netplay_delta_frame_ready(netplay_t *netplay, struct delta_frame *delta,
    return true;
 }
 
-static const uint8_t* netplay_get_savestate_coremem(netplay_t* netplay, const uint8_t* input)
+/* Size field of a savestate container block header (at hdr + 4).
+ * Read through uint32_t: a uint8_t promotes to int, so a plain
+ * 'b[7] << 24' with the top bit set would overflow. */
+static uint32_t netplay_read_block_size(const uint8_t *hdr)
 {
-   /* If the container header is detected, find the coremem block */
-   if (memcmp(input, "NETPLAY", 7) == 0)
+   return   ((uint32_t)hdr[7] << 24)
+          | ((uint32_t)hdr[6] << 16)
+          | ((uint32_t)hdr[5] << 8)
+          |  (uint32_t)hdr[4];
+}
+
+/* Walks a "NETPLAY1" container from 'input' to 'stop' and returns the
+ * start of the wanted block's content, or NULL if the container has no
+ * such block before its END block or a block runs past 'stop'. Each
+ * block is checked to fit before it is stepped over, so a state sent
+ * by a peer can never make us read past the buffer. */
+static const uint8_t* netplay_find_block(const uint8_t *input,
+      const uint8_t *stop, const char *want)
+{
+   input += 8; /* NETPLAY# */
+
+   while ((size_t)(stop - input) >= 8)
    {
-      const uint8_t* stop = input + netplay->state_size;
-      input += 8; /* NETPLAY# */
+      size_t block_size     = netplay_read_block_size(input);
+      size_t aligned_size   = CONTENT_ALIGN_SIZE(block_size);
+      const uint8_t *marker = input;
 
-      while (input < stop)
-      {
-         size_t block_size = (input[7] << 24 | input[6] << 16 | input[5] << 8 | input[4]);
-         const uint8_t* marker = input;
+      input += 8;
 
-         input += 8;
+      if (memcmp(marker, NETPLAYSTATE_END_BLOCK, 4) == 0)
+         return NULL;
+      if (   aligned_size < block_size
+          || aligned_size > (size_t)(stop - input))
+         return NULL;
+      if (memcmp(marker, want, 4) == 0)
+         return input;
 
-         if (memcmp(marker, NETPLAYSTATE_MEM_BLOCK, 4) == 0)
-            break;
-
-         input += CONTENT_ALIGN_SIZE(block_size);
-      }
+      input += aligned_size;
    }
 
-   return input;
+   return NULL;
+}
+
+/* Returns the start of the core's own serialized memory inside a
+ * state buffer, or NULL for a malformed container. Raw core data
+ * (no container header) is returned as-is. */
+static const uint8_t* netplay_get_savestate_coremem(netplay_t* netplay, const uint8_t* input)
+{
+   if (netplay->state_size < 8 || memcmp(input, "NETPLAY", 7) != 0)
+      return input;
+
+   return netplay_find_block(input, input + netplay->state_size,
+         NETPLAYSTATE_MEM_BLOCK);
 }
 
 /**
@@ -2163,7 +2201,154 @@ static uint32_t netplay_delta_frame_crc(netplay_t *netplay,
    input = netplay_get_savestate_coremem(netplay,
       (const uint8_t*)delta->state);
 
+   /* A malformed container carries no core memory to hash: report a
+    * mismatch (1 never equals a real CRC of a valid peer by chance
+    * often enough to matter) so the state gets re-requested. */
+   if (!input)
+      return 1;
+
    return encoding_crc32(0L, input, netplay->coremem_size);
+}
+
+/* Our CRC for a frame we have run, 0 for none. Lockstep keeps no state
+ * per frame, so it has only what it took before the frame ran. */
+static uint32_t netplay_frame_local_crc(netplay_t *netplay,
+      struct delta_frame *delta)
+{
+   if (netplay->lockstep)
+      return delta->have_local_crc ? delta->local_crc : 0;
+   if (!netplay->state_size)
+      return 0;
+   return netplay_delta_frame_crc(netplay, delta);
+}
+
+/* A check frame not yet hashed, with a peer to compare it with */
+static bool netplay_lockstep_wants_crc(netplay_t *netplay,
+      struct delta_frame *delta)
+{
+   if (     !netplay->check_frames
+         ||  delta->have_local_crc
+         || (delta->frame % netplay->check_frames) != 0)
+      return false;
+   if (netplay->is_server)
+      return netplay->connected_players > 1;
+   return netplay->self_mode >= NETPLAY_CONNECTION_CONNECTED;
+}
+
+/* Re-measure the core's state; one that grew gets room in the state,
+ * compression and socket buffers. False only when the memory could
+ * not be had. */
+static bool netplay_lockstep_fit_state(netplay_t *netplay)
+{
+   size_t coremem = core_serialize_size_special();
+   size_t state_size;
+   uint8_t *zbuffer;
+
+   if (!coremem || coremem <= netplay->coremem_size)
+      return true;
+
+   state_size = netplay->state_size
+      + CONTENT_ALIGN_SIZE(coremem)
+      - CONTENT_ALIGN_SIZE(netplay->coremem_size);
+
+   if (!netplay_grow_states(netplay, state_size))
+      return false;
+   netplay->coremem_size       = coremem;
+   netplay->state_crc_unusable = false;
+
+   if (!(zbuffer = (uint8_t*)realloc(netplay->zbuffer, state_size * 2)))
+      return false;
+   netplay->zbuffer      = zbuffer;
+   netplay->zbuffer_size = state_size * 2;
+
+   return netplay_init_socket_buffers(netplay);
+}
+
+/* CRC of the memory map's regions: those flagged system RAM, or with
+ * none flagged every writable one. 0 when there is no map. */
+static uint32_t netplay_lockstep_mmap_crc(bool *hashed)
+{
+   const rarch_memory_map_t *mmaps = &runloop_state_get_ptr()->system.mmaps;
+   unsigned i;
+   uint32_t crc = 0;
+   bool flagged = false;
+
+   *hashed = false;
+   if (!mmaps->descriptors)
+      return 0;
+
+   for (i = 0; i < mmaps->num_descriptors; i++)
+   {
+      const struct retro_memory_descriptor *d = &mmaps->descriptors[i].core;
+      if (d->ptr && d->len && (d->flags & RETRO_MEMDESC_SYSTEM_RAM))
+         flagged = true;
+   }
+
+   for (i = 0; i < mmaps->num_descriptors; i++)
+   {
+      const struct retro_memory_descriptor *d = &mmaps->descriptors[i].core;
+      if (     !d->ptr || !d->len
+            || (d->flags & RETRO_MEMDESC_CONST)
+            || (flagged && !(d->flags & RETRO_MEMDESC_SYSTEM_RAM)))
+         continue;
+      crc     = encoding_crc32(crc, (const uint8_t*)d->ptr + d->offset,
+            d->len);
+      *hashed = true;
+   }
+   return crc;
+}
+
+/* Hash the core before this frame runs: its RAM when it shows it,
+ * which costs no serialize and leaves out bookkeeping that may differ
+ * between peers, else a whole state. Every peer runs the same core and
+ * takes the same branch. @have_state: delta->state holds this frame.
+ * Returns whether it does afterwards. */
+static bool netplay_lockstep_take_crc(netplay_t *netplay,
+      struct delta_frame *delta, bool have_state)
+{
+   uint32_t crc = 0;
+   bool hashed  = false;
+   retro_ctx_memory_info_t mem;
+
+   mem.id   = RETRO_MEMORY_SYSTEM_RAM;
+   mem.data = NULL;
+   mem.size = 0;
+
+   if (core_get_memory(&mem) && mem.data && mem.size)
+   {
+      crc    = encoding_crc32(0L, (const uint8_t*)mem.data, mem.size);
+      hashed = true;
+   }
+   else
+   {
+      crc = netplay_lockstep_mmap_crc(&hashed);
+      if (     !hashed
+            &&  netplay->state_size
+            && !netplay->state_crc_unusable)
+      {
+         if (!have_state && netplay_lockstep_fit_state(netplay))
+         {
+            retro_ctx_serialize_info_t serial_info = {0};
+            serial_info.data = delta->state;
+            have_state       = netplay_build_savestate(netplay,
+                  &serial_info, false);
+         }
+         if (have_state)
+         {
+            crc    = netplay_delta_frame_crc(netplay, delta);
+            hashed = true;
+         }
+      }
+   }
+
+   /* 0 is "no CRC" on the wire; a frame not hashed must read as that,
+    * not as a mismatch */
+   if (!crc && hashed)
+      crc = 1;
+
+   delta->local_crc      = crc;
+   delta->have_local_crc = true;
+   return have_state;
 }
 
 /*
@@ -3222,6 +3407,41 @@ static bool netplay_resolve_input(netplay_t *netplay,
    return ret;
 }
 
+/* Compare the host's CRC for a frame with ours. The first check at or
+ * after a state we loaded from the host decides whether CRCs can be
+ * compared at all: that state is the host's, so a mismatch there means
+ * this core's hashes differ between peers whatever they run, and a
+ * resync could never mend it. Any later mismatch is a desync, and asks
+ * for the host's state. */
+static void netplay_check_frame_crc(netplay_t *netplay,
+      struct delta_frame *delta, uint32_t remote_crc)
+{
+   uint32_t local_crc;
+
+   if (     !netplay->crcs_valid
+         || !remote_crc
+         || (int32_t)(delta->frame - netplay->crc_load_frame) < 0)
+      return;
+
+   local_crc = netplay_frame_local_crc(netplay, delta);
+   /* lockstep: this frame was not hashed */
+   if (!local_crc && netplay->lockstep)
+      return;
+
+   if (local_crc == remote_crc)
+      netplay->crc_validity_checked = true;
+   else if (!netplay->crc_validity_checked)
+   {
+      RARCH_WARN("[Netplay] CRCs differ from the host's right after its "
+            "state was loaded; desync checks are off for this core.\n");
+      netplay->crcs_valid = false;
+   }
+   else if (netplay->check_frames)
+      netplay_cmd_request_savestate(netplay);
+   else
+      RARCH_WARN("[Netplay] Netplay CRCs mismatch!\n");
+}
+
 static void netplay_handle_frame_hash(netplay_t *netplay,
       struct delta_frame *delta)
 {
@@ -3230,38 +3450,14 @@ static void netplay_handle_frame_hash(netplay_t *netplay,
    {
       if (netplay->check_frames && (delta->frame % netplay->check_frames) == 0)
       {
-         delta->crc = netplay->state_size ?
-            netplay_delta_frame_crc(netplay, delta) : 0;
-         netplay_cmd_crc(netplay, delta);
+         delta->crc = netplay_frame_local_crc(netplay, delta);
+         /* lockstep has none for a frame that ran with no peer */
+         if (delta->crc || !netplay->lockstep)
+            netplay_cmd_crc(netplay, delta);
       }
    }
    else
-   {
-      if (netplay->crcs_valid && delta->crc)
-      {
-         /* We have a remote CRC, so check it. */
-         uint32_t local_crc = netplay->state_size ?
-            netplay_delta_frame_crc(netplay, delta) : 0;
-
-         if (local_crc != delta->crc)
-         {
-            /* If the very first check frame is wrong,
-               they probably just don't work. */
-            if (!netplay->crc_validity_checked)
-            {
-               netplay->crcs_valid = false;
-               return;
-            }
-
-            if (netplay->check_frames)
-               netplay_cmd_request_savestate(netplay);
-            else
-               RARCH_WARN("[Netplay] Netplay CRCs mismatch!\n");
-         }
-         else
-            netplay->crc_validity_checked = true;
-      }
-   }
+      netplay_check_frame_crc(netplay, delta, delta->crc);
 }
 
 /**
@@ -3715,20 +3911,55 @@ static bool netplay_sync_pre_frame(netplay_t *netplay)
       if (!(netplay->quirks & NETPLAY_QUIRK_INITIALIZATION))
       {
          retro_ctx_serialize_info_t serial_info = {0};
-         serial_info.data = netplay->buffer[netplay->run_ptr].state;
+         struct delta_frame *delta = &netplay->buffer[netplay->run_ptr];
+         bool lockstep   = netplay->lockstep;
+         /* lockstep sends while it waits: the peer it waits on may be
+          * the one that needs the state to start */
+         bool send_state = netplay->force_send_savestate
+            && (   !netplay->stall
+                || (lockstep && netplay->stall == NETPLAY_STALL_LOCKSTEP))
+            && !netplay->remote_paused;
+         bool have_state = false;
+         serial_info.data = delta->state;
 
-         if (netplay_build_savestate(netplay, &serial_info, false))
+         if (!lockstep)
+            have_state = netplay_build_savestate(netplay, &serial_info, false);
+         else
          {
-            if (netplay->force_send_savestate && !netplay->stall &&
-                  !netplay->remote_paused)
+            /* no rewinding, so a state only to send, or to hash when the
+             * core shows no RAM */
+            if (send_state)
+            {
+               if (netplay_lockstep_fit_state(netplay))
+               {
+                  serial_info.data = delta->state;
+                  have_state       = netplay_build_savestate(netplay,
+                        &serial_info, false);
+               }
+               if (have_state)
+                  netplay->lockstep_state_failures = 0;
+               /* a failed serialize is retried, not a reason to end the
+                * session; the joiner waits out the lockstep stall */
+               else if (++netplay->lockstep_state_failures < 180)
+                  send_state = false;
+            }
+            if (netplay_lockstep_wants_crc(netplay, delta))
+               netplay_lockstep_take_crc(netplay, delta, have_state);
+         }
+
+         if (have_state)
+         {
+            if (send_state)
             {
                /* Bring our running frame and input frames into
                 * parity so we don't send old info. */
                if (netplay->run_ptr != netplay->self_ptr)
                {
-                  memcpy(netplay->buffer[netplay->self_ptr].state,
-                     netplay->buffer[netplay->run_ptr].state,
-                     netplay->state_size);
+                  /* lockstep frames share one state */
+                  if (!lockstep)
+                     memcpy(netplay->buffer[netplay->self_ptr].state,
+                        netplay->buffer[netplay->run_ptr].state,
+                        netplay->state_size);
                   netplay->run_ptr         = netplay->self_ptr;
                   netplay->run_frame_count = netplay->self_frame_count;
                }
@@ -3739,7 +3970,7 @@ static bool netplay_sync_pre_frame(netplay_t *netplay)
                netplay->force_send_savestate = false;
             }
          }
-         else
+         else if (!lockstep || send_state)
          {
             ret = false;
             goto process;
@@ -3887,8 +4118,11 @@ static void netplay_sync_input_post_frame(netplay_t *netplay, bool stalled)
       {
          struct delta_frame *ptr = &netplay->buffer[netplay->other_ptr];
 
-         /* If resolving the input changes it, we used bad input */
-         if (netplay_resolve_input(netplay, netplay->other_ptr, true))
+         /* If resolving the input changes it, we used bad input.
+          * Lockstep runs only on real input and has no state to rewind
+          * to, so it carries on. */
+         if (     netplay_resolve_input(netplay, netplay->other_ptr, true)
+               && !netplay->lockstep)
          {
             cont = false;
             break;
@@ -3901,7 +4135,13 @@ static void netplay_sync_input_post_frame(netplay_t *netplay, bool stalled)
       netplay->replay_ptr = netplay->other_ptr;
       netplay->replay_frame_count = netplay->other_frame_count;
 
-      if (cont)
+      /* lockstep replays only from a loaded state (force_rewind) */
+      if (netplay->lockstep)
+      {
+         netplay->replay_ptr         = netplay->run_ptr;
+         netplay->replay_frame_count = netplay->run_frame_count;
+      }
+      else if (cont)
       {
          while (netplay->replay_frame_count < netplay->run_frame_count)
          {
@@ -3951,6 +4191,20 @@ static void netplay_sync_input_post_frame(netplay_t *netplay, bool stalled)
       if (!netplay_process_savestate(netplay, &serial_info))
          RARCH_ERR("[Netplay] Netplay savestate loading failed: Prepare for desync!\n");
 
+      /* A state that arrived past the frame we would run next (a lagging
+       * client given a lockstep host's state) is that frame now: run on
+       * from it, never run an earlier frame's input on top of it. */
+      if (netplay->replay_frame_count > netplay->run_frame_count)
+      {
+         netplay->run_ptr         = netplay->replay_ptr;
+         netplay->run_frame_count = netplay->replay_frame_count;
+         if (netplay->self_frame_count < netplay->run_frame_count)
+         {
+            netplay->self_ptr         = netplay->run_ptr;
+            netplay->self_frame_count = netplay->run_frame_count;
+         }
+      }
+
       while (netplay->replay_frame_count < netplay->run_frame_count)
       {
          retro_time_t start, tm;
@@ -3962,9 +4216,19 @@ static void netplay_sync_input_post_frame(netplay_t *netplay, bool stalled)
 
          start                   = cpu_features_get_time_usec();
 
-         /* Remember the current state */
-         memset(serial_info.data, 0, serial_info.size);
-         netplay_build_savestate(netplay, &serial_info, true);
+         /* Remember the current state; lockstep keeps none, and hashes
+          * a re-run check frame again */
+         if (!netplay->lockstep)
+         {
+            memset(serial_info.data, 0, serial_info.size);
+            netplay_build_savestate(netplay, &serial_info, true);
+         }
+         else
+         {
+            ptr->have_local_crc = false;
+            if (netplay_lockstep_wants_crc(netplay, ptr))
+               netplay_lockstep_take_crc(netplay, ptr, false);
+         }
 
          if (netplay->replay_frame_count < netplay->unread_frame_count)
             netplay_handle_frame_hash(netplay, ptr);
@@ -4725,7 +4989,9 @@ static void netplay_announce_play_spectate(netplay_t *netplay,
 #ifdef HAVE_CHEEVOS
    rcheevos_spectating_changed();
 
-   if (!netplay->is_server && !netplay_is_spectating()) /* force sync of achievement state */
+   /* force sync of achievement state; lockstep loaded the host's state
+    * in the handshake, and another costs a large-state host seconds */
+   if (!netplay->is_server && !netplay->lockstep && !netplay_is_spectating())
       netplay_cmd_request_savestate(netplay);
 #endif
 
@@ -4873,7 +5139,8 @@ static void netplay_handle_play_spectate(netplay_t *netplay,
                      retro_ctx_controller_info_t pad;
 
                      pad.port   = (unsigned)i;
-                     pad.device = netplay->config_devices[i];
+                     pad.device = NETPLAY_DEVICE_FOR_CORE(
+                           netplay->config_devices[i]);
                      core_set_controller_port_device(&pad);
 
                      netplay->device_share_modes[i] = share_mode;
@@ -4934,7 +5201,8 @@ static void netplay_handle_play_spectate(netplay_t *netplay,
                   devices    = 1 << i;
 
                   pad.port   = (unsigned)i;
-                  pad.device = netplay->config_devices[i];
+                  pad.device = NETPLAY_DEVICE_FOR_CORE(
+                        netplay->config_devices[i]);
                   core_set_controller_port_device(&pad);
 
                   netplay->device_share_modes[i] = share_mode;
@@ -5380,6 +5648,19 @@ static bool netplay_get_cmd(netplay_t *netplay,
       return false;
 
    cmd_size = ntohl(cmd_size);
+
+   /* A command has to fit the receive buffer whole. A state from a
+    * lockstep host whose core grew past what we measured may not. */
+   if (     netplay->lockstep
+         && cmd_size + 2 * sizeof(uint32_t)
+            > connection->recv_packet_buffer.bufsz)
+   {
+      if (     cmd_size > ((uint32_t)1 << 30)
+            || !netplay_resize_socket_buffer(&connection->recv_packet_buffer,
+                  cmd_size + 2 * sizeof(uint32_t)
+                  + NETPLAY_MAX_STALL_FRAMES * 16))
+         return netplay_cmd_nak(netplay, connection);
+   }
 
 #ifdef DEBUG_NETPLAY_STEPS
    RARCH_LOG("[Netplay] Received netplay command %X (%u) from %u\n", cmd, cmd_size,
@@ -5992,19 +6273,11 @@ static bool netplay_get_cmd(netplay_t *netplay,
             if (!found)
                break;
 
+            /* We've already replayed up to this frame, so we can check it
+             * directly */
             if (buffer[0] <= netplay->other_frame_count)
-            {
-               /* We've already replayed up to this frame, so we can check it
-                * directly */
-               uint32_t local_crc = 0;
-               if (netplay->state_size)
-                  local_crc       = netplay_delta_frame_crc(
-                        netplay, &netplay->buffer[tmp_ptr]);
-
-               /* Problem! */
-               if (buffer[1] != local_crc)
-                  netplay_cmd_request_savestate(netplay);
-            }
+               netplay_check_frame_crc(netplay, &netplay->buffer[tmp_ptr],
+                     buffer[1]);
             /* We'll have to check it when we catch up */
             else
                netplay->buffer[tmp_ptr].crc = buffer[1];
@@ -6086,8 +6359,35 @@ static bool netplay_get_cmd(netplay_t *netplay,
 
             if (frame != load_frame_count)
             {
-               RARCH_ERR("[Netplay] Netplay state load out of order!\n");
-               return netplay_cmd_nak(netplay, connection);
+               /* A lockstep host sends a state while it waits on us,
+                * labeled with a frame whose input it has sent already.
+                * We still hold that input, so we load the state there
+                * and run on from it. */
+               bool found = false;
+
+               if (     frame < load_frame_count
+                     && load_frame_count - frame < netplay->buffer_size)
+               {
+                  size_t   ptr  = load_ptr;
+                  uint32_t back = load_frame_count - frame;
+
+                  while (back--)
+                     ptr = PREV_PTR(ptr);
+
+                  if (     netplay->buffer[ptr].used
+                        && netplay->buffer[ptr].frame == frame)
+                  {
+                     load_ptr         = ptr;
+                     load_frame_count = frame;
+                     found            = true;
+                  }
+               }
+
+               if (!found)
+               {
+                  RARCH_ERR("[Netplay] Netplay state load out of order!\n");
+                  return netplay_cmd_nak(netplay, connection);
+               }
             }
 
             if (!netplay_delta_frame_ready(netplay,
@@ -6100,10 +6400,25 @@ static bool netplay_get_cmd(netplay_t *netplay,
             state_size     = ntohl(state_size);
             state_size_raw = cmd_size - (sizeof(frame) + sizeof(state_size));
 
-            if (state_size_raw > netplay->zbuffer_size)
+            /* Bound both sizes: the decompressed one sizes the state
+             * buffers, and a peer must not make us allocate at will. */
+            if (   (size_t)state_size > netplay->zbuffer_size
+                || state_size_raw > netplay->zbuffer_size)
             {
-               RARCH_ERR("[Netplay] Netplay state load with an unexpected save state size.\n");
-               return netplay_cmd_nak(netplay, connection);
+               /* a lockstep host's state may have grown since we
+                * measured ours */
+               uint8_t *zbuffer = NULL;
+               size_t   need    = state_size > state_size_raw
+                  ? state_size : state_size_raw;
+               if (     !netplay->lockstep
+                     || need > ((size_t)1 << 30)
+                     || !(zbuffer = (uint8_t*)realloc(netplay->zbuffer, need)))
+               {
+                  RARCH_ERR("[Netplay] Netplay state load with an unexpected save state size.\n");
+                  return netplay_cmd_nak(netplay, connection);
+               }
+               netplay->zbuffer      = zbuffer;
+               netplay->zbuffer_size = need;
             }
 
             RECV(netplay->zbuffer, state_size_raw)
@@ -6122,13 +6437,8 @@ static bool netplay_get_cmd(netplay_t *netplay,
             if (state_size > netplay->state_size)
             {
                /* other client state size is larger than ours, grow ours */
-               netplay->state_size = state_size;
-               for (i = 0; i < netplay->buffer_size; i++)
-               {
-                  netplay->buffer[i].state = realloc(netplay->buffer[i].state, netplay->state_size);
-                  if (!netplay->buffer[i].state)
-                     return false;
-               }
+               if (!netplay_grow_states(netplay, state_size))
+                  return false;
             }
 
             ctrans->decompression_backend->set_in(
@@ -6141,7 +6451,16 @@ static bool netplay_get_cmd(netplay_t *netplay,
                ctrans->decompression_stream,
                true, &rd, &wn, NULL);
 
-            if (memcmp(netplay->buffer[load_ptr].state, "NETPLAY", 7) != 0)
+            if (memcmp(netplay->buffer[load_ptr].state, "NETPLAY", 7) == 0)
+            {
+               /* A CRC over states of other sizes never agrees, and
+                * lockstep would reload the host's at every check */
+               netplay->state_crc_unusable =
+                     netplay_read_block_size((const uint8_t*)
+                           netplay->buffer[load_ptr].state + 8)
+                  != netplay->coremem_size;
+            }
+            else
             {
                if (state_size != netplay->coremem_size)
                {
@@ -6202,8 +6521,12 @@ static bool netplay_get_cmd(netplay_t *netplay,
 
             /* Make sure our states are correct. */
             netplay->savestate_request_outstanding = false;
+            netplay->crc_validity_checked          = false;
+            netplay->crc_load_frame                = load_frame_count;
             netplay->other_ptr                     = load_ptr;
             netplay->other_frame_count             = load_frame_count;
+            RARCH_LOG("[Netplay] Loaded the host's state at frame %u.\n",
+                  load_frame_count);
 
             break;
          }
@@ -7093,10 +7416,84 @@ static void netplay_write_block_header(unsigned char* output, const char* header
    output[7] = ((len >> 24) & 0xFF);
 }
 
-static bool netplay_init_serialization(netplay_t *netplay)
+/* Rollback keeps a state per buffered frame. Lockstep never rewinds,
+ * so every frame points at one. */
+static bool netplay_alloc_states(netplay_t *netplay)
 {
    size_t i;
 
+   if (netplay->lockstep)
+   {
+      if (!(netplay->lockstep_state = calloc(1, netplay->state_size)))
+         return false;
+      for (i = 0; i < netplay->buffer_size; i++)
+         netplay->buffer[i].state = netplay->lockstep_state;
+      return true;
+   }
+
+   for (i = 0; i < netplay->buffer_size; i++)
+   {
+      netplay->buffer[i].state = calloc(1, netplay->state_size);
+      if (!netplay->buffer[i].state)
+         return false;
+   }
+   return true;
+}
+
+static void netplay_free_states(netplay_t *netplay)
+{
+   size_t i;
+
+   if (!netplay->buffer)
+      return;
+
+   for (i = 0; i < netplay->buffer_size; i++)
+   {
+      if (!netplay->lockstep_state)
+         free(netplay->buffer[i].state);
+      netplay->buffer[i].state = NULL;
+   }
+
+   free(netplay->lockstep_state);
+   netplay->lockstep_state = NULL;
+}
+
+static bool netplay_grow_states(netplay_t *netplay, size_t state_size)
+{
+   size_t i;
+   size_t old_size = netplay->state_size;
+
+   if (netplay->lockstep_state)
+   {
+      void *state = realloc(netplay->lockstep_state, state_size);
+      if (!state)
+         return false;
+      memset((uint8_t*)state + old_size, 0, state_size - old_size);
+      netplay->lockstep_state = state;
+      netplay->state_size     = state_size;
+      for (i = 0; i < netplay->buffer_size; i++)
+         netplay->buffer[i].state = state;
+      return true;
+   }
+
+   for (i = 0; i < netplay->buffer_size; i++)
+   {
+      /* realloc to a temporary, so a failure leaks nothing; the caller
+       * tears the session down */
+      void *tmp = realloc(netplay->buffer[i].state, state_size);
+      if (!tmp)
+         return false;
+      netplay->buffer[i].state = tmp;
+      /* keep the grown tail defined for anything that reads the full
+       * state_size */
+      memset((uint8_t*)tmp + old_size, 0, state_size - old_size);
+   }
+   netplay->state_size = state_size;
+   return true;
+}
+
+static bool netplay_init_serialization(netplay_t *netplay)
+{
    if (netplay->state_size)
       return true;
 
@@ -7138,12 +7535,8 @@ static bool netplay_init_serialization(netplay_t *netplay)
       netplay->state_size = info_size;
    }
 
-   for (i = 0; i < netplay->buffer_size; i++)
-   {
-      netplay->buffer[i].state = calloc(1, netplay->state_size);
-      if (!netplay->buffer[i].state)
-         return false;
-   }
+   if (!netplay_alloc_states(netplay))
+      return false;
 
    netplay->zbuffer_size    = netplay->state_size * 2;
    netplay->zbuffer         = (uint8_t*)calloc(1, netplay->zbuffer_size);
@@ -7223,6 +7616,8 @@ static bool netplay_init_buffers(netplay_t *netplay)
 {
    netplay->max_stall_frames = NETPLAY_MAX_STALL_FRAMES;
 #if defined(MIYOOMINI)
+   /* Lockstep keeps a single state, whatever the window */
+   if (!netplay->lockstep)
    /* Every buffered frame holds a full save state: 124 of them on the
     * server is several hundred MB for large states (CPS3, big Neo Geo
     * sets...), and the OOM killer then takes RetroArch down. Shrink the
@@ -7312,6 +7707,9 @@ static void netplay_free(netplay_t *netplay)
 
    if (netplay->buffer)
    {
+      /* first: in lockstep the states are all one */
+      netplay_free_states(netplay);
+
       for (i = 0; i < netplay->buffer_size; i++)
          netplay_delta_frame_free(&netplay->buffer[i]);
 
@@ -7353,6 +7751,18 @@ static void netplay_free(netplay_t *netplay)
  *
  * Returns: new netplay data.
  */
+/* Lockstep, asked for or where rollback cannot go: a core whose
+ * states load but not deterministically enough to rewind on, or one
+ * whose state is too large to keep one per buffered frame */
+static bool netplay_wants_lockstep(const settings_t *settings)
+{
+   if (settings->bools.netplay_lockstep)
+      return true;
+   if (!core_info_current_supports_netplay())
+      return core_info_current_supports_savestate();
+   return core_serialize_size_special() > NETPLAY_LOCKSTEP_STATE_SIZE;
+}
+
 static netplay_t *netplay_new(const char *server, const char *mitm,
       uint16_t port, const char *mitm_session,
       uint32_t check_frames, const struct retro_callbacks *cb,
@@ -7370,6 +7780,10 @@ static netplay_t *netplay_new(const char *server, const char *mitm,
    netplay->quirks           = quirks;
    netplay->modus            = modus;
    netplay->crcs_valid       = true;
+   /* Our own choice: a lockstep peer plays with a rollback one */
+   if (     modus == NETPLAY_MODUS_INPUT_FRAME_SYNC
+         && netplay_wants_lockstep(config_get_ptr()))
+      netplay->lockstep      = true;
    netplay->listen_fd        = -1;
    netplay->next_announce    = -1;
    netplay->next_ping        = -1;
@@ -7392,9 +7806,17 @@ static netplay_t *netplay_new(const char *server, const char *mitm,
       if (!mitm)
          netplay->nat_traversal = nat_traversal;
 
+      netplay->analog_joypads = false;
       for (i = 0; i < MAX_INPUT_DEVICES; i++)
       {
          uint32_t device = input_config_get_device(i);
+
+         if (     settings->bools.netplay_analog_joypads
+               && (device & RETRO_DEVICE_MASK) == RETRO_DEVICE_JOYPAD)
+         {
+            device                  = NETPLAY_DEVICE_ANALOG_JOYPAD(device);
+            netplay->analog_joypads = true;
+         }
 
          netplay->config_devices[i] = device;
 
@@ -7549,7 +7971,7 @@ static void netplay_send_savestate(netplay_t *netplay,
       const uint8_t* input = netplay_get_savestate_coremem(netplay,
             (const uint8_t*)serial_info->data_const);
 
-      if (input != serial_info->data_const)
+      if (input && input != serial_info->data_const)
       {
          serial_info->data_const = input;
          serial_info->size = netplay->coremem_size;
@@ -7704,14 +8126,29 @@ static bool netplay_process_savestate1(retro_ctx_serialize_info_t* serial_info)
    const uint8_t* stop        = input + serial_info->size;
    bool seen_core             = false;
 
+   if (serial_info->size < 8)
+      return false;
+
    input += 8; /* NETPLAY1 */
 
-   while (input < stop)
+   /* The buffer is sized for the largest container this side can
+    * build; the container usually ends before it does. Stop at the
+    * END block: what follows is a stale tail, not more blocks. Every
+    * block is checked to fit, as the state may come from a peer. */
+   while ((size_t)(stop - input) >= 8)
    {
-      size_t block_size     = (input[7] << 24 | input[6] << 16 |  input[5] << 8 | input[4]);
+      size_t block_size     = netplay_read_block_size(input);
+      size_t aligned_size   = CONTENT_ALIGN_SIZE(block_size);
       const uint8_t *marker = input;
 
       input += 8;
+
+      if (memcmp(marker, NETPLAYSTATE_END_BLOCK, 4) == 0)
+         break;
+
+      if (   aligned_size < block_size
+          || aligned_size > (size_t)(stop - input))
+         return false;
 
       if (memcmp(marker, NETPLAYSTATE_MEM_BLOCK, 4) == 0)
       {
@@ -7726,7 +8163,12 @@ static bool netplay_process_savestate1(retro_ctx_serialize_info_t* serial_info)
 #ifdef HAVE_CHEEVOS
       else if (memcmp(marker, NETPLAYSTATE_CHEEVOS_BLOCK, 4) == 0 && settings->bools.cheevos_enable)
       {
-         const bool hardcore_state = (input[0] != 0);
+         bool hardcore_state;
+
+         if (block_size < 8)
+            return false;
+
+         hardcore_state = (input[0] != 0);
          if (hardcore_state != rcheevos_hardcore_active() && !netplay_is_spectating())
          {
             const char *msg = msg_hash_to_str(MSG_CHEEVOS_HARDCORE_MODE_CHANGED_BY_HOST);
@@ -7734,28 +8176,24 @@ static bool netplay_process_savestate1(retro_ctx_serialize_info_t* serial_info)
                   MESSAGE_QUEUE_ICON_DEFAULT, MESSAGE_QUEUE_CATEGORY_INFO);
 
             if (!hardcore_state)
-            {
                /* use pause_hardcore to ensure player can't re-enabled it on client side */
                rcheevos_pause_hardcore();
-            }
             else
-            {
-               /* if the player had hardcore on, this will reset it to on. otherwise, it'll
-                * stay off, even if the server is playing with hardcore restrictions now. we
-                * don't want to force hardcore unlocks for a player that doesn't want them. */
+               /* if the player had hardcore on, this resets it to on;
+                * otherwise it stays off */
                rcheevos_hardcore_enabled_changed();
-            }
          }
 
+         /* Flags word, then the rcheevos data. Skip the flags on a
+          * copy: the block step below covers the whole block, and
+          * stepping 'input' here too landed the walk 8 bytes past the
+          * next header. */
          if (block_size > 8)
-         {
-            input += 8;
-            rcheevos_set_serialized_data((void*)input);
-         }
+            rcheevos_set_serialized_data((void*)(input + 8));
       }
 #endif
 
-      input += CONTENT_ALIGN_SIZE(block_size);
+      input += aligned_size;
    }
 
    if (!seen_core)
@@ -8210,8 +8648,41 @@ static bool netplay_poll(netplay_t *netplay, bool block_libretro_input)
    netplay_update_unread_ptr(netplay);
 
    /* Figure out how many frames of input latency we should be using to
-      hide network latency. */
-   if (netplay->frame_run_time_avg)
+      hide network latency. Lockstep cannot run ahead to hide it, so it
+      takes another frame each time it waits, and gives one back once
+      input has long come with time to spare. */
+   if (netplay->lockstep)
+   {
+      int latency_max = netplay->input_latency_frames_max;
+      if (latency_max < NETPLAY_LOCKSTEP_LATENCY_MAX)
+         latency_max = NETPLAY_LOCKSTEP_LATENCY_MAX;
+
+      if (netplay->input_latency_frames < (int)netplay->input_latency_frames_min)
+         netplay->input_latency_frames++;
+      else if (netplay->stall == NETPLAY_STALL_LOCKSTEP)
+      {
+         netplay->lockstep_calm_frames = 0;
+         if (     netplay->lockstep_raised_frame != netplay->run_frame_count
+               && netplay->input_latency_frames < latency_max)
+         {
+            netplay->input_latency_frames++;
+            netplay->lockstep_raised_frame = netplay->run_frame_count;
+         }
+      }
+      else if (netplay->unread_frame_count > netplay->run_frame_count + 1)
+      {
+         if (     ++netplay->lockstep_calm_frames >= NETPLAY_LOCKSTEP_CALM_FRAMES
+               && netplay->input_latency_frames
+                  > (int)netplay->input_latency_frames_min)
+         {
+            netplay->input_latency_frames--;
+            netplay->lockstep_calm_frames = 0;
+         }
+      }
+      else
+         netplay->lockstep_calm_frames = 0;
+   }
+   else if (netplay->frame_run_time_avg)
    {
       /* FIXME: Using fixed 60fps for this calculation */
       unsigned frames_per_frame    = netplay->frame_run_time_avg ?
@@ -8271,6 +8742,10 @@ static bool netplay_poll(netplay_t *netplay, bool block_libretro_input)
          /* Just let it recalculate momentarily. */
          netplay->stall = NETPLAY_STALL_NONE;
          break;
+      case NETPLAY_STALL_LOCKSTEP:
+         if (netplay->unread_frame_count > netplay->run_frame_count)
+            netplay->stall = NETPLAY_STALL_NONE;
+         break;
       case NETPLAY_STALL_SERVER_REQUESTED:
          {
             struct netplay_connection *connection = &netplay->connections[0];
@@ -8320,6 +8795,20 @@ static bool netplay_poll(netplay_t *netplay, bool block_libretro_input)
             break;
       }
 
+      /* Lockstep: is every player's real input for the frame we run
+       * here? If not, wait for it rather than guess. */
+      if (     netplay->stall == NETPLAY_STALL_NONE
+            && netplay->lockstep
+            && (   !netplay->is_server
+                || netplay->connected_players > 1)
+            && netplay->unread_frame_count <= netplay->run_frame_count)
+      {
+         netplay->stall      = NETPLAY_STALL_LOCKSTEP;
+         netplay->stall_time = 0;
+         if (!netplay->lockstep_stall_time)
+            netplay->lockstep_stall_time = cpu_features_get_time_usec();
+      }
+
       /* Are we too far ahead? */
       if (netplay->stall == NETPLAY_STALL_NONE &&
             netplay->self_frame_count >= netplay->max_stall_frames)
@@ -8352,6 +8841,39 @@ static bool netplay_poll(netplay_t *netplay, bool block_libretro_input)
                }
             }
          }
+      }
+   }
+
+   /* The lockstep wait has its own, longer timer, as it also covers a
+    * joiner loading a large state; the input latency stall interleaves
+    * with it, so only a frame that runs restarts it */
+   if (netplay->stall == NETPLAY_STALL_NONE)
+      netplay->lockstep_stall_time = 0;
+   else if (   netplay->stall == NETPLAY_STALL_LOCKSTEP
+            && netplay->lockstep_stall_time)
+   {
+      retro_time_t now = cpu_features_get_time_usec();
+
+      if (netplay->remote_paused)
+         netplay->lockstep_stall_time = now;
+      else if (now - netplay->lockstep_stall_time
+            >= MAX_LOCKSTEP_STALL_TIME_USEC)
+      {
+         if (!netplay->is_server)
+            goto catastrophe;
+
+         /* hang up on whoever we still wait for */
+         for (i = 0; i < netplay->connections_size; i++)
+         {
+            struct netplay_connection *connection = &netplay->connections[i];
+            if (     (connection->flags & NETPLAY_CONN_FLAG_ACTIVE)
+                  && (connection->mode == NETPLAY_CONNECTION_PLAYING)
+                  && (netplay->read_frame_count[i + 1]
+                        <= netplay->run_frame_count))
+               netplay_hangup(netplay, connection);
+         }
+         netplay->stall               = NETPLAY_STALL_NONE;
+         netplay->lockstep_stall_time = 0;
       }
    }
 
@@ -8997,6 +9519,21 @@ static void netplay_disconnect(netplay_t *netplay)
  * Returns: true if the frontend is cleared to emulate the frame,
  * false if we're stalled or paused
  **/
+/* Send what is queued for every connection, without blocking */
+static void netplay_flush_output(netplay_t *netplay)
+{
+   size_t i;
+   for (i = 0; i < netplay->connections_size; i++)
+   {
+      struct netplay_connection *connection = &netplay->connections[i];
+      if (   (connection->flags & NETPLAY_CONN_FLAG_ACTIVE)
+          && !netplay_send_flush(
+             &connection->send_packet_buffer, connection->fd,
+             false))
+         netplay_hangup(netplay, connection);
+   }
+}
+
 static bool netplay_pre_frame(netplay_t *netplay)
 {
    /* FIXME: This is an ugly way to learn we're not paused anymore */
@@ -9065,6 +9602,10 @@ static bool netplay_pre_frame(netplay_t *netplay)
       /* We may have received data even if we're stalled,
        * so run post-frame sync. */
       netplay_sync_input_post_frame(netplay, true);
+      /* Post-frame, where output drains, is skipped while we stall: a
+       * lockstep host waits on a joiner that waits on the state queued
+       * for it */
+      netplay_flush_output(netplay);
       return false;
    }
 
@@ -9081,8 +9622,6 @@ static bool netplay_pre_frame(netplay_t *netplay)
  **/
 static void netplay_post_frame(netplay_t *netplay)
 {
-   size_t i;
-
    /* When a core uses the netpacket interface frames are not synced */
    if (netplay->modus == NETPLAY_MODUS_INPUT_FRAME_SYNC)
    {
@@ -9090,15 +9629,7 @@ static void netplay_post_frame(netplay_t *netplay)
       netplay_sync_input_post_frame(netplay, false);
    }
 
-   for (i = 0; i < netplay->connections_size; i++)
-   {
-      struct netplay_connection *connection = &netplay->connections[i];
-      if (   (connection->flags & NETPLAY_CONN_FLAG_ACTIVE)
-          && !netplay_send_flush(
-             &connection->send_packet_buffer, connection->fd,
-             false))
-         netplay_hangup(netplay, connection);
-   }
+   netplay_flush_output(netplay);
 
    /* If we're disconnected, deinitialize */
    if (     (!(netplay->is_server))
@@ -9179,7 +9710,11 @@ bool init_netplay(const char *server, unsigned port, const char *mitm_session)
    if (net_st->core_netpacket_interface)
       modus = NETPLAY_MODUS_CORE_PACKET_INTERFACE;
 
-   if ((!core_info_current_supports_netplay()
+   /* Rollback rewinds on savestates, so they must be deterministic;
+    * lockstep loads one only to join or resync */
+   if ((!(netplay_wants_lockstep(settings)
+            ? core_info_current_supports_savestate()
+            : core_info_current_supports_netplay())
          || serialization_quirks & (RETRO_SERIALIZATION_QUIRK_INCOMPLETE
                                  | RETRO_SERIALIZATION_QUIRK_SINGLE_SESSION))
          && modus != NETPLAY_MODUS_CORE_PACKET_INTERFACE)
@@ -9516,7 +10051,6 @@ bool netplay_reinit_serialization(void)
 {
    net_driver_state_t* net_st = &networking_driver_st;
    netplay_t* netplay = net_st->data;
-   size_t i;
 
    if (!netplay)
       return true;
@@ -9525,17 +10059,11 @@ bool netplay_reinit_serialization(void)
 
    /* netplay_init_serialization rebuilds the delta states and zbuffer, but
     * nothing else, so we have to free them directly */
-   for (i = 0; i < netplay->buffer_size; i++)
-   {
-      free(netplay->buffer[i].state);
-      netplay->buffer[i].state = NULL;
-   }
+   netplay_free_states(netplay);
 
-   if (netplay->zbuffer)
-   {
-      free(netplay->zbuffer);
-      netplay->zbuffer = NULL;
-   }
+   free(netplay->zbuffer);
+   netplay->zbuffer      = NULL;
+   netplay->zbuffer_size = 0;
 
    return netplay_init_serialization(netplay);
 }
@@ -9867,6 +10395,12 @@ bool netplay_driver_ctl(enum rarch_netplay_ctl_state state, void *data)
 
       case RARCH_NETPLAY_CTL_USE_CORE_PACKET_INTERFACE:
          ret = (net_st->core_netpacket_interface != NULL);
+         break;
+
+      case RARCH_NETPLAY_CTL_USE_LOCKSTEP:
+         ret =     !net_st->core_netpacket_interface
+               &&  (content_get_flags() & CONTENT_ST_FLAG_IS_INITED)
+               &&  netplay_wants_lockstep(config_get_ptr());
          break;
 
       case RARCH_NETPLAY_CTL_ALLOW_TIMESKIP:

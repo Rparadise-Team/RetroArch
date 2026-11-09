@@ -639,3 +639,11 @@ MSG_HASH(
    MENU_ENUM_SUBLABEL_CLOUD_SYNC_RESOLVE_KEEP_SERVER,
    "Rezolvă toate conflictele descărcând fișierele de pe server și înlocuind copiile locale."
    )
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (așteaptă intrările)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Așteaptă intrările tuturor jucătorilor în loc să prezică și să deruleze înapoi. Folosește o singură salvare de stare în loc de una pe cadru și este potrivit pentru nucleele cu stări mari sau care nu pot fi derulate înapoi, cu prețul unei latențe de intrare puțin mai mari. Aceste nuclee îl folosesc chiar și când este dezactivat."
+   )

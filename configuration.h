@@ -931,6 +931,8 @@ typedef struct settings
       bool netplay_start_as_spectator;
       bool netplay_fade_chat;
       bool netplay_allow_pausing;
+      bool netplay_analog_joypads;
+      bool netplay_lockstep;
       bool netplay_allow_slaves;
       bool netplay_require_slaves;
       bool netplay_nat_traversal;

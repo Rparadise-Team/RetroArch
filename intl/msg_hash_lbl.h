@@ -2599,6 +2599,10 @@ MSG_HASH(
    "netplay_allow_pausing"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_NETPLAY_LOCKSTEP,
+   "netplay_lockstep"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_NETPLAY_TCP_UDP_PORT,
    "netplay_tcp_udp_port"
    )
@@ -4282,6 +4286,10 @@ MSG_HASH(
 MSG_HASH(
    MENU_ENUM_LABEL_MIYOO_MENU_RETURN,
    "miyoo_menu_return"
+   )
+MSG_HASH(
+   MENU_ENUM_LABEL_MIYOO_CORE_OPTIONS,
+   "miyoo_core_options"
    )
 MSG_HASH(
    MENU_ENUM_SUBLABEL_MIYOO_RESUME,

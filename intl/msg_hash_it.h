@@ -7534,6 +7534,14 @@ MSG_HASH(
    "Permetti ai giocatori di mettere in pausa durante netplay."
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (attendi gli input)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Attende gli input di tutti i giocatori invece di prevedere e riavvolgere. Usa un solo salvataggio di stato invece di uno per fotogramma ed è adatto ai core con stati grandi o non riavvolgibili, al costo di un po' di latenza di input. Questi core lo usano anche quando è disattivato."
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "Attiva modalità Client Slave"
    )

@@ -7118,6 +7118,14 @@ MSG_HASH(
    "ネットプレイ中にプレイヤーが一時停止することを許可します。"
    )
 MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "ロックステップ (入力待ち)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "予測と巻き戻しの代わりに、全プレイヤーの入力を待ちます。フレームごとではなく 1 つのステートセーブだけを使い、ステートが大きい、または巻き戻せないコアに適していますが、入力遅延が少し増えます。そのようなコアはオフでもこれを使用します。"
+   )
+MSG_HASH(
    MENU_ENUM_LABEL_VALUE_NETPLAY_ALLOW_SLAVES,
    "スレーブモードのクライアントを許可"
    )

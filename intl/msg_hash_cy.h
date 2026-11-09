@@ -1919,3 +1919,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (aros am fewnbwn)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Yn aros am fewnbwn pob chwaraewr yn lle rhagfynegi ac ailddirwyn. Yn defnyddio un cyflwr cadw yn lle un i bob ffrâm ac yn addas i greiddiau â chyflyrau mawr neu na ellir eu hailddirwyn, ar draul ychydig o oedi mewnbwn. Mae creiddiau o'r fath yn ei ddefnyddio hyd yn oed pan fydd i ffwrdd."
+   )

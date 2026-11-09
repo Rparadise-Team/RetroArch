@@ -883,3 +883,11 @@ MSG_HASH(
 )
 
 #endif
+MSG_HASH(
+   MENU_ENUM_LABEL_VALUE_NETPLAY_LOCKSTEP,
+   "Lockstep (esperar las entradas)"
+   )
+MSG_HASH(
+   MENU_ENUM_SUBLABEL_NETPLAY_LOCKSTEP,
+   "Espèra las entradas de totes los jogaires allòc de preveire e rebobinar. Utiliza una sola salvagarda instantanèa allòc d'una per imatge e conven als nuclèus que lors estats son grands o que se pòdon pas rebobinar, al prètz d'un pauc de laténcia d'entrada. Aqueles nuclèus l'utilizan quitament s'es desactivat."
+   )
