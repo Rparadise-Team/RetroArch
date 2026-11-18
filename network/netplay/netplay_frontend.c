@@ -6751,6 +6751,20 @@ static bool netplay_get_cmd(netplay_t *netplay,
             RECV(buf, cmd_size)
                return false;
 
+            /* Only playing clients may talk to the core. A packet from
+             * anyone else is read off the stream and dropped rather than
+             * NAKed: a NAK hangs the connection up, and a client that is
+             * still waiting for its promotion to player, or an older
+             * client whose core sends from start(), is not misbehaving.
+             * (The core could not answer it anyway: what we send to a
+             * client that is not playing yet is dropped.) */
+            if (     netplay->is_server
+                  && connection->mode != NETPLAY_CONNECTION_PLAYING)
+            {
+               RARCH_DBG("[Netplay] Dropped a netpacket from a non-playing client.\n");
+               break;
+            }
+
             if (!netplay->is_server)
             {
                /* packets arriving at a client are always meant for us
