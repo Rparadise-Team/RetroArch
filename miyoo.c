@@ -20,6 +20,7 @@
 #endif
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <time.h>
 
 #define MIYOO_JOYPAD_SENSE_DEFAULT 1
@@ -448,8 +449,10 @@ found:
 
     if (!from_system && !miyoo_cpu_clock_sync_initialized && *clock_hz > 0)
     {
-       if (miyoo_gfx_apply_cpuclock((int)(*clock_hz)) != 0)
-          miyoo_cpu_clock_write(*clock_hz);
+       long applied_hz = miyoo_mirror_clock(*clock_hz);
+       if (miyoo_gfx_apply_cpuclock((int)applied_hz) != 0)
+          miyoo_cpu_clock_write(applied_hz);
+       miyoo_cpu_clock_cached_hz = *clock_hz;   /* shown/kept: the configured one */
        miyoo_cpu_clock_sync_initialized = true;
     }
 
@@ -514,8 +517,14 @@ static bool miyoo_cpu_clock_apply_target(long clock_hz)
     bool applied_runtime = false;
     bool applied_sysfs   = false;
 
+    long requested_hz;
+
     if (clock_hz <= 0)
         return false;
+
+    /* the menu shows and keeps the configured clock; the mirror one is only applied */
+    requested_hz = clock_hz;
+    clock_hz     = miyoo_mirror_clock(clock_hz);
 
     if (miyoo_gfx_apply_cpuclock((int)clock_hz) == 0)
        applied_runtime = miyoo_cpu_clock_matches_target(clock_hz);
@@ -524,6 +533,9 @@ static bool miyoo_cpu_clock_apply_target(long clock_hz)
 
     if (!applied_runtime && applied_sysfs)
        applied_runtime = miyoo_cpu_clock_matches_target(clock_hz);
+
+    if (miyoo_cpu_clock_cached_hz == clock_hz)
+       miyoo_cpu_clock_cached_hz = requested_hz;
 
     return applied_runtime || applied_sysfs;
 }
@@ -1414,5 +1426,65 @@ void miyoo_event_fullscreen_impl(settings_t *settings)
     show_miyoo_fullscreen_notification(settings);
     write_core_override_aspect_scale(settings);
 }
+
+/* ---- Screen Mirror ---------------------------------------------------------
+ * Its video encoder competes with the core for memory (Plus, Golden Sun TLA on
+ * gpSP with a viewer: 800 MHz -> 41 audio cuts in 36 s, 1200 MHz -> 4-10), so
+ * every place that applies the game clock goes through here. */
+long miyoo_mirror_clock(long clock)
+{
+   if (clock > 0 && clock < MIYOO_MIRROR_MIN_CLOCK && access("/tmp/mirror", F_OK) == 0)
+   {
+      RARCH_LOG("[CPU]: Mirror running: %ld -> %d MHz\n", clock / 1000, MIYOO_MIRROR_MIN_CLOCK / 1000);
+      return MIYOO_MIRROR_MIN_CLOCK;
+   }
+   return clock;
+}
+
+/* ---- Combo window of the system libSDL2 ---------------------------------
+ * Koriki's libSDL2 groups action buttons pressed within SDL_MINI_COMBO_MS
+ * (33 ms by default) for every program. RetroArch has its own buffer, with
+ * three levels scaled from that same window, so it asks SDL for 0 ms while
+ * SDL starts (the value is read once in SDL_Init) and puts the environment
+ * back afterwards, so programs started from RetroArch keep the system one. */
+static unsigned miyoo_sdl_combo_base_ms = 0;   /* 0 = not read yet */
+static char miyoo_sdl_combo_saved[16];
+static bool miyoo_sdl_combo_had_env = false;
+
+unsigned miyoo_sdl_combo_ms(void)
+{
+   if (miyoo_sdl_combo_base_ms == 0)
+   {
+      const char *v = getenv("SDL_MINI_COMBO_MS");
+      int ms        = (v && *v) ? atoi(v) : MIYOO_SDL_COMBO_DEFAULT_MS;
+      if (ms < 0)
+         ms = 0;
+      if (ms > 1000)
+         ms = 1000;
+      /* keep 0 apart from "not read yet" */
+      miyoo_sdl_combo_base_ms = (unsigned)ms + 1;
+   }
+   return miyoo_sdl_combo_base_ms - 1;
+}
+
+void miyoo_sdl_combo_disable_begin(void)
+{
+   const char *v = getenv("SDL_MINI_COMBO_MS");
+
+   miyoo_sdl_combo_ms();   /* remember the system value first */
+   miyoo_sdl_combo_had_env = (v != NULL);
+   if (v)
+      strlcpy(miyoo_sdl_combo_saved, v, sizeof(miyoo_sdl_combo_saved));
+   setenv("SDL_MINI_COMBO_MS", "0", 1);
+}
+
+void miyoo_sdl_combo_disable_end(void)
+{
+   if (miyoo_sdl_combo_had_env)
+      setenv("SDL_MINI_COMBO_MS", miyoo_sdl_combo_saved, 1);
+   else
+      unsetenv("SDL_MINI_COMBO_MS");
+}
+
 
 #endif

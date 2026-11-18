@@ -83,4 +83,18 @@ int miyoo_menu_joypad_sense_get(void);
 int miyoo_menu_joypad_sense_set(int sense);
 #endif
 
+/* Combo window of Koriki's libSDL2 (SDL_MINI_COMBO_MS, 33 ms by default).
+ * RetroArch turns it off around SDL_Init and applies its own buffer
+ * (Joypad sensitivity) scaled from this value. */
+#define MIYOO_SDL_COMBO_DEFAULT_MS 33
+void miyoo_sdl_combo_disable_begin(void);
+void miyoo_sdl_combo_disable_end(void);
+unsigned miyoo_sdl_combo_ms(void);
+
+/* Screen Mirror (App/Mirror) creates /tmp/mirror when it starts its service
+ * and removes it when it stops it (only from SimpleMenu). While it exists the
+ * game clock is at least 1200 MHz; a higher configured clock is kept. */
+#define MIYOO_MIRROR_MIN_CLOCK 1200000
+long miyoo_mirror_clock(long clock);
+
 #endif

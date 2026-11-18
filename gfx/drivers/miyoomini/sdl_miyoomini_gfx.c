@@ -35,6 +35,7 @@
 #include "gfx.c"
 #include "scaler_neon.c"
 #include <signal.h>
+#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 
@@ -1468,6 +1469,8 @@ static void print_clock(void) {
 
 /* Set CPU governor */
 enum cpugov { PERFORMANCE = 0, POWERSAVE = 1, ONDEMAND = 2, USERSPACE = 3 };
+
+/* Screen Mirror: miyoo_mirror_clock() in miyoo.c (at least 1200 MHz) */
 static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
    const char govstr[4][12] = { "performance", "powersave", "ondemand", "userspace" };
    const char fn_min_freq[] = "/sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq";
@@ -1512,6 +1515,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
                && runtime_clock <= 1600000)
          {
             char str[16];
+            runtime_clock = miyoo_mirror_clock(runtime_clock);
             fp = fopen(fn_governor, "w");
             if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
             int fset = open(fn_setspeed, O_WRONLY);
@@ -1553,6 +1557,7 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 		 RARCH_LOG("[CPU]: Path %s: %s\n", fps ? "found" : "not found", clock_path_used ? clock_path_used : "unknown");
          fscanf(fps, "%d", &cpuclock); fclose(fps);
          if ((cpuclock >= 200000)&&(cpuclock <= 1600000)) {
+            cpuclock = (int)miyoo_mirror_clock(cpuclock);
             fp = fopen(fn_governor, "w");
             if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
             int fset = open(fn_setspeed, O_WRONLY);
@@ -1585,6 +1590,19 @@ static void sdl_miyoomini_set_cpugovernor(enum cpugov gov) {
 		    fclose(fps);
          }
 		 if ((cpuclock >= 200000)&&(cpuclock <= 1600000)) {
+            if (miyoo_mirror_clock(cpuclock) != cpuclock) {
+               /* the SimpleMenu clock is lower than the mirror needs */
+               char str[16];
+               int fset;
+               fp = fopen(fn_governor, "w");
+               if (fp) { fwrite(govstr[USERSPACE], 1, strlen(govstr[USERSPACE]), fp); fclose(fp); }
+               fset = open(fn_setspeed, O_WRONLY);
+               snprintf(str, sizeof(str), "%d", MIYOO_MIRROR_MIN_CLOCK);
+               if (fset >= 0) { write(fset, str, strlen(str)); close(fset); }
+               set_cpuclock(MIYOO_MIRROR_MIN_CLOCK);
+               print_clock();
+               return;
+            }
 			fp = fopen(fn_governor, "w");
             if (fp) { fprintf(fp, "%s", governor); fclose(fp); }
             RARCH_LOG("[CPU]: Clock is: %d MHz\n", cpuclock / 1000);
@@ -1918,11 +1936,20 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 
    sdl_miyoomini_set_cpugovernor(PERFORMANCE);
 
-   /* Initialise graphics subsystem, if required */
+   /* Initialise graphics subsystem, if required.
+    * The libSDL2 combo window is off here: the joypad driver has its own */
    if (sdl_subsystem_flags == 0) {
-      if (SDL_Init(SDL_INIT_VIDEO) < 0) return NULL;
+      int sdl_ret;
+      miyoo_sdl_combo_disable_begin();
+      sdl_ret = SDL_Init(SDL_INIT_VIDEO);
+      miyoo_sdl_combo_disable_end();
+      if (sdl_ret < 0) return NULL;
    } else if ((sdl_subsystem_flags & SDL_INIT_VIDEO) == 0) {
-      if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) return NULL;
+      int sdl_ret;
+      miyoo_sdl_combo_disable_begin();
+      sdl_ret = SDL_InitSubSystem(SDL_INIT_VIDEO);
+      miyoo_sdl_combo_disable_end();
+      if (sdl_ret < 0) return NULL;
    }
 
    vid = (sdl_miyoomini_video_t*)calloc(1, sizeof(*vid));
