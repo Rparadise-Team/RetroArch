@@ -35,7 +35,6 @@
 
 #if defined(MIYOO_CUSTOM_MENU)
 #include "../../miyoo.h"
-#include <features/features_cpu.h>
 #endif
 
 /* Simple joypad driver designed to rationalise
@@ -77,8 +76,8 @@
 typedef struct {
    uint16_t pad_state;       /* Estado físico inmediato del hardware */
    uint16_t reported_state;  /* Estado consolidado visible para RetroArch */
-   retro_time_t pending_since; /* Cuándo empezó el cambio pendiente (0 = ninguno) */
    uint8_t  sense_frames;      /* Nivel: 0 instantáneo, 1 rápido, 2 lento */
+   int      combo_applied;     /* Ventana de la libSDL2 puesta (ms), -1 = ninguna */
    bool connected;
 #if defined(SDL_MIYOOMINI_HAS_MENU_TOGGLE)
    bool menu_toggle;
@@ -213,6 +212,7 @@ static void *sdl_miyoomini_joypad_init(void *data) {
    miyoomini_joypad_t *joypad      = (miyoomini_joypad_t*)&miyoomini_joypad;
 
    memset(joypad, 0, sizeof(miyoomini_joypad_t));
+   joypad->combo_applied = -1;
 	
 #if defined(MIYOO_CUSTOM_MENU)
    joypad->sense_frames = (uint8_t)miyoo_menu_joypad_sense_get();
@@ -456,43 +456,27 @@ static void sdl_miyoomini_joypad_poll_impl(void){
       (uint8_t)miyoo_menu_joypad_sense_get();
 #endif
 
-   /* Ventana en tiempo, no en frames, para que sea igual a cualquier
-    * frecuencia de pantalla. Parte de la ventana de la libSDL2 del sistema
-    * (33 ms), desactivada dentro de RetroArch: instantáneo = 0,
-    * rápido = la mitad, lento = la ventana completa. */
-   if (current_action != reported_action)
+   /* La ventana de combinación es la de la libSDL2 del sistema (33 ms),
+    * escalada por el nivel: instantáneo x0, rápido /2, lento x1. Se aplica
+    * con una pista de SDL (solo afecta a este proceso) al cambiar de nivel;
+    * aquí ya no se retrasa nada más. */
    {
-      retro_time_t window_us = (retro_time_t)miyoo_sdl_combo_ms() * 1000;
+      int ms = (int)miyoo_sdl_combo_ms();
 
       if (joypad->sense_frames == 0)
-         window_us = 0;
+         ms = 0;
       else if (joypad->sense_frames == 1)
-         window_us /= 2;
+         ms /= 2;
 
-      if (window_us == 0)
+      if (ms != joypad->combo_applied)
       {
-         /* Off: reconocimiento inmediato */
-         reported_action       = current_action;
-         joypad->pending_since = 0;
-      }
-      else
-      {
-         retro_time_t now = cpu_features_get_time_usec();
-
-         if (joypad->pending_since == 0)
-            joypad->pending_since = now;
-         /* margen de 4 ms: la variación del ritmo de frames no añade uno de más */
-         else if (now - joypad->pending_since + 4000 >= window_us)
-         {
-            reported_action       = current_action;
-            joypad->pending_since = 0;
-         }
+         char v[16];
+         snprintf(v, sizeof(v), "%d", ms);
+         SDL_SetHintWithPriority("SDL_MINI_COMBO_MS", v, SDL_HINT_OVERRIDE);
+         joypad->combo_applied = ms;
       }
    }
-   else
-   {
-      joypad->pending_since = 0;
-   }
+   reported_action = current_action;
 
    // 3. Recombinar la dirección instantánea con las acciones consolidadas
    joypad->reported_state = current_dir | reported_action;

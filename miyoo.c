@@ -1443,47 +1443,18 @@ long miyoo_mirror_clock(long clock)
 
 /* ---- Combo window of the system libSDL2 ---------------------------------
  * Koriki's libSDL2 groups action buttons pressed within SDL_MINI_COMBO_MS
- * (33 ms by default) for every program. RetroArch has its own buffer, with
- * three levels scaled from that same window, so it asks SDL for 0 ms while
- * SDL starts (the value is read once in SDL_Init) and puts the environment
- * back afterwards, so programs started from RetroArch keep the system one. */
-static unsigned miyoo_sdl_combo_base_ms = 0;   /* 0 = not read yet */
-static char miyoo_sdl_combo_saved[16];
-static bool miyoo_sdl_combo_had_env = false;
-
+ * (33 ms by default, or the environment variable) for every program.
+ * RetroArch keeps it and only scales it with "Joypad sensitivity"
+ * (see sdl_miyoomini_joypad.c). This is the system value. */
 unsigned miyoo_sdl_combo_ms(void)
 {
-   if (miyoo_sdl_combo_base_ms == 0)
-   {
-      const char *v = getenv("SDL_MINI_COMBO_MS");
-      int ms        = (v && *v) ? atoi(v) : MIYOO_SDL_COMBO_DEFAULT_MS;
-      if (ms < 0)
-         ms = 0;
-      if (ms > 1000)
-         ms = 1000;
-      /* keep 0 apart from "not read yet" */
-      miyoo_sdl_combo_base_ms = (unsigned)ms + 1;
-   }
-   return miyoo_sdl_combo_base_ms - 1;
-}
-
-void miyoo_sdl_combo_disable_begin(void)
-{
    const char *v = getenv("SDL_MINI_COMBO_MS");
-
-   miyoo_sdl_combo_ms();   /* remember the system value first */
-   miyoo_sdl_combo_had_env = (v != NULL);
-   if (v)
-      strlcpy(miyoo_sdl_combo_saved, v, sizeof(miyoo_sdl_combo_saved));
-   setenv("SDL_MINI_COMBO_MS", "0", 1);
-}
-
-void miyoo_sdl_combo_disable_end(void)
-{
-   if (miyoo_sdl_combo_had_env)
-      setenv("SDL_MINI_COMBO_MS", miyoo_sdl_combo_saved, 1);
-   else
-      unsetenv("SDL_MINI_COMBO_MS");
+   int ms        = (v && *v) ? atoi(v) : MIYOO_SDL_COMBO_DEFAULT_MS;
+   if (ms < 0)
+      ms = 0;
+   if (ms > 1000)
+      ms = 1000;
+   return (unsigned)ms;
 }
 
 

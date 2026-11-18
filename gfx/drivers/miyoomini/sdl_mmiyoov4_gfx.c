@@ -2000,20 +2000,11 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
    RARCH_LOG("[SDL2/MI_GFX]: Resolution: %dx%d\n", res_x, res_y);
    rgui_menu_dest_rect = (SDL_Rect){(res_x - RGUI_MENU_WIDTH * 2) / 2, (res_y - RGUI_MENU_HEIGHT * 2) / 2, RGUI_MENU_WIDTH * 2, RGUI_MENU_HEIGHT * 2};
 
-   /* Initialise graphics subsystem, if required.
-    * The libSDL2 combo window is off here: the joypad driver has its own */
+   /* Initialise graphics subsystem, if required */
    if (sdl_subsystem_flags == 0) {
-      int sdl_ret;
-      miyoo_sdl_combo_disable_begin();
-      sdl_ret = SDL_Init(SDL_INIT_VIDEO);
-      miyoo_sdl_combo_disable_end();
-      if (sdl_ret < 0) return NULL;
+      if (SDL_Init(SDL_INIT_VIDEO) < 0) return NULL;
    } else if ((sdl_subsystem_flags & SDL_INIT_VIDEO) == 0) {
-      int sdl_ret;
-      miyoo_sdl_combo_disable_begin();
-      sdl_ret = SDL_InitSubSystem(SDL_INIT_VIDEO);
-      miyoo_sdl_combo_disable_end();
-      if (sdl_ret < 0) return NULL;
+      if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) return NULL;
    }
 
    vid = (sdl_miyoomini_video_t*)calloc(1, sizeof(*vid));

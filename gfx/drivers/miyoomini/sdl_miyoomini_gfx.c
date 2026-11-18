@@ -1936,20 +1936,11 @@ static void *sdl_miyoomini_gfx_init(const video_info_t *video,
 
    sdl_miyoomini_set_cpugovernor(PERFORMANCE);
 
-   /* Initialise graphics subsystem, if required.
-    * The libSDL2 combo window is off here: the joypad driver has its own */
+   /* Initialise graphics subsystem, if required */
    if (sdl_subsystem_flags == 0) {
-      int sdl_ret;
-      miyoo_sdl_combo_disable_begin();
-      sdl_ret = SDL_Init(SDL_INIT_VIDEO);
-      miyoo_sdl_combo_disable_end();
-      if (sdl_ret < 0) return NULL;
+      if (SDL_Init(SDL_INIT_VIDEO) < 0) return NULL;
    } else if ((sdl_subsystem_flags & SDL_INIT_VIDEO) == 0) {
-      int sdl_ret;
-      miyoo_sdl_combo_disable_begin();
-      sdl_ret = SDL_InitSubSystem(SDL_INIT_VIDEO);
-      miyoo_sdl_combo_disable_end();
-      if (sdl_ret < 0) return NULL;
+      if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) return NULL;
    }
 
    vid = (sdl_miyoomini_video_t*)calloc(1, sizeof(*vid));
