@@ -507,6 +507,29 @@ static int action_start_miyoo_state_slot(
 
    return 0;
 }
+
+/* START restores the default: saved CPU clocks back to N/D, sensitivity
+ * back to its default level */
+static int action_start_miyoo_reset(
+      const char *path, const char *label,
+      unsigned type, size_t idx, size_t entry_idx)
+{
+   switch (type)
+   {
+      case FILE_TYPE_MIYOO_SAVE_CPU_CORE:
+         miyoo_menu_action_clear_cpu_core();
+         break;
+      case FILE_TYPE_MIYOO_SAVE_CPU_ROM:
+         miyoo_menu_action_clear_cpu_rom();
+         break;
+      case FILE_TYPE_MIYOO_JOYPAD_SENSE:
+         miyoo_menu_joypad_sense_reset();
+         break;
+      default:
+         return -1;
+   }
+   return 0;
+}
 #endif
 
 static int action_start_replay_slot(
@@ -998,6 +1021,11 @@ static int menu_cbs_init_bind_start_compare_type(menu_file_list_cbs_t *cbs,
          case FILE_TYPE_MIYOO_STATE_SLOT_8:
          case FILE_TYPE_MIYOO_STATE_SLOT_9:
             BIND_ACTION_START(cbs, action_start_miyoo_state_slot);
+            break;
+         case FILE_TYPE_MIYOO_SAVE_CPU_CORE:
+         case FILE_TYPE_MIYOO_SAVE_CPU_ROM:
+         case FILE_TYPE_MIYOO_JOYPAD_SENSE:
+            BIND_ACTION_START(cbs, action_start_miyoo_reset);
             break;
 #endif
          case MENU_SETTING_ACTION_PLAYREPLAY:

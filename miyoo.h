@@ -51,6 +51,8 @@ bool miyoo_menu_cpu_menu_is_open(void);
 int miyoo_menu_cpu_menu_get_index(void);
 int miyoo_menu_action_save_cpu_core(void);
 int miyoo_menu_action_save_cpu_rom(void);
+int miyoo_menu_action_clear_cpu_core(void);
+int miyoo_menu_action_clear_cpu_rom(void);
 bool miyoo_menu_cpu_saved_clock_get_core(long *clock_hz);
 bool miyoo_menu_cpu_saved_clock_get_rom(long *clock_hz);
 int miyoo_menu_action_netplay_host(void);
@@ -81,6 +83,7 @@ void miyoo_menu_state_slot_metadata(int slot, char *out, size_t len);
 void miyoo_menu_update_savestate_thumbnail(unsigned selection);
 int miyoo_menu_joypad_sense_get(void);
 int miyoo_menu_joypad_sense_set(int sense);
+int miyoo_menu_joypad_sense_reset(void);
 #endif
 
 /* Combo window of Koriki's libSDL2 (SDL_MINI_COMBO_MS, 33 ms by default).

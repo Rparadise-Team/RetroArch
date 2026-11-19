@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define MIYOO_JOYPAD_SENSE_DEFAULT 1
+#define MIYOO_JOYPAD_SENSE_DEFAULT 0   /* instantaneous: the fixed libSDL2 input needs no combo window */
 #define MIYOO_JOYPAD_SENSE_MIN     0
 #define MIYOO_JOYPAD_SENSE_MAX     2
 
@@ -914,6 +914,46 @@ int miyoo_menu_action_save_cpu_rom(void)
     }
 }
 
+/* START on "CPU core" / "CPU ROM": forget the saved clock (back to N/D);
+ * the clock then comes from the next level (ROM > core > system) the next
+ * time it is applied. */
+static int miyoo_cpu_clock_clear_file(const char *file_name, const char *who)
+{
+    char path[PATH_MAX_LENGTH];
+    char msg[256];
+
+    if (!miyoo_cpu_clock_build_core_path(path, sizeof(path), file_name))
+        return -1;
+    if (path_is_valid(path) && filestream_delete(path) != 0)
+        return -1;
+
+    snprintf(msg, sizeof(msg), "%s: N/D", who);
+    miyoo_menu_notify(msg);
+    return 0;
+}
+
+int miyoo_menu_action_clear_cpu_core(void)
+{
+    rarch_system_info_t *system = &runloop_state_get_ptr()->system;
+
+    if (!system || string_is_empty(system->info.library_name))
+        return -1;
+    return miyoo_cpu_clock_clear_file("cpuclock", system->info.library_name);
+}
+
+int miyoo_menu_action_clear_cpu_rom(void)
+{
+    char rom_cpu_file[PATH_MAX_LENGTH];
+    const char *rarch_path_basename = path_get(RARCH_PATH_BASENAME);
+    const char *rom_name             = path_basename_nocompression(rarch_path_basename);
+
+    if (string_is_empty(rom_name))
+        return -1;
+
+    snprintf(rom_cpu_file, sizeof(rom_cpu_file), "%s-cpu", rom_name);
+    return miyoo_cpu_clock_clear_file(rom_cpu_file, rom_name);
+}
+
 /* Survives a crash: RetroArch can die in the middle of netplay (out of
  * memory with large save states) and then the restore below never runs,
  * leaving cheevos_enable = false in the cfg for good. */
@@ -1053,7 +1093,7 @@ int miyoo_menu_joypad_sense_get(void)
    }
    else
    {
-      /* Primera ejecución: crear el archivo con Fast (1). */
+      /* Primera ejecución: crear el archivo con el valor por defecto. */
       fp = filestream_open(path,
             RETRO_VFS_FILE_ACCESS_WRITE,
             RETRO_VFS_FILE_ACCESS_HINT_NONE);
@@ -1115,6 +1155,12 @@ int miyoo_menu_joypad_sense_set(int sense)
    RARCH_LOG("[MIYOO][Joypad] Sense = %d\n", sense);
 
    return 0;
+}
+
+/* START on "Sensitivity": back to the default level */
+int miyoo_menu_joypad_sense_reset(void)
+{
+   return miyoo_menu_joypad_sense_set(MIYOO_JOYPAD_SENSE_DEFAULT);
 }
 
 void miyoo_menu_core_options_menu_open(void)
