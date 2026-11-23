@@ -5132,10 +5132,7 @@ static int generic_action_ok_network(const char *path,
    const char *url_label                   = NULL;
    retro_task_callback_t callback          = NULL;
    bool suppress_msg                       = false;
-   settings_t *settings                    = config_get_ptr();
    struct menu_state *menu_st              = menu_state_get_ptr();
-   const char *network_buildbot_assets_url =
-      settings->paths.network_buildbot_assets_url;
 
    url_path[0]         = '\0';
    url_path_encoded[0] = '\0';
@@ -5144,11 +5141,9 @@ static int generic_action_ok_network(const char *path,
    {
       case MENU_ENUM_LABEL_CB_CORE_CONTENT_DIRS_LIST:
 
-         if (string_is_empty(network_buildbot_assets_url))
-            return -1;
-
+         /* Koriki: core content always comes from libretro */
          fill_pathname_join_special(url_path,
-               network_buildbot_assets_url,
+               FILE_PATH_LIBRETRO_ASSETS_URL,
                "cores/" FILE_PATH_INDEX_DIRS_URL,
                sizeof(url_path));
          url_label    = msg_hash_to_str(enum_idx);
@@ -5165,10 +5160,9 @@ static int generic_action_ok_network(const char *path,
          suppress_msg = true;
          break;
       case MENU_ENUM_LABEL_CB_CORE_SYSTEM_FILES_LIST:
-         if (string_is_empty(network_buildbot_assets_url))
-            return -1;
+         /* Koriki: core system files always come from libretro */
          fill_pathname_join_special(url_path,
-               network_buildbot_assets_url,
+               FILE_PATH_LIBRETRO_ASSETS_URL,
                "system/" FILE_PATH_INDEX_URL,
                sizeof(url_path));
          url_label    = msg_hash_to_str(enum_idx);
@@ -5459,8 +5453,9 @@ static int action_ok_download_generic(const char *path,
          }
          break;
       case MENU_ENUM_LABEL_CB_CORE_SYSTEM_FILES_DOWNLOAD:
+         /* Koriki: core system files always come from libretro */
          fill_pathname_join_special(s,
-               network_buildbot_assets_url,
+               FILE_PATH_LIBRETRO_ASSETS_URL,
                "system", sizeof(s));
          break;
       case MENU_ENUM_LABEL_CB_LAKKA_DOWNLOAD:

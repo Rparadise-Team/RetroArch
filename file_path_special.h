@@ -75,6 +75,10 @@ RETRO_BEGIN_DECLS
 #define FILE_PATH_RETROACHIEVEMENTS_URL "http://i.retroachievements.org"
 #define FILE_PATH_LOBBY_LIBRETRO_URL "http://lobby.libretro.com/"
 #define FILE_PATH_CORE_THUMBNAILS_URL "http://thumbnails.libretro.com"
+/* Koriki: core_updater_buildbot_assets_url points to the Koriki repo, which only
+ * hosts frontend/ (info, assets, overlays...). Core system files and core
+ * content keep coming from libretro. */
+#define FILE_PATH_LIBRETRO_ASSETS_URL "http://buildbot.libretro.com/assets"
 #define FILE_PATH_CORE_THUMBNAILPACKS_URL "http://thumbnailpacks.libretro.com"
 #define FILE_PATH_SHADERS_GLSL_ZIP "shaders_glsl.zip"
 #define FILE_PATH_SHADERS_SLANG_ZIP "shaders_slang.zip"

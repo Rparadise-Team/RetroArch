@@ -13718,11 +13718,10 @@ bool menu_displaylist_ctl(enum menu_displaylist_ctl_state type,
             {
 #ifdef HAVE_NETWORKING
                char new_label[NAME_MAX_LENGTH];
-               const char *
-                  network_buildbot_assets_url = settings->paths.network_buildbot_assets_url;
 
+               /* Koriki: core content always comes from libretro */
                fill_pathname_join_special(new_label,
-                     network_buildbot_assets_url,
+                     FILE_PATH_LIBRETRO_ASSETS_URL,
                      "cores", sizeof(new_label));
 
                if ((count = (unsigned)print_buf_lines(info->list, new_label, menu->core_buf,
