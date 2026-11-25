@@ -32,6 +32,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/soundcard.h>
@@ -44,6 +45,7 @@
 
 #include "../audio_driver.h"
 #include "../../verbosity.h"
+#include "miyoo_audioserver_fifo.h"
 
 #define DEFAULT_OSS_DEV "/dev/dsp"
 
@@ -53,7 +55,18 @@ typedef struct oss_audio
    bool is_paused;
    bool nonblock;
    bool audioserver;
+   size_t fifo_limit;
+   size_t capacity;
+   bool fifo_nonblock;
 } oss_audio_t;
+
+static bool oss_is_audioserver_fifo(int fd)
+{
+   struct stat opened, server;
+   return fstat(fd, &opened) == 0 && S_ISFIFO(opened.st_mode) &&
+          stat(MIYOO_AUDIOSERVER_FIFO, &server) == 0 &&
+          opened.st_dev == server.st_dev && opened.st_ino == server.st_ino;
+}
 
 static void *oss_init(const char *device,
       unsigned rate, unsigned latency,
@@ -127,6 +140,26 @@ static void *oss_init(const char *device,
       MI_AO_SetPubAttr(0, &attr);
    }
 	
+   if (ossaudio->audioserver && oss_is_audioserver_fifo(ossaudio->fd))
+      ossaudio->fifo_limit = miyoo_fifo_configure(ossaudio->fd, new_rate, latency);
+   else
+   {
+      audio_buf_info info = {0};
+      ossaudio->capacity = 2; /* A neutral, nonzero point if GETOSPACE is unavailable. */
+      if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) >= 0 &&
+          info.fragsize > 0 && info.fragstotal > 0 &&
+          (uint64_t)info.fragsize * info.fragstotal <= INT32_MAX)
+      {
+         const size_t capacity = (size_t)info.fragsize * info.fragstotal;
+         if (capacity >= 2)
+            ossaudio->capacity = capacity;
+      }
+      if (ossaudio->audioserver)
+         RARCH_WARN("[OSS]: audioserver descriptor is not the Koriki FIFO; using OSS space.\n");
+      if (ossaudio->capacity == 2)
+         RARCH_WARN("[OSS]: No valid OSS buffer size; using neutral rate control.\n");
+   }
+
    int target_vol = getVolumeMM();
    set_snd_level(target_vol);
 
@@ -144,6 +177,14 @@ static ssize_t oss_write(void *data, const void *buf, size_t size)
 {
    ssize_t ret, total_written = 0;
    oss_audio_t *ossaudio = (oss_audio_t*)data;
+   if (ossaudio->fifo_limit)
+   {
+      if (ossaudio->nonblock && !ossaudio->fifo_nonblock)
+         return 0;
+      return miyoo_fifo_write(ossaudio->fd, ossaudio->fifo_limit,
+            ossaudio->nonblock, buf, size);
+   }
+
    /* For stock oss, no playback during fast forward to avoid blocking */
    if ( (size == 0) || ((!ossaudio->audioserver)&&(ossaudio->nonblock)) )
       return 0;
@@ -200,7 +241,12 @@ static void oss_set_nonblock_state(void *data, bool state)
 {
    oss_audio_t *ossaudio  = (oss_audio_t*)data;
 
-   if (state) fcntl(ossaudio->fd, F_SETFL, fcntl(ossaudio->fd, F_GETFL) | O_NONBLOCK);
+   if (ossaudio->fifo_limit)
+   {
+      if (miyoo_fifo_set_nonblock(ossaudio->fd, state))
+         ossaudio->fifo_nonblock = state;
+   }
+   else if (state) fcntl(ossaudio->fd, F_SETFL, fcntl(ossaudio->fd, F_GETFL) | O_NONBLOCK);
    else       fcntl(ossaudio->fd, F_SETFL, fcntl(ossaudio->fd, F_GETFL) & (~O_NONBLOCK));
 
    ossaudio->nonblock = state;
@@ -216,30 +262,21 @@ static void oss_free(void *data)
 
 static size_t oss_write_avail(void *data)
 {
-   audio_buf_info info;
-   oss_audio_t *ossaudio  = (oss_audio_t*)data;
-
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
-   {
-      RARCH_ERR("[OSS]: SNDCTL_DSP_GETOSPACE failed ...\n");
-      return 0;
-   }
-
-   return info.bytes;
+   audio_buf_info info = {0};
+   oss_audio_t *ossaudio = (oss_audio_t*)data;
+   if (ossaudio->fifo_limit)
+      return miyoo_fifo_write_avail(ossaudio->fd, ossaudio->fifo_limit);
+   if (ossaudio->capacity == 2 ||
+       ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0 || info.bytes < 0)
+      return ossaudio->capacity / 2;
+   return (size_t)info.bytes < ossaudio->capacity ?
+         (size_t)info.bytes : ossaudio->capacity;
 }
 
 static size_t oss_buffer_size(void *data)
 {
-   audio_buf_info info;
-   oss_audio_t *ossaudio  = (oss_audio_t*)data;
-
-   if (ioctl(ossaudio->fd, SNDCTL_DSP_GETOSPACE, &info) < 0)
-   {
-      RARCH_ERR("[OSS]: SNDCTL_DSP_GETOSPACE failed ...\n");
-      return 1; /* Return something non-zero to avoid SIGFPE. */
-   }
-
-   return info.fragsize * info.fragstotal;
+   oss_audio_t *ossaudio = (oss_audio_t*)data;
+   return ossaudio->fifo_limit ? ossaudio->fifo_limit : ossaudio->capacity;
 }
 
 static bool oss_use_float(void *data)

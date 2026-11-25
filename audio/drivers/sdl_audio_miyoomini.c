@@ -40,9 +40,9 @@
 #include "../../verbosity.h"
 #include "volume/volume.h"
 #include <mi_ao.h>
+#include "miyoo_audioserver_fifo.h"
 
 #define SDL_AUDIO_SAMPLES 256
-#define AUDIOSERVER_FIFO "/tmp/audio_fifo_server"
 
 static unsigned sdl_audio_mini_supported_rate(unsigned rate)
 {
@@ -127,6 +127,7 @@ typedef struct sdl_audio
    int audiofix;
    bool audioserver_mode;
    int audioserver_fd;
+   bool fifo_nonblock;
 } sdl_audio_t;
 
 static void sdl_audio_cb(void *data, Uint8 *stream, int len)
@@ -210,14 +211,14 @@ static void *sdl_audio_init(const char *device,
 
    if (sdl->audioserver_mode)
    {
-      sdl->audioserver_fd = open(AUDIOSERVER_FIFO, O_WRONLY);
+      sdl->audioserver_fd = open(MIYOO_AUDIOSERVER_FIFO, O_WRONLY);
       if (sdl->audioserver_fd < 0)
       {
-         RARCH_ERR("[SDL audio]: Cannot open audioserver FIFO: %s\n", AUDIOSERVER_FIFO);
+         RARCH_ERR("[SDL audio]: Cannot open audioserver FIFO: %s\n", MIYOO_AUDIOSERVER_FIFO);
          goto error;
       }
       *new_rate = spec.freq;
-      sdl->bufsize = (latency * spec.freq / 1000) << 2;
+      sdl->bufsize = miyoo_fifo_configure(sdl->audioserver_fd, spec.freq, latency);
       RARCH_LOG("[SDL audio]: with audioserver FIFO mode\n");
       goto platform_init;
    }
@@ -297,20 +298,10 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
 
    if (sdl->audioserver_mode && sdl->audioserver_fd >= 0)
    {
-      size_t total = 0;
-      while (total < size)
-      {
-         ssize_t w = write(sdl->audioserver_fd, (const uint8_t*)buf + total, size - total);
-         if (w > 0)
-            total += w;
-         else if (w < 0 && errno == EAGAIN)
-            usleep(1000);
-         else if (w < 0 && errno == EINTR)
-            continue;
-         else
-            break;
-      }
-      return total;
+      if (sdl->nonblock && !sdl->fifo_nonblock)
+         return 0;
+      return miyoo_fifo_write(sdl->audioserver_fd, sdl->bufsize,
+            sdl->nonblock, buf, size);
    }
 
    if (sdl->nonblock)
@@ -397,6 +388,8 @@ static bool sdl_audio_start(void *data, bool is_shutdown)
 static void sdl_audio_set_nonblock_state(void *data, bool state)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
+   if (sdl->audioserver_mode && miyoo_fifo_set_nonblock(sdl->audioserver_fd, state))
+      sdl->fifo_nonblock = state;
    sdl->nonblock = state;
 }
 
@@ -437,7 +430,7 @@ static size_t sdl_audio_write_avail(void *data)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
    if (sdl->audioserver_mode)
-      return sdl->bufsize ? sdl->bufsize : 1024;
+      return miyoo_fifo_write_avail(sdl->audioserver_fd, sdl->bufsize);
    SDL_LockAudio();
    size_t avail = FIFO_WRITE_AVAIL(sdl->buffer);
    SDL_UnlockAudio();
@@ -447,8 +440,6 @@ static size_t sdl_audio_write_avail(void *data)
 static size_t sdl_audio_buffer_size(void *data)
 {
    sdl_audio_t *sdl = (sdl_audio_t*)data;
-   if (sdl->audioserver_mode)
-      return sdl->bufsize;
    return sdl->bufsize;
 }
 
