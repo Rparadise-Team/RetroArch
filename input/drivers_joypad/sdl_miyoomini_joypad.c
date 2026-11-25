@@ -136,6 +136,8 @@ static bool sdl_miyoomini_joypad_set_rumble(unsigned pad,
       if (joypad->rumble_timer)
          SDL_RemoveTimer(joypad->rumble_timer);
       joypad->rumble_timer = SDL_AddTimer(joypad->rumble_time, miyoomini_rumble_finish, NULL);
+      if (!joypad->rumble_timer)
+         miyoomini_rumble(0);
 #else
       SDL_SetTimer(joypad->rumble_time, miyoomini_rumble_finish);
 #endif
@@ -181,24 +183,21 @@ static void sdl_miyoomini_joypad_disconnect(void) {
    if (joypad->connected)
       input_autoconfigure_disconnect(0, sdl_dingux_joypad.ident);
 
+   /* Cancel the timer before clearing its ID. */
+#if defined(HAVE_SDL2)
+   if (joypad->rumble_timer)
+      SDL_RemoveTimer(joypad->rumble_timer);
+#else
+   SDL_SetTimer(0, NULL);
+#endif
+   miyoomini_rumble(0);
    memset(joypad, 0, sizeof(miyoomini_joypad_t));
 }
 
 static void sdl_miyoomini_joypad_destroy(void) {
    SDL_Event event;
 
-   /* Disconnect joypad */
    sdl_miyoomini_joypad_disconnect();
-
-   /* Stop rumble */
-#if defined(HAVE_SDL2)
-   if (miyoomini_joypad.rumble_timer)
-      SDL_RemoveTimer(miyoomini_joypad.rumble_timer);
-   miyoomini_joypad.rumble_timer = 0;
-#else
-   SDL_SetTimer(0, NULL);
-#endif
-   miyoomini_rumble(0);
 
    /* Flush out all pending events */
    while (SDL_PollEvent(&event));

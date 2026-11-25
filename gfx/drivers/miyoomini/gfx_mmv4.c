@@ -176,8 +176,9 @@ static void* GFX_FlipThread(void* param) {
 	while(1) {
 		while (!now_flipping) pthread_cond_wait(&flip_req, &flip_mx);
 		PF_MARK(PF_IDLE);
-		Fence = flipFence;
-		do {	target_offset = vinfo.yoffset + res_y;
+		do {
+			Fence = flipFence;
+			target_offset = vinfo.yoffset + res_y;
 			if ( target_offset == res_y * 3 ) target_offset = 0;
 			vinfo.yoffset = target_offset;
 			pthread_cond_signal(&flip_start);
@@ -185,11 +186,11 @@ static void* GFX_FlipThread(void* param) {
 			PF_MARK(PF_WAKE);
 #ifdef	HAVE_OVERLAY
 			if (ovrsurface) {
-				MI_GFX_WaitAllDone(FALSE, flipFence);
+				MI_GFX_WaitAllDone(FALSE, Fence);
 				PF_MARK(PF_WAIT_MAIN);
 				OvrDst.phyAddr = finfo.smem_start + (res_x*target_offset*4);
 				MI_GFX_BitBlit(&OvrSrc, &OvrSrcRect, &OvrDst, &OvrDstRect, &OvrOpt, &Fence);
-				MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0;
+				MI_GFX_WaitAllDone(FALSE, Fence);
 				PF_MARK(PF_OVERLAY);
 				if (flip_callback) flip_callback(userdata_callback);
 				PF_MARK(PF_CALLBACK);
@@ -197,11 +198,11 @@ static void* GFX_FlipThread(void* param) {
 #endif
 			if (flip_callback) {
 				// Wait done always when callback is active
-				MI_GFX_WaitAllDone(FALSE, flipFence); Fence = 0;
+				MI_GFX_WaitAllDone(FALSE, Fence);
 				PF_MARK(PF_WAIT_MAIN);
 				flip_callback(userdata_callback);
 				PF_MARK(PF_CALLBACK);
-			} else if (Fence) { MI_GFX_WaitAllDone(FALSE, Fence); Fence = 0; PF_MARK(PF_WAIT_MAIN); }
+			} else if (Fence) { MI_GFX_WaitAllDone(FALSE, Fence); PF_MARK(PF_WAIT_MAIN); }
 			ioctl(fd_fb, FBIOPAN_DISPLAY, &vinfo);
 			PF_MARK(PF_PAN);
 			PF_REPORT();

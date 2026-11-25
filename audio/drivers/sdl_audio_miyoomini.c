@@ -148,7 +148,12 @@ static void sdl_audio_cb(void *data, Uint8 *stream, int len)
          memset(stream + write_size, 0, len - write_size);
    }
 #ifdef HAVE_THREADS
+   /* signal with the writer's mutex held: the writer takes it before
+      releasing the SDL audio lock, so this wake-up cannot fall between its
+      FIFO check and its wait (it used to be lost, costing one more period) */
+   slock_lock(sdl->lock);
    scond_signal(sdl->cond);
+   slock_unlock(sdl->lock);
 #endif
 }
 
@@ -335,12 +340,14 @@ static ssize_t sdl_audio_write(void *data, const void *buf, size_t size)
          avail = FIFO_WRITE_AVAIL(sdl->buffer);
          if (avail < low_watermark)
          {
-            SDL_UnlockAudio();
 #ifdef HAVE_THREADS
+            /* same lock order as the callback (SDL audio lock, then ours) */
             slock_lock(sdl->lock);
+            SDL_UnlockAudio();
             scond_wait(sdl->cond, sdl->lock);
             slock_unlock(sdl->lock);
 #else
+            SDL_UnlockAudio();
             SDL_Delay(1);
 #endif
          }

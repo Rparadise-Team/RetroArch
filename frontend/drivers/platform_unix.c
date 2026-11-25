@@ -83,6 +83,7 @@
 #include <streams/file_stream.h>
 #include <string/stdstring.h>
 #include <queues/task_queue.h>
+#include <time.h>
 #include <retro_timers.h>
 #include <features/features_cpu.h>
 
@@ -1248,32 +1249,47 @@ static enum frontend_powerstate frontend_unix_get_powerstate(
 
 #if defined(MIYOOMINI)
 	
-	int crg = 0;
+	/* Charger state. A failed or incomplete read keeps the last state (it
+	   used to count as "not charging"), and on the Plus/Flip axp_test (a
+	   shell + a process) runs at most every 10 s, also when a core asks for
+	   the power state often. */
+	static int last_crg = 0;
+	static time_t last_axp = 0;
+	int crg = last_crg;
 	int is_charging = 0;
     int MMplus = access("/customer/app/axp_test", F_OK);
   
     if (MMplus == 0) {
-        char *cmd = "cd /customer/app/ ; ./axp_test";
-        int axp_response_size = 100;
-        char buf[axp_response_size];
-        int bat = 0;
-        int vol = 0;
+        time_t now = time(NULL);
+        if (last_axp == 0 || now - last_axp >= 10 || now < last_axp) {
+            char *cmd = "cd /customer/app/ ; ./axp_test";
+            int axp_response_size = 100;
+            char buf[axp_response_size];
+            int bat = 0;
+            int vol = 0;
+            int c = 0, fields = 0, end = 0;
 
-        FILE *fp;
-        fp = popen(cmd, "r");
-        if (fp) {
-            if (fgets(buf, axp_response_size, fp) != NULL)
-                sscanf(buf,  "{\"battery\":%d, \"voltage\":%d, \"charging\":%d}", &bat, &vol, &crg);
-            pclose(fp);
+            FILE *fp;
+            last_axp = now;
+            fp = popen(cmd, "r");
+            if (fp) {
+                if (fgets(buf, axp_response_size, fp) != NULL)
+                    fields = sscanf(buf,  "{\"battery\":%d, \"voltage\":%d, \"charging\":%d}%n", &bat, &vol, &c, &end);
+                if (pclose(fp) == 0 && fields == 3 && end > 0 && c >= 0 && c <= 3)
+                    crg = c;
+            }
         }
     } else {
         FILE *file = fopen("/sys/devices/gpiochip0/gpio/gpio59/value", "r");
         if (file!=NULL) {
-            fscanf(file, "%i", &crg);
+            int c = 0;
+            if (fscanf(file, "%i", &c) == 1 && (c == 0 || c == 1))
+                crg = c;
             fclose(file);
 		}
     }
 
+    last_crg = crg;
     is_charging = crg;
 
    if (is_charging == 0) {

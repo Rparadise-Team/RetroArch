@@ -35,6 +35,9 @@
 #include "file_path_special.h"
 #include "command.h"
 #include "configuration.h"
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+#include "miyoo.h"
+#endif
 #include "content.h"
 #include "config.def.h"
 #include "config.features.h"
@@ -5130,7 +5133,12 @@ success:
  */
 static void config_parse_file(global_t *global)
 {
-   const char *config_path = path_get(RARCH_PATH_CONFIG);
+   const char *config_path;
+
+#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
+   miyoo_menu_netplay_recover_cheevos();
+#endif
+   config_path = path_get(RARCH_PATH_CONFIG);
 
    if (!config_load_file(global, config_path, config_st))
    {

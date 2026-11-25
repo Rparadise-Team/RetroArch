@@ -1951,10 +1951,6 @@ bool rcheevos_load(const void *data)
    settings_t *settings               = config_get_ptr();
    bool cheevos_enable;
 
-#if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
-   miyoo_menu_netplay_recover_cheevos();
-#endif
-
    cheevos_enable = settings && settings->bools.cheevos_enable;
 
 #if defined(MIYOOMINI) && defined(MIYOO_CUSTOM_MENU)
